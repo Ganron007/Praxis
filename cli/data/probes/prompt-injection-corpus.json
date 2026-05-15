@@ -1,0 +1,133 @@
+{
+  "version": "1.0",
+  "description": "Prompt-injection probe corpus. Each entry is a static-detectable signal (regex) that a code path is constructing or accepting an LLM prompt in a way that matches a known injection class.",
+  "categories": [
+    {
+      "id": "direct-injection",
+      "title": "Direct prompt injection",
+      "tags": ["LLM01", "AML.T0051", "AML.T0043"]
+    },
+    {
+      "id": "instruction-override",
+      "title": "Instruction-override jailbreak",
+      "tags": ["LLM01", "AML.T0054"]
+    },
+    {
+      "id": "role-play-bypass",
+      "title": "Role-play / persona bypass (DAN, etc.)",
+      "tags": ["LLM01", "AML.T0054"]
+    },
+    {
+      "id": "indirect-injection",
+      "title": "Indirect injection from URL / file / RAG",
+      "tags": ["LLM01", "LLM08", "AML.T0070"]
+    },
+    {
+      "id": "system-prompt-leak",
+      "title": "System-prompt leakage / extraction",
+      "tags": ["LLM07", "AML.T0057"]
+    },
+    {
+      "id": "tool-use-hijack",
+      "title": "Tool / function-call hijack",
+      "tags": ["LLM06", "AML.T0053"]
+    },
+    {
+      "id": "dataflow-unsafe",
+      "title": "Unsanitized user input into prompt construction",
+      "tags": ["LLM01", "LLM05"]
+    }
+  ],
+  "probes": [
+    {
+      "id": "PI-001",
+      "category": "direct-injection",
+      "title": "User input concatenated into system prompt",
+      "regex": "(?:system|systemPrompt|system_prompt|systemMessage|messages\\s*[:=]\\s*\\[\\s*\\{\\s*role\\s*:\\s*[\"']system)[\\s\\S]{0,200}(?:\\$\\{[^}]*(?:user|input|query|prompt|message|content|body|req\\.)|\\+\\s*(?:userInput|input|query|prompt|message)|f[\"'][^\"']{0,200}\\{(?:user|input|query|prompt|message))",
+      "severity": "high",
+      "description": "User-controlled value is interpolated directly into a system prompt. This is the canonical direct prompt-injection pattern.",
+      "fix": "Keep system prompts static. If user data must influence behavior, treat it as untrusted user-role content and constrain it via templated placeholders or guardrails."
+    },
+    {
+      "id": "PI-002",
+      "category": "instruction-override",
+      "title": "Hardcoded instruction-override phrase",
+      "regex": "(?i)(?:ignore\\s+(?:all\\s+)?(?:previous|prior|above)\\s+instructions|disregard\\s+(?:any|all|the)\\s+(?:previous|earlier|above)\\s+(?:instructions|prompt|context)|forget\\s+(?:everything|all)\\s+(?:above|previous))",
+      "severity": "high",
+      "description": "Source contains a hardcoded instruction-override string. If this string is sent to a downstream LLM unsanitized, it is a self-jailbreak.",
+      "fix": "Remove hardcoded override phrases from prompts. If demonstrating the pattern in tests/docs, use the praxis-ignore inline comment."
+    },
+    {
+      "id": "PI-003",
+      "category": "role-play-bypass",
+      "title": "DAN / persona-bypass prompt",
+      "regex": "(?i)(?:do\\s+anything\\s+now|\\bdan\\s+mode\\b|act\\s+as\\s+(?:if\\s+you\\s+have\\s+no\\s+restrictions|an?\\s+(?:unfiltered|unrestricted|jailbroken)\\s+ai)|pretend\\s+you\\s+are\\s+(?:not|no\\s+longer)\\s+bound\\s+by)",
+      "severity": "high",
+      "description": "Source contains a DAN-style or persona-bypass jailbreak template.",
+      "fix": "Strip jailbreak templates from prompts. Add prompt-injection detection on user input."
+    },
+    {
+      "id": "PI-004",
+      "category": "indirect-injection",
+      "title": "Fetched URL content fed to LLM without sanitization",
+      "regex": "(?:fetch|axios\\.get|requests\\.get|urllib\\.request\\.urlopen|http\\.get)\\s*\\([^)]*\\)[\\s\\S]{0,400}(?:\\.invoke|\\.complete|\\.chat|\\.create|\\.generate|client\\.messages|chat\\.completions|generate_content)\\s*\\(",
+      "severity": "high",
+      "description": "Remote-fetched content flows into an LLM call without an intermediate sanitation step. This is the indirect-injection pattern (attacker plants instructions in a webpage / file).",
+      "fix": "Strip HTML, neutralize known jailbreak phrases, or render fetched content inside a delimited user-role block before sending to the LLM."
+    },
+    {
+      "id": "PI-005",
+      "category": "indirect-injection",
+      "title": "RAG retrieved chunk concatenated into prompt",
+      "regex": "(?:similarity_search|similaritySearch|retriever\\.invoke|asRetriever|get_relevant_documents|retrieve)\\s*\\([\\s\\S]{0,200}\\)[\\s\\S]{0,300}(?:\\$\\{|\\+\\s*[a-zA-Z_]|f[\"'])",
+      "severity": "high",
+      "description": "RAG retrieval result is interpolated into a prompt without filtering. Attackers who can poison the retrieval index (e.g., via uploaded docs) gain prompt control.",
+      "fix": "Quote retrieved content inside delimited blocks (e.g., <document>...</document>) and instruct the model to treat them as untrusted data."
+    },
+    {
+      "id": "PI-006",
+      "category": "system-prompt-leak",
+      "title": "System prompt echo via 'repeat your instructions' handling",
+      "regex": "(?i)(?:print|return|output|reveal|show)\\s+(?:your|the)\\s+(?:system|original|initial)\\s+(?:prompt|instructions|message|rules)",
+      "severity": "medium",
+      "description": "Code contains text that asks the model to disclose its system prompt — typical of prompt-extraction probing or a misconfigured debug path.",
+      "fix": "Never echo system prompts in production. Add a refusal pattern for prompt-disclosure requests."
+    },
+    {
+      "id": "PI-007",
+      "category": "tool-use-hijack",
+      "title": "Over-broad tool / function schema (additionalProperties true / no validation)",
+      "regex": "(?:tools\\s*[:=]|functions\\s*[:=]|tool_choice\\s*[:=])[\\s\\S]{0,400}(?:\"additionalProperties\"\\s*:\\s*true|\"type\"\\s*:\\s*\"object\"\\s*\\}\\s*[,\\}])",
+      "severity": "medium",
+      "description": "Tool/function schema is permissive: additionalProperties is true or there is no property constraint, so a model coerced via prompt injection can pass arbitrary args.",
+      "fix": "Define a strict JSON Schema for every tool: list required properties and set additionalProperties: false."
+    },
+    {
+      "id": "PI-008",
+      "category": "tool-use-hijack",
+      "title": "Function-call result executed without confirmation",
+      "regex": "(?:function_call|tool_calls?)\\.(?:arguments|args|input)\\s*[\\s\\S]{0,200}(?:exec|spawn|eval|child_process|subprocess|os\\.system)\\s*\\(",
+      "severity": "critical",
+      "description": "Arguments coming from an LLM function call are passed straight into shell/exec/eval. A successful prompt injection becomes RCE.",
+      "fix": "Validate function-call arguments against a schema and require human confirmation for any side-effectful tool."
+    },
+    {
+      "id": "PI-009",
+      "category": "dataflow-unsafe",
+      "title": "User input wrapped in delimiters that the user can close",
+      "regex": "(?:`{3}|\"{3}|<\\|user\\|>|<\\|system\\|>|<\\|assistant\\|>)\\s*\\$?\\{[^}]*(?:user|input|query|message)\\s*\\}\\s*(?:`{3}|\"{3}|<\\|)",
+      "severity": "high",
+      "description": "User content is wrapped in delimiters (triple backticks, ChatML tokens) that the user can themselves emit, escaping the intended block.",
+      "fix": "Encode/escape special tokens in user input or use a delimiter unlikely to appear in user content."
+    },
+    {
+      "id": "PI-010",
+      "category": "direct-injection",
+      "title": "Anthropic Messages API: user role concatenated from raw input",
+      "regex": "(?:client\\.messages\\.create|messages\\s*[:=]\\s*\\[)[\\s\\S]{0,400}role\\s*:\\s*[\"']user[\"'][\\s\\S]{0,200}content\\s*:\\s*(?:`[^`]*\\$\\{[^}]*(?:user|input|req|body)|f[\"'][^\"']{0,200}\\{(?:user|input)|\\$\\{[^}]*\\+\\s*(?:user|input))",
+      "severity": "medium",
+      "description": "User role content is constructed by string interpolation from request data — sanitize first and consider rate-limiting / token caps.",
+      "fix": "Pass user input as a structured message rather than via template-string concatenation. Apply input length limits."
+    }
+  ]
+}

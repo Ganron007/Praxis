@@ -1,0 +1,96 @@
+{
+  "name": "praxis",
+  "displayName": "Praxis — Security Scanner",
+  "description": "Real-time security scanning with 16 AI agents. Find secrets, vulnerabilities, and CVEs as you code.",
+  "version": "1.0.0",
+  "publisher": "praxis",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com//praxis"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "security",
+    "secrets",
+    "vulnerability",
+    "scanner",
+    "ai",
+    "owasp"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "praxis.scanWorkspace",
+        "title": "Praxis: Scan Workspace"
+      },
+      {
+        "command": "praxis.scanFile",
+        "title": "Praxis: Scan Current File"
+      },
+      {
+        "command": "praxis.showReport",
+        "title": "Praxis: Show Report"
+      },
+      {
+        "command": "praxis.toggleWatch",
+        "title": "Praxis: Toggle Watch Mode"
+      }
+    ],
+    "configuration": {
+      "title": "Praxis",
+      "properties": {
+        "praxis.autoScanOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan files when saved"
+        },
+        "praxis.severity": {
+          "type": "string",
+          "default": "medium",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Minimum severity to show in diagnostics"
+        },
+        "praxis.showInlineHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline hints for findings"
+        },
+        "praxis.deep": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable AI deep analysis (requires API key)"
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "praxis.scanFile",
+          "group": "praxis"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20",
+    "typescript": "^5.3.0"
+  }
+}

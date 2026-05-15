@@ -1,0 +1,569 @@
+/**
+ * Scan Command
+ * ============
+ *
+ * Scans a directory for leaked secrets using pattern matching + entropy scoring.
+ *
+ * USAGE:
+ *   praxis scan [path]            Scan specified path (default: current directory)
+ *   praxis scan . -v              Verbose mode (show files being scanned)
+ *   praxis scan . --json          Output as JSON (for CI integration)
+ *   praxis scan . --include-tests Also scan test files (excluded by default)
+ *
+ * SUPPRESSING FALSE POSITIVES:
+ *   Add  # praxis-ignore  as a comment on the same line to suppress a finding.
+ *   Create a .praxisignore file (same syntax as .gitignore) to exclude paths.
+ *
+ * EXIT CODES:
+ *   0 - No secrets found
+ *   1 - Secrets found (or error)
+ */
+
+import fs from 'fs';
+import path from 'path';
+import fg from 'fast-glob';
+import ora from 'ora';
+import chalk from 'chalk';
+import {
+  SECRET_PATTERNS,
+  SECURITY_PATTERNS,
+  SKIP_DIRS,
+  SKIP_EXTENSIONS,
+  SKIP_FILENAMES,
+  TEST_FILE_PATTERNS,
+  MAX_FILE_SIZE,
+  loadGitignorePatterns
+} from '../utils/patterns.js';
+import { isHighEntropyMatch, getConfidence } from '../utils/entropy.js';
+import * as output from '../utils/output.js';
+import { CacheManager } from '../utils/cache-manager.js';
+
+// =============================================================================
+// CUSTOM PATTERNS (.praxis.json)
+// =============================================================================
+
+/**
+ * Load custom patterns from .praxis.json in the project root.
+ *
+ * Format:
+ *   {
+ *     "patterns": [
+ *       {
+ *         "name": "My Internal Key",
+ *         "pattern": "MYAPP_[A-Z0-9]{32}",
+ *         "severity": "high",
+ *         "description": "Internal API key for myapp services."
+ *       }
+ *     ]
+ *   }
+ */
+function loadCustomPatterns(rootPath) {
+  const configPath = path.join(rootPath, '.praxis.json');
+  if (!fs.existsSync(configPath)) return [];
+
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    if (!Array.isArray(config.patterns)) return [];
+
+    return config.patterns
+      .filter(p => p.name && p.pattern)
+      .map(p => ({
+        name: `[custom] ${p.name}`,
+        pattern: new RegExp(p.pattern, 'g'),
+        severity: p.severity || 'high',
+        description: p.description || `Custom pattern: ${p.name}`,
+        custom: true,
+      }));
+  } catch (err) {
+    output.warning(`.praxis.json parse error: ${err.message}`);
+    return [];
+  }
+}
+
+// =============================================================================
+// MAIN SCAN FUNCTION
+// =============================================================================
+
+export async function scanCommand(targetPath = '.', options = {}) {
+  const absolutePath = path.resolve(targetPath);
+
+  // Validate path exists
+  if (!fs.existsSync(absolutePath)) {
+    output.error(`Path does not exist: ${absolutePath}`);
+    process.exit(1);
+  }
+
+  // Load .praxisignore patterns
+  const ignorePatterns = loadIgnoreFile(absolutePath);
+
+  // Load custom patterns from .praxis.json
+  const customPatterns = loadCustomPatterns(absolutePath);
+  const allPatterns = [...SECRET_PATTERNS, ...SECURITY_PATTERNS, ...customPatterns];
+
+  if (customPatterns.length > 0 && options.verbose) {
+    output.info(`Loaded ${customPatterns.length} custom pattern(s) from .praxis.json`);
+  }
+
+  // Start spinner
+  const spinner = ora({
+    text: 'Scanning for secrets and vulnerabilities...',
+    color: 'cyan'
+  }).start();
+
+  try {
+    // Find all files
+    const files = await findFiles(absolutePath, ignorePatterns, options);
+
+    // Cache: determine which files changed
+    const useCache = options.cache !== false;
+    const cache = new CacheManager(absolutePath);
+    const cacheData = useCache ? cache.load() : null;
+    let filesToScan = files;
+    let cacheDiff = null;
+    const cachedResults = [];
+
+    if (cacheData) {
+      cacheDiff = cache.diff(files);
+      filesToScan = cacheDiff.changedFiles;
+
+      // Group cached findings by file
+      const cachedByFile = {};
+      for (const f of cacheDiff.cachedFindings) {
+        if (!cachedByFile[f.file]) cachedByFile[f.file] = [];
+        cachedByFile[f.file].push({
+          line: f.line,
+          column: f.column,
+          matched: f.matched,
+          patternName: f.rule || f.title,
+          severity: f.severity,
+          confidence: f.confidence,
+          description: f.description,
+          category: f.category,
+        });
+      }
+      for (const [file, findings] of Object.entries(cachedByFile)) {
+        cachedResults.push({ file, findings });
+      }
+    }
+
+    const cacheNote = cacheDiff && filesToScan.length < files.length
+      ? ` (${filesToScan.length} changed, ${cacheDiff.unchangedCount} cached)`
+      : '';
+    spinner.text = `Scanning ${filesToScan.length} files${cacheNote}...`;
+
+    // Scan each file
+    const results = [];
+    let scannedCount = 0;
+
+    for (const file of filesToScan) {
+      const findings = await scanFile(file, allPatterns);
+      if (findings.length > 0) {
+        results.push({ file, findings });
+      }
+
+      scannedCount++;
+      if (options.verbose) {
+        spinner.text = `Scanned ${scannedCount}/${filesToScan.length}: ${path.relative(absolutePath, file)}`;
+      }
+    }
+
+    // Merge with cached results
+    const allResults = [...results, ...cachedResults];
+
+    // Save cache
+    if (useCache) {
+      try {
+        const allFindings = [];
+        for (const { file, findings } of allResults) {
+          for (const f of findings) {
+            allFindings.push({
+              file,
+              line: f.line,
+              column: f.column,
+              severity: f.severity,
+              category: f.category || 'secrets',
+              rule: f.patternName,
+              title: f.patternName,
+              description: f.description,
+              matched: f.matched,
+              confidence: f.confidence,
+            });
+          }
+        }
+        cache.save(files, allFindings, null, null);
+      } catch {
+        // Silent
+      }
+    }
+
+    spinner.stop();
+
+    // Output results
+    if (options.sarif) {
+      outputSARIF(allResults, absolutePath);
+    } else if (options.json) {
+      outputJSON(allResults, files.length);
+    } else {
+      outputPretty(allResults, files.length, absolutePath);
+    }
+
+    // Exit with appropriate code
+    const hasFindings = allResults.length > 0;
+    process.exit(hasFindings ? 1 : 0);
+
+  } catch (err) {
+    spinner.fail('Scan failed');
+    output.error(err.message);
+    process.exit(1);
+  }
+}
+
+// =============================================================================
+// .PRAXISIGNORE LOADING
+// =============================================================================
+
+/**
+ * Load ignore patterns from .praxisignore file.
+ * Same syntax as .gitignore — glob patterns, one per line, # for comments.
+ */
+function loadIgnoreFile(rootPath) {
+  const ignorePath = path.join(rootPath, '.praxisignore');
+
+  if (!fs.existsSync(ignorePath)) return [];
+
+  try {
+    return fs.readFileSync(ignorePath, 'utf-8')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith('#'));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Check if a file path matches any ignore pattern.
+ * Supports: exact paths, glob patterns, and directory prefixes.
+ */
+function isIgnoredByFile(filePath, rootPath, ignorePatterns) {
+  if (ignorePatterns.length === 0) return false;
+
+  const relPath = path.relative(rootPath, filePath).replace(/\\/g, '/');
+
+  return ignorePatterns.some(pattern => {
+    // Directory prefix match: "tests/" ignores everything under tests/
+    if (pattern.endsWith('/')) {
+      return relPath.startsWith(pattern) || relPath.includes('/' + pattern);
+    }
+    // Simple glob: "**/fixtures/**" or "src/secrets.js"
+    const escaped = pattern
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*/g, '[^/]*')
+      .replace(/\?/g, '[^/]');
+    return new RegExp(`(^|/)${escaped}($|/)`).test(relPath);
+  });
+}
+
+// =============================================================================
+// FILE DISCOVERY
+// =============================================================================
+
+async function findFiles(rootPath, ignorePatterns, options = {}) {
+  // Build ignore patterns from SKIP_DIRS
+  const globIgnore = Array.from(SKIP_DIRS).map(dir => `**/${dir}/**`);
+
+  // Respect .gitignore patterns
+  const gitignoreGlobs = loadGitignorePatterns(rootPath);
+  globIgnore.push(...gitignoreGlobs);
+
+  // Find all files
+  const files = await fg('**/*', {
+    cwd: rootPath,
+    absolute: true,
+    onlyFiles: true,
+    ignore: globIgnore,
+    dot: true
+  });
+
+  const filtered = [];
+
+  for (const file of files) {
+    // Skip by extension
+    const ext = path.extname(file).toLowerCase();
+    if (SKIP_EXTENSIONS.has(ext)) continue;
+    if (SKIP_FILENAMES.has(path.basename(file))) continue;
+
+    // Handle compound extensions like .min.js
+    const basename = path.basename(file);
+    if (basename.endsWith('.min.js') || basename.endsWith('.min.css')) continue;
+
+    // Skip test files by default (--include-tests to override)
+    if (!options.includeTests && isTestFile(file)) continue;
+
+    // Skip files matching .praxisignore
+    if (isIgnoredByFile(file, rootPath, ignorePatterns)) continue;
+
+    // Skip by size
+    try {
+      const stats = fs.statSync(file);
+      if (stats.size > MAX_FILE_SIZE) continue;
+    } catch {
+      continue;
+    }
+
+    filtered.push(file);
+  }
+
+  return filtered;
+}
+
+function isTestFile(filePath) {
+  return TEST_FILE_PATTERNS.some(pattern => pattern.test(filePath));
+}
+
+// =============================================================================
+// FILE SCANNING
+// =============================================================================
+
+async function scanFile(filePath, patterns = SECRET_PATTERNS) {
+  const findings = [];
+
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n');
+
+    for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+      const line = lines[lineNum];
+
+      // Inline suppression: # praxis-ignore on the same line
+      if (/praxis-ignore/i.test(line)) continue;
+
+      for (const pattern of patterns) {
+        // Reset regex state (important for global regexes)
+        pattern.pattern.lastIndex = 0;
+
+        let match;
+        while ((match = pattern.pattern.exec(line)) !== null) {
+          // For generic patterns, apply entropy check to filter placeholders
+          if (pattern.requiresEntropyCheck && !isHighEntropyMatch(match[0])) {
+            continue;
+          }
+
+          const confidence = getConfidence(pattern, match[0]);
+
+          findings.push({
+            line: lineNum + 1,
+            column: match.index + 1,
+            matched: match[0],
+            patternName: pattern.name,
+            severity: pattern.severity,
+            confidence,
+            description: pattern.description,
+            category: pattern.category || 'secret'
+          });
+        }
+      }
+    }
+  } catch {
+    // Skip files that can't be read (binary, permissions, etc.)
+  }
+
+  // Deduplicate: multiple patterns can match the same secret on the same line
+  // (e.g. Stripe and Clerk both match sk_live_...). Keep one finding per
+  // unique (line, matched-text) pair — first match wins (patterns are ordered
+  // by severity: critical → high → medium).
+  const seen = new Set();
+  return findings.filter(f => {
+    const key = `${f.line}:${f.matched}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// =============================================================================
+// OUTPUT FORMATTING
+// =============================================================================
+
+function outputPretty(results, filesScanned, rootPath) {
+  // Separate findings into secrets and code vulnerabilities
+  const secretResults = [];
+  const vulnResults = [];
+
+  for (const { file, findings } of results) {
+    const secrets = findings.filter(f => f.category !== 'vulnerability');
+    const vulns = findings.filter(f => f.category === 'vulnerability');
+    if (secrets.length > 0) secretResults.push({ file, findings: secrets });
+    if (vulns.length > 0) vulnResults.push({ file, findings: vulns });
+  }
+
+  const stats = {
+    total: 0,
+    critical: 0,
+    high: 0,
+    medium: 0,
+    secretsTotal: 0,
+    vulnsTotal: 0,
+    filesScanned
+  };
+
+  for (const { findings } of results) {
+    for (const f of findings) {
+      stats.total++;
+      stats[f.severity] = (stats[f.severity] || 0) + 1;
+      if (f.category === 'vulnerability') stats.vulnsTotal++;
+      else stats.secretsTotal++;
+    }
+  }
+
+  output.header('Scan Results');
+
+  if (results.length === 0) {
+    output.success('No secrets or vulnerabilities detected in your codebase!');
+    console.log();
+    console.log(chalk.gray('Note: Uses pattern matching + entropy scoring. Test files excluded by default.'));
+    console.log(chalk.gray('Tip:  Run with --include-tests to also scan test files.'));
+    console.log(chalk.gray('Tip:  Add a .praxisignore file to exclude paths.'));
+  } else {
+    // ── Secrets section ────────────────────────────────────────────────────
+    if (secretResults.length > 0) {
+      console.log();
+      console.log(chalk.red.bold(`  Secrets (${stats.secretsTotal})`));
+      console.log(chalk.red('  ' + '─'.repeat(58)));
+
+      for (const { file, findings } of secretResults) {
+        const relPath = path.relative(rootPath, file);
+        for (const f of findings) {
+          output.finding(relPath, f.line, f.patternName, f.severity, f.matched, f.description, f.confidence);
+        }
+      }
+    }
+
+    // ── Code Vulnerabilities section ───────────────────────────────────────
+    if (vulnResults.length > 0) {
+      console.log();
+      console.log(chalk.yellow.bold(`  Code Vulnerabilities (${stats.vulnsTotal})`));
+      console.log(chalk.yellow('  ' + '─'.repeat(58)));
+
+      for (const { file, findings } of vulnResults) {
+        const relPath = path.relative(rootPath, file);
+        for (const f of findings) {
+          output.vulnerabilityFinding(relPath, f.line, f.patternName, f.severity, f.matched, f.description);
+        }
+      }
+    }
+
+    // Remind about suppressions
+    console.log();
+    console.log(chalk.gray('Suppress a finding: add  # praxis-ignore  as a comment on that line'));
+    console.log(chalk.gray('Exclude a path:     add it to .praxisignore'));
+    console.log();
+    console.log(chalk.gray('Track findings over time: ') + chalk.cyan(''));
+
+    if (secretResults.length > 0) output.recommendations();
+    if (vulnResults.length > 0) output.vulnRecommendations();
+  }
+
+  output.summary(stats);
+}
+
+function outputJSON(results, filesScanned) {
+  const jsonOutput = {
+    success: results.length === 0,
+    filesScanned,
+    totalFindings: 0,
+    findings: []
+  };
+
+  for (const { file, findings } of results) {
+    for (const f of findings) {
+      jsonOutput.totalFindings++;
+      jsonOutput.findings.push({
+        file,
+        line: f.line,
+        column: f.column,
+        category: f.category || 'secret',
+        severity: f.severity,
+        confidence: f.confidence,
+        type: f.patternName,
+        matched: f.category === 'vulnerability' ? f.matched : output.maskSecret(f.matched),
+        description: f.description
+      });
+    }
+  }
+
+  console.log(JSON.stringify(jsonOutput, null, 2));
+}
+
+// =============================================================================
+// SARIF OUTPUT (GitHub Code Scanning compatible)
+// =============================================================================
+
+/**
+ * Output findings in SARIF 2.1.0 format.
+ * Feed this into GitHub's Security tab:
+ *   npx praxis scan . --sarif > results.sarif
+ *
+ * Then upload via:
+ *   github/codeql-action/upload-sarif@v3
+ */
+function outputSARIF(results, rootPath) {
+  const rules = {};
+
+  // Build rules from findings
+  for (const { findings } of results) {
+    for (const f of findings) {
+      if (!rules[f.patternName]) {
+        rules[f.patternName] = {
+          id: f.patternName.replace(/\s+/g, '-').toLowerCase(),
+          name: f.patternName,
+          shortDescription: { text: f.patternName },
+          fullDescription: { text: f.description },
+          defaultConfiguration: {
+            level: f.severity === 'critical' ? 'error'
+              : f.severity === 'high' ? 'error'
+              : f.severity === 'medium' ? 'warning'
+              : 'note'
+          },
+          helpUri: 'https://github.com//praxis',
+        };
+      }
+    }
+  }
+
+  const sarif = {
+    version: '2.1.0',
+    $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
+    runs: [{
+      tool: {
+        driver: {
+          name: 'praxis',
+          version: '2.1.0',
+          informationUri: 'https://github.com//praxis',
+          rules: Object.values(rules),
+        }
+      },
+      results: results.flatMap(({ file, findings }) =>
+        findings.map(f => ({
+          ruleId: f.patternName.replace(/\s+/g, '-').toLowerCase(),
+          level: f.severity === 'critical' || f.severity === 'high' ? 'error' : 'warning',
+          message: { text: f.description },
+          locations: [{
+            physicalLocation: {
+              artifactLocation: {
+                uri: path.relative(rootPath, file).replace(/\\/g, '/'),
+                uriBaseId: '%SRCROOT%'
+              },
+              region: {
+                startLine: f.line,
+                startColumn: f.column,
+              }
+            }
+          }]
+        }))
+      )
+    }]
+  };
+
+  console.log(JSON.stringify(sarif, null, 2));
+}

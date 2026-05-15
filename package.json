@@ -1,0 +1,68 @@
+{
+  "name": "praxis",
+  "version": "1.0.0",
+  "description": "Praxis — From finding to fix, on autopilot. AI-native security CLI with 23 parallel agents covering AI / MCP / skill threats, OWASP LLM Top 10, multi-source supply-chain intel (OSV / GHSA / KEV / EPSS / NVD / Gitleaks + optional paid feeds), secret scanning, and an LLM-powered agentic remediation loop.",
+  "main": "cli/index.js",
+  "bin": {
+    "praxis": "cli/bin/praxis.js"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "node --test cli/__tests__/intel.test.js cli/__tests__/agents.test.js cli/__tests__/core.test.js cli/__tests__/standards.test.js cli/__tests__/model-file-scanner.test.js cli/__tests__/prompt-injection-prober.test.js",
+    "lint": "eslint cli/",
+    "praxis": "node cli/bin/praxis.js"
+  },
+  "keywords": [
+    "security",
+    "praxis",
+    "ai-security",
+    "agentic-security",
+    "llm-security",
+    "mcp-security",
+    "prompt-injection",
+    "supply-chain",
+    "secrets",
+    "scanner",
+    "sast",
+    "devsecops",
+    "red-team",
+    "vulnerability-scanner",
+    "sbom",
+    "abom",
+    "owasp-llm",
+    "agentic-remediation",
+    "threat-intel",
+    "cve",
+    "kev",
+    "epss",
+    "osv",
+    "ghsa",
+    "cli"
+  ],
+  "author": "Praxis contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "cli/",
+    "!cli/__tests__/",
+    "checklists/",
+    "configs/",
+    "snippets/",
+    "ai-defense/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "fast-glob": "^3.3.3",
+    "ora": "^8.0.1",
+    "write-file-atomic": "^7.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.18.0"
+  }
+}

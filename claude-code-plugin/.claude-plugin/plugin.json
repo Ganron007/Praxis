@@ -1,0 +1,17 @@
+{
+  "name": "praxis",
+  "version": "3.0.0",
+  "description": "Security audit your project with Praxis — 16 agents, 80+ attack classes, deep LLM analysis, CI mode",
+  "author": "",
+  "homepage": "https://github.com//praxis",
+  "skills": [
+    "skills/praxis",
+    "skills/praxis-scan",
+    "skills/praxis-score",
+    "skills/praxis-baseline",
+    "skills/praxis-red-team",
+    "skills/praxis-fix",
+    "skills/praxis-deep",
+    "skills/praxis-ci"
+  ]
+}
