@@ -154,6 +154,7 @@ const INJECTION_PATTERNS = [
 const HIDDEN_CONTENT_PATTERNS = [
   {
     // Unicode zero-width chars used to hide instructions
+    // eslint-disable-next-line no-misleading-character-class -- intentional: detects zero-width char clusters that hide injected instructions
     regex: /[\u200B\u200C\u200D\u2060\uFEFF]{3,}/g,
     rule: 'MEMORY_HIDDEN_UNICODE',
     title: 'Hidden Unicode Content in Agent File',

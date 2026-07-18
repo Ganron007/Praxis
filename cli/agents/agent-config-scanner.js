@@ -208,6 +208,7 @@ const PATTERNS = [
   {
     rule: 'AGENT_CFG_ZERO_WIDTH',
     title: 'Agent Config: Zero-Width Character Cluster',
+    // eslint-disable-next-line no-misleading-character-class -- intentional: detects zero-width char clusters that hide prompt-injection payloads
     regex: /[\u200B\u200C\u200D\uFEFF\u2060]{4,}/g,
     severity: 'high',
     cwe: 'CWE-116',
