@@ -781,6 +781,60 @@ plugin-side wiring required.
 
 ---
 
+## `praxis mcp` — MCP server mode
+
+Exposes Praxis as a Model Context Protocol (MCP) server over stdio (JSON-RPC
+2.0). This lets IDEs (Cursor, Continue, VS Code) call Praxis tools directly
+from chat — real-time vulnerability feedback without leaving the editor.
+
+### Quick start
+
+```bash
+npx praxis mcp
+# → Praxis MCP server listening on stdio (JSON-RPC 2.0)
+```
+
+### IDE integration
+
+Cursor / Continue config (`.continue/config.yaml` or Cursor MCP settings):
+
+```yaml
+mcpServers:
+  - name: praxis
+    transport: stdio
+    command: npx
+    args: ["praxis", "mcp"]
+```
+
+In Docker (DarkAI lab):
+
+```yaml
+mcpServers:
+  - name: praxis
+    transport: stdio
+    command: docker
+    args: ["exec", "-i", "darkai-ops", "praxis", "mcp"]
+```
+
+### Available MCP tools
+
+| Tool | Input | Returns | Description |
+|------|-------|---------|-------------|
+| `scan_secrets` | `{ path }` | findings[] | Scan a file/directory for hardcoded secrets |
+| `scan_repo` | `{ path, deep? }` | findings[] + score | Full orchestrator scan (all 26 agents + intel) |
+| `analyze_file` | `{ path }` | findings[] | Deep LLM analysis of a single file |
+| `get_findings` | `{ severity? }` | findings[] | Retrieve cached findings (optionally filtered) |
+| `get_checklist` | — | checklist[] | Launch-day security checklist items |
+| `suppress_finding` | `{ id, reason }` | `{ ok }` | Suppress a finding (writes to `.praxis/ignores.json`) |
+
+### Example MCP interaction
+
+When connected, an IDE user can ask: *"Scan this file for AI vulnerabilities"*
+and the LLM calls `scan_repo` — Praxis findings appear inline in the chat with
+file:line references. The `deep` flag triggers LLM-powered taint analysis.
+
+---
+
 ## Get help
 
 ```bash

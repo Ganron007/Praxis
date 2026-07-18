@@ -19,10 +19,12 @@
 
 import json from './json.js';
 import sarif from './sarif.js';
+import compliance from './compliance.js';
 
 const REGISTRY = {
   json,
   sarif,
+  compliance,
 };
 
 export function listFormats() {

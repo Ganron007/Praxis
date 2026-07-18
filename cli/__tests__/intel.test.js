@@ -185,6 +185,29 @@ describe('OSV source', async () => {
     assert.equal(recs[0].package, 'foo');
   });
 
+  it('falls back to database_specific.severity when no numeric score is appended', async () => {
+    fetchHandlers.push({
+      match: (url) => String(url).includes('osv.dev/v1/query'),
+      response: () => jsonResponse({
+        vulns: [{
+          id: 'GHSA-aaa-bbb-ccc',
+          summary: 'High RCE',
+          aliases: ['CVE-2099-1234'],
+          severity: [{ type: 'CVSS_V3', score: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H' }],
+          database_specific: { severity: 'HIGH' },
+          affected: [{
+            package: { name: 'foo', ecosystem: 'npm' },
+            ranges: [{ type: 'SEMVER', events: [{ introduced: '1.0.0' }, { fixed: '1.5.0' }] }],
+          }],
+        }],
+      }),
+    });
+
+    const recs = await osv.lookupLive('foo', '1.2.3', 'npm');
+    assert.equal(recs.length, 1);
+    assert.equal(recs[0].severity, 'high');
+  });
+
   it('returns [] when fetch errors', async () => {
     fetchHandlers.push({
       match: () => true,

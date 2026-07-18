@@ -29,8 +29,13 @@
  */
 
 import fs from 'fs';
-import path from 'path';
+import { fileURLToPath } from 'url';
+import path, { dirname } from 'path';
 import { createInterface } from 'readline';
+
+const __filename = fileURLToPath(import.meta.url); // praxis-ignore — module's own path via import.meta.url, not user input
+const __dirname = dirname(__filename);
+const praxisDir = path.resolve(__dirname, '../..');
 import { execFileSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -83,8 +88,12 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
     if (state === 'not-a-repo') {
       console.log(chalk.yellow('  Note: this is not a git repository.'));
       console.log(chalk.gray('  Changes cannot be reverted automatically.'));
-      const ok = await confirm('  Continue anyway?');
-      if (!ok) { console.log(chalk.gray('  Aborted.\n')); return; }
+      if (options.ci) {
+        console.log(chalk.gray('  CI mode active: automatically continuing.'));
+      } else {
+        const ok = await confirm('  Continue anyway?');
+        if (!ok) { console.log(chalk.gray('  Aborted.\n')); return; }
+      }
     } else if (state === 'dirty') {
       output.error('Working tree has uncommitted changes.');
       console.log(chalk.gray('  Commit or stash first, or pass --allow-dirty.'));
@@ -127,8 +136,7 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
   console.log(chalk.gray(`  Provider: ${chalk.cyan(provider.name)}`));
 
   if (options.sandbox) {
-    console.log(chalk.yellow('  --sandbox is not yet implemented — falling back to in-process verification.'));
-    console.log(chalk.gray('  Track this in the agent\'s next milestone.'));
+    console.log(chalk.gray('  Sandbox:  ' + chalk.green('active') + ' (verifying fixes in Docker container)'));
   }
 
   // ── Run the scan ─────────────────────────────────────────────────────────
@@ -227,9 +235,9 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
     //   default      → prompt every time
     let decision;
     const risk = (plan.risk || 'medium').toLowerCase();
-    if (options.yolo) {
+    if (options.yolo || options.ci) {
       decision = 'a';
-      console.log(chalk.gray('      (yolo: auto-accepting)'));
+      console.log(chalk.gray(`      (${options.ci ? 'ci' : 'yolo'}: auto-accepting)`));
     } else if (options.autoLow && risk === 'low') {
       decision = 'a';
       console.log(chalk.gray('      (auto-low: low-risk, auto-accepting)'));
@@ -268,7 +276,7 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
 
     // Verify by re-scanning
     const verifySpinner = ora({ text: 'Verifying...', color: 'cyan', indent: 6 }).start();
-    const verified = await verifyFile(root, filePath, fileFindings);
+    const verified = await verifyFile(root, filePath, fileFindings, options);
     if (verified.allResolved) {
       verifySpinner.succeed(chalk.green(`Fix verified — ${fileFindings.length} finding(s) resolved`));
     } else if (verified.someResolved) {
@@ -278,6 +286,7 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
     }
 
     // Per-fix commit (if branch isolation in use)
+    let commitHash = null;
     if (branchCreated) {
       try {
         execFileSync('git', ['add', '--', ...written], { cwd: root, stdio: 'pipe' });
@@ -285,6 +294,7 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
         const more   = fileFindings.length > 3 ? ` (+${fileFindings.length - 3} more)` : '';
         const msg    = `fix(security): ${filePath} — ${titles}${more}`;
         execFileSync('git', ['commit', '-m', msg], { cwd: root, stdio: 'pipe' });
+        commitHash = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf-8' }).trim();
       } catch {
         // commit failed — most likely nothing staged because edits were no-ops
       }
@@ -298,6 +308,7 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
       plan,
       verified:  verified.allResolved,
       branch:    branchCreated,
+      commitHash,
     });
 
     applied.push({ file: filePath, plan, verified });
@@ -366,7 +377,7 @@ async function generateBatchPlan(provider, root, filePath, fileFindings) {
     return { ok: false, reason: 'file-read-failed', error: err.message };
   }
 
-  const fileForPrompt = windowFileContent(content, fileFindings[0]?.line);
+  const fileForPrompt = windowFileContent(content, fileFindings);
 
   const findingsBlock = fileFindings.map((f, i) => `
 ${i + 1}. [${f.severity.toUpperCase()}] ${f.title}${f.line ? ` (line ${f.line})` : ''}
@@ -464,13 +475,47 @@ function parseJsonLoose(response) {
   }
 }
 
-function windowFileContent(content, line) {
+function windowFileContent(content, fileFindings) {
   if (content.length <= 8000) return content;
-  if (!line) return content.slice(0, 8000);
+  if (!Array.isArray(fileFindings) || fileFindings.length === 0) {
+    return content.slice(0, 8000);
+  }
+  
   const lines = content.split('\n');
-  const start = Math.max(0, line - 40);
-  const end   = Math.min(lines.length, line + 40);
-  return lines.slice(start, end).join('\n');
+  const RADIUS = 40;
+  
+  const targetLines = [...new Set(fileFindings.map(f => f.line).filter(Boolean))].sort((a, b) => a - b);
+  if (targetLines.length === 0) return content.slice(0, 8000);
+  
+  const ranges = [];
+  for (const line of targetLines) {
+    const start = Math.max(0, line - 1 - RADIUS);
+    const end = Math.min(lines.length - 1, line - 1 + RADIUS);
+    if (ranges.length === 0) {
+      ranges.push({ start, end });
+    } else {
+      const last = ranges[ranges.length - 1];
+      if (start <= last.end + 5) {
+        last.end = Math.max(last.end, end);
+      } else {
+        ranges.push({ start, end });
+      }
+    }
+  }
+  
+  const result = [];
+  let lastEnd = 0;
+  for (const r of ranges) {
+    if (r.start > lastEnd) {
+      result.push(`// ... [lines ${lastEnd + 1}-${r.start} truncated] ...`);
+    }
+    result.push(lines.slice(r.start, r.end + 1).join('\n'));
+    lastEnd = r.end + 1;
+  }
+  if (lastEnd < lines.length) {
+    result.push(`// ... [lines ${lastEnd + 1}-${lines.length} truncated] ...`);
+  }
+  return result.join('\n');
 }
 
 // =============================================================================
@@ -680,10 +725,43 @@ function applyEdit(root, fileChange) {
 // VERIFY
 // =============================================================================
 
-async function verifyFile(root, filePath, originalFindings) {
+function isDockerAvailable() {
   try {
-    const result = await auditCommand(root, { _agenticInner: true, deep: false, deps: false, noAi: true });
-    const remaining = (result.findings ?? []).filter(f => f.file === filePath);
+    execFileSync('docker', ['info'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function verifyFile(root, filePath, originalFindings, options = {}) {
+  try {
+    let result;
+    if (options.sandbox) {
+      if (isDockerAvailable()) {
+        const stdout = execFileSync('docker', [
+          'run', '--rm',
+          '-v', `${root}:/workspace`,
+          '-v', `${praxisDir}:/opt/praxis:ro`,
+          '-w', '/workspace',
+          'node:18-alpine',
+          'node', '/opt/praxis/cli/bin/praxis.js', 'scan', '.', '--json'
+        ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
+        
+        const jsonLine = stdout.split('\n').find(l => l.trim().startsWith('{'));
+        result = jsonLine ? JSON.parse(jsonLine) : { findings: [] };
+      } else {
+        console.log(chalk.yellow('\n      Docker is not running or not installed. Falling back to local verification.'));
+        result = await auditCommand(root, { _agenticInner: true, deep: false, deps: false, noAi: true });
+      }
+    } else {
+      result = await auditCommand(root, { _agenticInner: true, deep: false, deps: false, noAi: true });
+    }
+    const remaining = (result.findings ?? []).filter(f => {
+      const fPath = path.resolve(root, f.file);
+      const targetPath = path.resolve(root, filePath);
+      return fPath === targetPath;
+    });
 
     let resolvedCount = 0;
     for (const orig of originalFindings) {

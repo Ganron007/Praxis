@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="180" viewBox="0 0 620 180" role="img" aria-label="Praxis logo">
+  <defs>
+    <!-- Base Shield Gradient (Vibrant purple to deep violet) -->
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="55%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+    <!-- Wordmark Gradient (Fuchsia to violet) -->
+    <linearGradient id="wordGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e879f9"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Shield icon with find-fix-verify loop and AI sparkle -->
+  <g transform="translate(24,28)">
+    <!-- Sleek outer shield path -->
+    <path d="M55 0 L110 18 V62 C110 100 86 128 55 145 C24 128 0 100 0 62 V18 Z"
+          fill="url(#purpleGrad)" stroke="#3b0764" stroke-width="2"/>
+    
+    <!-- Clockwise reload/loop arrow (the "remediation loop") -->
+    <path d="M55 35 A35 35 0 1 1 20 70 H32 A23 23 0 1 0 55 47 V60 L75 41 L55 22 V35 Z"
+          fill="#ffffff" opacity="0.95"/>
+          
+    <!-- 4-point AI sparkle star (representing autopilot / agent intelligence) -->
+    <path d="M55 52 Q55 70 73 70 Q55 70 55 88 Q55 70 37 70 Q55 70 55 52 Z"
+          fill="#ffffff" opacity="0.95"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="160" y="86" font-family="Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="56" font-weight="800" fill="url(#wordGrad)" letter-spacing="-1">Praxis</text>
+
+  <!-- Tagline under the wordmark -->
+  <text x="162" y="120" font-family="Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="19" font-weight="600" fill="#6b7280" letter-spacing="0.4">Autonomous SAST &amp; AI-Safety Auditing</text>
+</svg>

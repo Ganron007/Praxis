@@ -217,3 +217,72 @@ describe('cli/core/branding', async () => {
     }
   });
 });
+
+// =============================================================================
+// policy-engine.js
+// =============================================================================
+
+describe('cli/agents/policy-engine', async () => {
+  const { PolicyEngine } = await import('../agents/policy-engine.js');
+
+  it('enforces minimumScore and failOn severity', () => {
+    const policy = new PolicyEngine({
+      minimumScore: 70,
+      failOn: 'high',
+    });
+
+    const scoreResult = { score: 65, grade: 'C' };
+    const findings = [
+      { severity: 'high', title: 'High risk finding', file: 'app.js', line: 10, rule: 'r1' },
+      { severity: 'low', title: 'Low risk finding', file: 'app.js', line: 12, rule: 'r2' },
+    ];
+
+    const violations = policy.evaluate(scoreResult, findings);
+    assert.equal(violations.length, 2);
+    assert.equal(violations[0].type, 'minimum_score');
+    assert.equal(violations[1].type, 'severity_threshold');
+  });
+
+  it('enforces requiredScans list', () => {
+    const policy = new PolicyEngine({
+      requiredScans: ['secrets', 'injection', 'deps'],
+    });
+
+    const scoreResult = { score: 90, grade: 'A' };
+    
+    // Test: missing 'injection' scan
+    const violations = policy.evaluate(scoreResult, [], {
+      agentResults: [{ agent: 'secrets-scanner', category: 'secrets', success: true }],
+      depsRun: true,
+      secretsRun: true,
+    });
+    
+    assert.equal(violations.length, 1);
+    assert.equal(violations[0].type, 'missing_scan');
+    assert.ok(violations[0].message.includes('injection'));
+  });
+
+  it('enforces maxAge for dependency CVEs', () => {
+    const policy = new PolicyEngine({
+      maxAge: {
+        criticalCVE: '7d',
+        highCVE: '30d',
+      },
+    });
+
+    const scoreResult = { score: 90, grade: 'A' };
+
+    // Test: a critical CVE that is 10 days old (violates 7d SLA)
+    const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    const depVulns = [
+      { name: 'old-package', severity: 'critical', cve: 'CVE-2026-1000', published: tenDaysAgo },
+      { name: 'safe-package', severity: 'high', cve: 'CVE-2026-2000', published: new Date().toISOString() },
+    ];
+
+    const violations = policy.evaluate(scoreResult, [], { depVulns });
+    assert.equal(violations.length, 1);
+    assert.equal(violations[0].type, 'cve_sla_breach');
+    assert.ok(violations[0].message.includes('old-package'));
+  });
+});
+

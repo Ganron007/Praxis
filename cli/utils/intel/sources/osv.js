@@ -117,7 +117,7 @@ function pickSeverity(vuln) {
   // OSV severity comes in either CVSS_V3 or DB-specific fields. Prefer CVSS.
   for (const s of vuln.severity || []) {
     if (s.type === 'CVSS_V3' || s.type === 'CVSS_V4') {
-      const score = parseFloat((s.score || '').match(/\/([0-9.]+)/)?.[1] || s.score);
+      const score = parseFloat((s.score || '').match(/\/([0-9.]+)$/)?.[1] || s.score);
       if (!Number.isNaN(score)) {
         if (score >= 9.0) return 'critical';
         if (score >= 7.0) return 'high';

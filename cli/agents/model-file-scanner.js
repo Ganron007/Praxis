@@ -82,7 +82,7 @@ export class ModelFileScanner extends BaseAgent {
     if (langs && (langs instanceof Set ? langs.has('python') : langs.includes?.('python'))) {
       return true;
     }
-    return true;
+    return false;
   }
 
   async analyze(context) {

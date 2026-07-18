@@ -99,3 +99,17 @@ test('returns empty when no model files are present', async () => {
   const findings = await scanner.analyze({ rootPath: dir });
   assert.deepEqual(findings, []);
 });
+
+test('shouldRun returns true when models or Python detected, false otherwise', () => {
+  const scanner = new ModelFileScanner();
+  
+  // Model files present
+  assert.equal(scanner.shouldRun({ hasModelFiles: true }), true);
+  
+  // Python detected
+  assert.equal(scanner.shouldRun({ languages: new Set(['python']) }), true);
+  assert.equal(scanner.shouldRun({ languages: ['python'] }), true);
+  
+  // Neither detected
+  assert.equal(scanner.shouldRun({ hasModelFiles: false, languages: ['javascript', 'go'] }), false);
+});

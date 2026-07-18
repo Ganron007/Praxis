@@ -53,6 +53,16 @@ function collectRules(findings) {
   for (const f of findings) {
     const id = f.ruleId || f.pattern || f.type || 'finding';
     if (seen.has(id)) continue;
+    // Collect tags for the rule definition so GitHub Security tab groups
+    // Praxis findings by AI/LLM/MCP/supply-chain categories.
+    const ruleTags = ['praxis'];
+    if (f.category) ruleTags.push(f.category);
+    if (f.owasp) ruleTags.push(f.owasp);
+    if (f.standards) {
+      for (const [, ids] of Object.entries(f.standards)) {
+        for (const sid of ids) ruleTags.push(sid);
+      }
+    }
     seen.set(id, {
       id,
       name: f.patternName || id,
@@ -60,6 +70,9 @@ function collectRules(findings) {
       fullDescription: { text: f.description || f.patternName || id },
       defaultConfiguration: {
         level: LEVEL_FROM_SEVERITY[f.severity] || 'warning',
+      },
+      properties: {
+        tags: [...new Set(ruleTags)], // dedup
       },
     });
   }

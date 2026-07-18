@@ -55,7 +55,7 @@ export class PolicyEngine {
    * Evaluate findings against the policy.
    * Returns array of violations (empty = pass).
    */
-  evaluate(scoreResult, findings = []) {
+  evaluate(scoreResult, findings = [], options = {}) {
     const violations = [];
 
     // ── Minimum score check ───────────────────────────────────────────────────
@@ -80,6 +80,85 @@ export class PolicyEngine {
             message: `${finding.severity} finding: ${finding.title} in ${finding.file}:${finding.line}`,
             severity: finding.severity,
             finding,
+          });
+        }
+      }
+    }
+
+    // ── Required Scans Check ──────────────────────────────────────────────────
+    if (this.policy.requiredScans && this.policy.requiredScans.length > 0) {
+      const runCategories = new Set(
+        (options.agentResults || [])
+          .filter(r => r.success)
+          .map(r => r.category ? r.category.toLowerCase() : r.agent ? r.agent.toLowerCase() : '')
+      );
+      
+      if (options.depsRun) {
+        runCategories.add('deps');
+      }
+      if (options.secretsRun) {
+        runCategories.add('secrets');
+      }
+
+      for (const scan of this.policy.requiredScans) {
+        const scanLower = scan.toLowerCase();
+        if (!runCategories.has(scanLower)) {
+          violations.push({
+            type: 'missing_scan',
+            message: `Required security scan "${scan}" was not run or failed`,
+            severity: 'high',
+          });
+        }
+      }
+    }
+
+    // ── CVE Max Age (SLA) Check ───────────────────────────────────────────────
+    if (this.policy.maxAge && options.depVulns) {
+      const isOlderThan = (dateStr, durationStr) => {
+        if (!dateStr || !durationStr) return false;
+        const publishedDate = new Date(dateStr);
+        if (Number.isNaN(publishedDate.getTime())) return false;
+        const match = durationStr.match(/^(\d+)([dhmys])$/i);
+        if (!match) return false;
+        const val = parseInt(match[1], 10);
+        const unit = match[2].toLowerCase();
+        const mult = { s: 1000, m: 60000, h: 3600000, d: 86400000 }[unit] || 86400000;
+        return (Date.now() - publishedDate.getTime()) > val * mult;
+      };
+
+      for (const vuln of options.depVulns) {
+        const severity = vuln.severity?.toLowerCase();
+        const policyKey = `${severity}CVE`;
+        const duration = this.policy.maxAge[policyKey];
+        if (!duration) continue;
+
+        let violated = false;
+        let reason = '';
+
+        if (vuln.published) {
+          if (isOlderThan(vuln.published, duration)) {
+            violated = true;
+            const ageDays = Math.round((Date.now() - new Date(vuln.published).getTime()) / 86400000);
+            reason = `${vuln.name} vulnerability ${vuln.cve || ''} is ${ageDays} days old (exceeds SLA of ${duration})`;
+          }
+        } else if (vuln.cve) {
+          const m = vuln.cve.match(/^CVE-(\d{4})-\d+/i);
+          if (m) {
+            const year = parseInt(m[1], 10);
+            const currentYear = new Date().getFullYear();
+            if (currentYear - year >= 2) {
+              violated = true;
+              reason = `${vuln.name} vulnerability ${vuln.cve} is from ${year} (exceeds SLA of ${duration})`;
+            }
+          }
+        }
+
+        if (violated) {
+          violations.push({
+            type: 'cve_sla_breach',
+            message: reason,
+            severity: severity === 'critical' ? 'critical' : 'high',
+            vuln,
           });
         }
       }
@@ -119,8 +198,8 @@ export class PolicyEngine {
   /**
    * Check if policy passes (no violations).
    */
-  passes(scoreResult, findings) {
-    return this.evaluate(scoreResult, findings).length === 0;
+  passes(scoreResult, findings, options = {}) {
+    return this.evaluate(scoreResult, findings, options).length === 0;
   }
 
   /**

@@ -241,7 +241,7 @@ async function handleSlashCommand(line, state, options) {
         console.log(chalk.yellow('  No scan results yet. Run /scan first.'));
         return true;
       }
-      const findings = state.lastScan.findings ?? [];
+      const findings = getSortedFindings(state);
       const n = parseInt(args[0], 10);
       if (!Number.isInteger(n) || n < 1 || n > findings.length) {
         console.log(chalk.yellow(`  Usage: /plan <n>  (1..${findings.length})`));
@@ -270,7 +270,7 @@ async function handleSlashCommand(line, state, options) {
         console.log(chalk.yellow('  No scan results yet. Run /scan first.'));
         return true;
       }
-      printFindingsList(state.lastScan.findings ?? []);
+      printFindingsList(getSortedFindings(state));
       return true;
     }
 
@@ -280,7 +280,7 @@ async function handleSlashCommand(line, state, options) {
         return true;
       }
       const n = parseInt(args[0], 10);
-      const findings = state.lastScan.findings ?? [];
+      const findings = getSortedFindings(state);
       if (!Number.isInteger(n) || n < 1 || n > findings.length) {
         console.log(chalk.yellow(`  Usage: /show <n>  (1..${findings.length})`));
         return true;
@@ -507,4 +507,14 @@ function gradeColor(score) {
   if (score >= 80) return chalk.green;
   if (score >= 60) return chalk.yellow;
   return chalk.red;
+}
+
+function getSortedFindings(state) {
+  if (!state.lastScan || !state.lastScan.findings) return [];
+  if (!state.lastScan.findingsSorted) {
+    state.lastScan.findingsSorted = [...state.lastScan.findings].sort(
+      (a, b) => (SEV_RANK[b.severity] ?? 0) - (SEV_RANK[a.severity] ?? 0)
+    );
+  }
+  return state.lastScan.findingsSorted;
 }

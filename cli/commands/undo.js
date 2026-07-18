@@ -95,7 +95,25 @@ export async function undoCommand(targetPath = '.', options = {}) {
   }
 }
 
+function isGitRepo(dir) {
+  try {
+    execFileSync('git', ['-C', dir, 'rev-parse', '--is-inside-work-tree'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function reverseEntry(root, entry) {
+  if (entry.commitHash && isGitRepo(root)) {
+    try {
+      execFileSync('git', ['-C', root, 'revert', '--no-commit', entry.commitHash], { stdio: 'ignore' });
+      return;
+    } catch {
+      console.log(chalk.yellow(`    Git revert failed for ${entry.commitHash.slice(0, 7)}. Falling back to manual text reversal.`));
+    }
+  }
+
   const plan = entry.plan;
   if (!plan || !Array.isArray(plan.files) || plan.files.length === 0) {
     throw new Error('entry has no plan to reverse');

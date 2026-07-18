@@ -121,6 +121,82 @@ export async function loadPlugins(rootPath, options = {}) {
         instance.category = 'custom';
       }
 
+      // Sandbox the analyze method to restrict file system access and block shell executions
+      const originalAnalyze = instance.analyze;
+      instance.analyze = async function(context) {
+        const child_process = await import('child_process');
+        
+        const originalReadFileSync = fs.readFileSync;
+        const originalWriteFileSync = fs.writeFileSync;
+        const originalReadFile = fs.readFile;
+        const originalWriteFile = fs.writeFile;
+        const originalPromisesReadFile = fs.promises?.readFile;
+        const originalPromisesWriteFile = fs.promises?.writeFile;
+        const originalExec = child_process.exec;
+        const originalExecSync = child_process.execSync;
+        const originalSpawn = child_process.spawn;
+        const originalSpawnSync = child_process.spawnSync;
+        
+        const isSafePath = (p) => {
+          if (!p) return false;
+          try {
+            const resolved = path.resolve(context.rootPath, String(p));
+            return resolved.startsWith(path.resolve(context.rootPath));
+          } catch {
+            return false;
+          }
+        };
+        
+        fs.readFileSync = (p, ...args) => {
+          if (!isSafePath(p)) throw new Error(`Access denied (sandbox): read outside workspace path ${p}`);
+          return originalReadFileSync(p, ...args);
+        };
+        fs.writeFileSync = (p, ...args) => {
+          if (!isSafePath(p)) throw new Error(`Access denied (sandbox): write outside workspace path ${p}`);
+          return originalWriteFileSync(p, ...args);
+        };
+        fs.readFile = (p, ...args) => {
+          if (!isSafePath(p)) throw new Error(`Access denied (sandbox): read outside workspace path ${p}`);
+          return originalReadFile(p, ...args);
+        };
+        fs.writeFile = (p, ...args) => {
+          if (!isSafePath(p)) throw new Error(`Access denied (sandbox): write outside workspace path ${p}`);
+          return originalWriteFile(p, ...args);
+        };
+        if (fs.promises) {
+          fs.promises.readFile = async (p, ...args) => {
+            if (!isSafePath(p)) throw new Error(`Access denied (sandbox): read outside workspace path ${p}`);
+            return originalPromisesReadFile(p, ...args);
+          };
+          fs.promises.writeFile = async (p, ...args) => {
+            if (!isSafePath(p)) throw new Error(`Access denied (sandbox): write outside workspace path ${p}`);
+            return originalPromisesWriteFile(p, ...args);
+          };
+        }
+        
+        child_process.exec = () => { throw new Error('Access denied (sandbox): exec not allowed in plugins'); };
+        child_process.execSync = () => { throw new Error('Access denied (sandbox): execSync not allowed in plugins'); };
+        child_process.spawn = () => { throw new Error('Access denied (sandbox): spawn not allowed in plugins'); };
+        child_process.spawnSync = () => { throw new Error('Access denied (sandbox): spawnSync not allowed in plugins'); };
+        
+        try {
+          return await originalAnalyze.call(this, context);
+        } finally {
+          fs.readFileSync = originalReadFileSync;
+          fs.writeFileSync = originalWriteFileSync;
+          fs.readFile = originalReadFile;
+          fs.writeFile = originalWriteFile;
+          if (fs.promises) {
+            fs.promises.readFile = originalPromisesReadFile;
+            fs.promises.writeFile = originalPromisesWriteFile;
+          }
+          child_process.exec = originalExec;
+          child_process.execSync = originalExecSync;
+          child_process.spawn = originalSpawn;
+          child_process.spawnSync = originalSpawnSync;
+        }
+      };
+
       plugins.push(instance);
 
       if (!options.quiet) {

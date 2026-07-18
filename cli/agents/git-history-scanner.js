@@ -140,8 +140,7 @@ export class GitHistoryScanner extends BaseAgent {
   existsInWorkingTree(rootPath, secret) {
     try {
       const result = execFileSync('git', [
-        '-C', rootPath, 'grep', '-l', secret.slice(0, 12),
-        '--', '*.js', '*.ts', '*.py', '*.env', '*.json'
+        '-C', rootPath, 'grep', '-F', '-l', secret
       ], {
         cwd: rootPath,
         encoding: 'utf-8',

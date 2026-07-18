@@ -237,6 +237,7 @@ fix
   .option('--yolo', 'Auto-accept every plan without prompting')
   .option('--auto-low', 'Auto-accept plans marked risk:low')
   .option('--sandbox', 'Verify each fix in a Docker sandbox')
+  .option('--ci', 'Non-interactive CI/CD mode (auto-accept fixes)')
   .action(agentFixCommand);
 
 fix
@@ -560,6 +561,11 @@ program
   .description('Compute a 0-100 security health score for your project')
   .option('--no-deps', 'Skip dependency audit')
   .action(scoreCommand);
+
+program
+  .command('hooks [action]')
+  .description('Manage Claude Code hooks — real-time security gate on tool calls')
+  .action(hooksCommand);
 
 // =============================================================================
 // PARSE AND RUN

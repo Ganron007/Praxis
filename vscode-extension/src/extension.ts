@@ -89,7 +89,7 @@ async function scanWorkspace() {
     const deep = config.get('deep') ? '--deep' : '';
 
     const { stdout } = await execAsync(
-      `npx praxis audit "${workspacePath}" --json --deps ${deep}`,
+      getCliCommand(config, 'audit', `"${workspacePath}" --json --deps ${deep}`),
       { timeout: 120_000, maxBuffer: 10 * 1024 * 1024, cwd: workspacePath }
     );
 
@@ -130,8 +130,9 @@ async function scanFile(uri: vscode.Uri) {
   if (!workspacePath) return;
 
   try {
+    const config = vscode.workspace.getConfiguration('praxis');
     const { stdout } = await execAsync(
-      `npx praxis scan "${filePath}" --json`,
+      getCliCommand(config, 'scan', `"${filePath}" --json`),
       { timeout: 30_000, maxBuffer: 5 * 1024 * 1024, cwd: workspacePath }
     );
 
@@ -288,4 +289,15 @@ class PraxisCodeActionProvider implements vscode.CodeActionProvider {
 export function deactivate() {
   diagnosticCollection.dispose();
   statusBarItem.dispose();
+}
+
+function getCliCommand(config: vscode.WorkspaceConfiguration, subcommand: string, args: string): string {
+  const cliPath = config.get<string>('cliPath');
+  if (cliPath && cliPath.trim().length > 0) {
+    if (cliPath.endsWith('.js')) {
+      return `node "${cliPath}" ${subcommand} ${args}`;
+    }
+    return `"${cliPath}" ${subcommand} ${args}`;
+  }
+  return `npx praxis ${subcommand} ${args}`;
 }

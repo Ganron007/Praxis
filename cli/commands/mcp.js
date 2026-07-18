@@ -389,6 +389,38 @@ function suppressFinding({ file, line, reason }) {
     return { alreadySuppressed: true, file: absPath, line, message: 'Line already has a praxis-ignore comment.' };
   }
 
+  // Critical check:
+  const fileFindings = scanFile(absPath);
+  const criticalFinding = fileFindings.find(f => f.line === line && f.severity === 'critical');
+  if (criticalFinding) {
+    return { error: `Cannot suppress critical severity finding: ${criticalFinding.description}` };
+  }
+
+  // Log suppression request to .praxis/suppressions.json for manual audit
+  const suppressionsDir = path.join(process.cwd(), '.praxis');
+  if (!fs.existsSync(suppressionsDir)) {
+    try {
+      fs.mkdirSync(suppressionsDir, { recursive: true });
+    } catch {}
+  }
+  const suppressionsFile = path.join(suppressionsDir, 'suppressions.json');
+  let suppressions = [];
+  if (fs.existsSync(suppressionsFile)) {
+    try {
+      suppressions = JSON.parse(fs.readFileSync(suppressionsFile, 'utf-8'));
+    } catch {}
+  }
+  suppressions.push({
+    file: path.relative(process.cwd(), absPath),
+    line,
+    reason,
+    timestamp: new Date().toISOString(),
+    status: 'pending_review'
+  });
+  try {
+    fs.writeFileSync(suppressionsFile, JSON.stringify(suppressions, null, 2), 'utf-8');
+  } catch {}
+
   // Detect indentation and comment style
   const indent = targetLine.match(/^(\s*)/)?.[1] ?? '';
   const isJs   = /\.(js|ts|jsx|tsx|mjs|cjs|java|c|cpp|cs|go|rs|swift|kt)$/.test(file);

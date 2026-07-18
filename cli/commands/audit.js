@@ -476,7 +476,12 @@ export async function auditCommand(targetPath = '.', options = {}) {
 
   if (!machineOutput && !options.csv && !options.md) {
     // ── Policy Violations ──────────────────────────────────────────────────
-    const violations = policy.evaluate(scoreResult, filteredFindings);
+    const violations = policy.evaluate(scoreResult, filteredFindings, {
+      agentResults,
+      depsRun: options.deps !== false,
+      secretsRun: true,
+      depVulns,
+    });
     if (violations.length > 0) {
       console.log();
       console.log(chalk.red.bold('  Policy Violations:'));

@@ -16,6 +16,8 @@ import chalk from 'chalk';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { buildOrchestratorAsync } from '../agents/index.js';
+import { autoDetectProvider } from '../providers/llm-provider.js';
 
 const __filename = fileURLToPath(import.meta.url); // praxis-ignore — module's own path via import.meta.url, not user input
 const __dirname = dirname(__filename);
@@ -119,7 +121,55 @@ export async function doctorCommand() {
     info('Cache directory does not exist yet (created on first scan)');
   }
 
-  // 7. Version check
+  // 7. Built-in agents & custom plugins
+  try {
+    const orchestrator = await buildOrchestratorAsync(cwd, { quiet: true });
+    const count = orchestrator.agents?.length ?? 0;
+    pass(`All ${count} built-in and plugin agents loaded successfully`);
+  } catch (err) {
+    fail(`Failed to load agents or plugins: ${err.message}`);
+    allGood = false;
+  }
+
+  // 8. Intel sources connectivity
+  try {
+    const res = await fetch('https://api.osv.dev/v1/vulns/test', {
+      signal: AbortSignal.timeout(3000)
+    });
+    if (res.status === 200 || res.status === 404) {
+      pass('Intel source (OSV) is reachable');
+    } else {
+      fail(`Intel source (OSV) returned HTTP ${res.status}`);
+      allGood = false;
+    }
+  } catch (err) {
+    fail(`Intel source (OSV) is unreachable: ${err.message}`);
+    allGood = false;
+  }
+
+  // 9. LLM connection test (if configured)
+  const provider = autoDetectProvider(cwd);
+  if (provider) {
+    try {
+      const response = await provider.complete(
+        "Connection check",
+        "Say: connection ok"
+      );
+      if (response && response.toLowerCase().includes("ok")) {
+        pass(`${provider.name} LLM responding successfully`);
+      } else {
+        fail(`${provider.name} LLM returned unexpected response: ${response}`);
+        allGood = false;
+      }
+    } catch (err) {
+      fail(`${provider.name} LLM connection check failed: ${err.message}`);
+      allGood = false;
+    }
+  } else {
+    info('No LLM provider configured. Skipping LLM connectivity test.');
+  }
+
+  // 10. Version check
   pass(`praxis v${PACKAGE_VERSION}`);
   try {
     const latest = execFileSync('npm', ['view', 'praxis', 'version'], {
