@@ -34,5 +34,5 @@
 
   <!-- Tagline under the wordmark -->
   <text x="162" y="120" font-family="Segoe UI, Helvetica, Arial, sans-serif"
-        font-size="19" font-weight="600" fill="#6b7280" letter-spacing="0.4">Autonomous SAST &amp; AI-Safety Auditing</text>
+        font-size="19" font-weight="600" fill="#6b7280" letter-spacing="0.4">Autonomous AI-Security Audit Framework</text>
 </svg>
