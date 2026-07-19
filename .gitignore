@@ -3,3 +3,10 @@ node_modules/
 
 # Dogfood artifacts (praxis scan . self-report)
 praxis-report.html
+
+# Archive (old reports, samples, generated artifacts)
+archive/
+
+# Claude Code local config
+CLAUDE.md
+.claude/
