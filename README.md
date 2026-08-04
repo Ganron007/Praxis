@@ -12,14 +12,14 @@
   <img src="https://img.shields.io/badge/Status-Production%20Ready-success.svg" alt="Status: Production Ready">
 </p>
 
+Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — AI-security scan → remediate → verify CLI (also used by DarkAI; runs standalone).
+
 > [!IMPORTANT]
 > **Local Privacy & Autopilot Safety.** Praxis is designed with an offline-first architecture. It will never transmit your source code to external servers or AI providers unless you explicitly configure LLM remediation. When LLM features are enabled, Praxis works in a **gated confirmation loop** — no file changes are written without your explicit approval, and every modification is fully reversible via local logs.
 
 Praxis is an enterprise-grade autonomous AI-security audit framework designed to detect vulnerabilities and automate patch engineering. Operating as a command-line interface (CLI), Praxis analyzes application codebases, Model Context Protocol (MCP) server configurations, and AI agent integration points to identify traditional vulnerabilities and modern generative AI exposure risks. 
 
 Unlike passive scanning tools that only generate static finding logs, Praxis provides an autonomous, closed-loop remediation pipeline. When vulnerabilities are detected, Praxis leverages cloud or local Large Language Models (LLMs) to automatically construct precise, context-aware code repairs (as unified diff patches). After user verification, the patches are written atomically to disk and immediately re-scanned to programmatically verify that the issue has been successfully resolved.
-
-Developed as a core utility within the CADRE (Cloud, Agentic, DFIR, and RedTeam Environment) initiative, Praxis provides the scanning, policy verification, and patch application infrastructure needed to secure autonomous AI agent workflows and their host environments.
 
 ---
 
