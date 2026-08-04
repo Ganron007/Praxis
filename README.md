@@ -14,6 +14,9 @@
 
 Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — AI-security scan → remediate → verify CLI (also used by DarkAI; runs standalone).
 
+> [!NOTE]
+> **Feature testing in progress.** Core scan / fix / verify flows work for practice, but agent coverage, CI honesty, and DarkAI ops bake-through are still being validated. Expect CLI flags, agents, and docs to keep evolving.
+
 > [!IMPORTANT]
 > **Local Privacy & Autopilot Safety.** Praxis is designed with an offline-first architecture. It will never transmit your source code to external servers or AI providers unless you explicitly configure LLM remediation. When LLM features are enabled, Praxis works in a **gated confirmation loop** — no file changes are written without your explicit approval, and every modification is fully reversible via local logs.
 
