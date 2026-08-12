@@ -5,7 +5,7 @@
   "command": "npx praxis openclaw . --preflight --json",
   "permissions": ["read"],
   "author": "praxis contributors",
-  "homepage": "",
+  "homepage": "https://github.com/Ganron007/Praxis",
   "repository": "https://github.com/Ganron007/Praxis",
   "tags": ["security", "audit", "openclaw", "mcp", "agent-config"],
   "verified": true

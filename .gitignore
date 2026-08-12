@@ -22,3 +22,6 @@ showcase-target/
 
 # Local lab journal
 SHOWCASE-LAB-LOG.md
+
+# npm pack artifacts
+*.tgz

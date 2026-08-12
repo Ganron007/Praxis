@@ -5,17 +5,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/CADRE-Platform/Praxis/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/CADRE-Platform/Praxis/ci.yml?label=CI" alt="CI"></a>
+  <a href="https://github.com/Ganron007/Praxis/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Ganron007/Praxis/ci.yml?label=CI" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.0.0-blue.svg" alt="Node.js: >=18.0.0">
   <img src="https://img.shields.io/badge/Version-1.0.0-blue.svg" alt="Version: 1.0.0">
-  <img src="https://img.shields.io/badge/Status-Production%20Ready-success.svg" alt="Status: Production Ready">
+  <img src="https://img.shields.io/badge/Status-Public%20Beta-yellow.svg" alt="Status: Public Beta">
 </p>
 
 Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — AI-security scan → remediate → verify CLI (also used by DarkAI; runs standalone).
 
 > [!NOTE]
-> **Feature testing in progress.** Core scan / fix / verify flows work for practice, but agent coverage, CI honesty, and DarkAI ops bake-through are still being validated. Expect CLI flags, agents, and docs to keep evolving.
+> **Public Beta.** The core scan / fix / verify flows are stable and CI-tested; agent coverage and integration surfaces (GitHub Action, Claude Code plugin) are still being validated in the wild. Expect CLI flags, agents, and docs to keep evolving.
 
 > [!IMPORTANT]
 > **Local Privacy & Autopilot Safety.** Praxis is designed with an offline-first architecture. It will never transmit your source code to external servers or AI providers unless you explicitly configure LLM remediation. When LLM features are enabled, Praxis works in a **gated confirmation loop** — no file changes are written without your explicit approval, and every modification is fully reversible via local logs.
@@ -56,7 +56,7 @@ flowchart TD
 
     subgraph Orchestrator["Agentic Orchestrator (parallel scan)"]
         direction TB
-        AGENTS["25 Parallel Agents<br/>(LLMRedTeam, InjectionTester, RAGSecurityAgent...)"]
+        AGENTS["26 Parallel Agents<br/>(LLMRedTeam, InjectionTester, RAGSecurityAgent...)"]
         PLUGINS["User Plugins<br/>(.praxis/agents/*.js)"]
     end
 
@@ -99,7 +99,7 @@ flowchart TD
 **Execution Pipeline Lifecycle:**
 1. **CLI Ingress & Parsing** — CLI subcommands are parsed and processed. Target directories are crawled, filtering out files matched by `.gitignore` and `.praxisignore` rules.
 2. **Reconnaissance & Profiling** — `ReconAgent` maps the repository's technology stack (e.g., frameworks, runtime engines) to optimize scanning profiles.
-3. **Concurrent Security Scans** — 25 built-in analysis engines execute in parallel to identify code vulnerabilities and agent misconfigurations. Extensible local plugins are loaded dynamically from `.praxis/agents/*.js`.
+3. **Concurrent Security Scans** — 26 built-in analysis engines execute in parallel to identify code vulnerabilities and agent misconfigurations. Extensible local plugins are loaded dynamically from `.praxis/agents/*.js`.
 4. **Post-Processing Triage** — Suspected secret disclosures are programmatically verified for liveness by `VerifierAgent`, static taint paths are analyzed by `DeepAnalyzer`, and the project security score is computed.
 5. **Standards Compliance Mapping** — Identified vulnerabilities are programmatically mapped to corresponding controls from the 8 supported compliance frameworks.
 6. **Remediation & Repair Verification** — When executing a repair, the `LLMProvider` constructs a context-aware remediation patch (as a unified diff). Once approved, updates are written atomically and verified through a follow-up scan.

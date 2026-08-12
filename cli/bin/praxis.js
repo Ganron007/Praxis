@@ -612,9 +612,8 @@ legacy('scan-mcp [target]', 'Vet an MCP server tool manifest (alias of `agents m
   ['--json', 'Output results as JSON'],
 ]).action(scanMcpCommand);
 
-legacy('mcp [target]', 'Vet an MCP server tool manifest (alias of `agents mcp`)', [
-  ['--json', 'Output results as JSON'],
-]).action(scanMcpCommand);
+legacy('mcp', 'Start praxis as an MCP server over stdio (alias of `agents serve`)', [])
+  .action(mcpCommand);
 
 legacy('scan-skill [target]', 'Vet an AI agent skill (alias of `agents skill`)', [
   ['--all', 'Scan all skills defined in openclaw.json'],
@@ -802,7 +801,7 @@ if (process.argv.length === 2 && process.stdin.isTTY) {
   console.log(chalk.white('  praxis vibe .          ') + chalk.gray('# Emoji-graded score'));
   console.log(chalk.white('  praxis --help          ') + chalk.gray('# Show all groups'));
   console.log();
-  console.log(chalk.gray('Migrating from `praxis`? See MIGRATION.md or run any old command —'));
+  console.log(chalk.gray('Migrating from `praxis`? Any legacy command (audit, ci, mcp, ...) still —'));
   console.log(chalk.gray('the `praxis` binary continues to work with full back-compat.'));
   console.log();
   process.exit(0);
