@@ -77,7 +77,7 @@ export async function scanStandardCommand(name, targetPath = '.', options = {}) 
   if (spinner) spinner.succeed(chalk.green(`Scanned ${result.findings.length} finding(s) total`));
 
   const scoring = new ScoringEngine();
-  scoring.compute(result.findings);
+  const scoreResult = scoring.compute(result.findings);
 
   const filtered = filterFindingsByStandard(
     result.findings,
@@ -101,6 +101,9 @@ export async function scanStandardCommand(name, targetPath = '.', options = {}) 
     totalControls: standardSummary.totalControls,
     controls: standardSummary.controls,
     findings: filtered,
+    score: scoreResult.score,
+    grade: scoreResult.grade?.letter || 'A',
+    scannedAt: new Date().toISOString(),
   };
 
   if (options.json) {

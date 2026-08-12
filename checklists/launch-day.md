@@ -51,7 +51,7 @@ If you get a 200 response, your git folder is exposed.
 **How to check:**
 ```bash
 # Run the praxis scanner
-python scripts/scan_secrets.py ./src
+praxis scan secrets ./src
 
 # Or manually search
 grep -r "sk-" ./src
