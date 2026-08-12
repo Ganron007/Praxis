@@ -101,11 +101,12 @@ export class PolicyEngine {
       }
 
       for (const scan of this.policy.requiredScans) {
-        const scanLower = scan.toLowerCase();
+        const scanName = typeof scan === 'string' ? scan : (scan?.name || scan?.scan || String(scan || ''));
+        const scanLower = scanName.toLowerCase();
         if (!runCategories.has(scanLower)) {
           violations.push({
             type: 'missing_scan',
-            message: `Required security scan "${scan}" was not run or failed`,
+            message: `Required security scan "${scanName}" was not run or failed`,
             severity: 'high',
           });
         }

@@ -35,6 +35,7 @@ export { AgenticSupplyChainAgent } from './agentic-supply-chain-agent.js';
 export { ABOMGenerator } from './abom-generator.js';
 export { ModelFileScanner } from './model-file-scanner.js';
 export { PromptInjectionProber } from './prompt-injection-prober.js';
+export { AgentTelemetryAgent } from './agent-telemetry-agent.js';
 export { VerifierAgent } from './verifier-agent.js';
 export { DeepAnalyzer } from './deep-analyzer.js';
 export { ScoringEngine, GRADES, CATEGORIES } from './scoring-engine.js';
@@ -76,6 +77,7 @@ import { AgentAttestationAgent as AgentAttestationAgentClass } from './agent-att
 import { AgenticSupplyChainAgent as AgenticSupplyChainAgentClass } from './agentic-supply-chain-agent.js';
 import { ModelFileScanner as ModelFileScannerClass } from './model-file-scanner.js';
 import { PromptInjectionProber as PromptInjectionProberClass } from './prompt-injection-prober.js';
+import { AgentTelemetryAgent as AgentTelemetryAgentClass } from './agent-telemetry-agent.js';
 import { loadPlugins } from '../utils/plugin-loader.js';
 
 const BUILT_IN_AGENTS = () => [
@@ -104,6 +106,7 @@ const BUILT_IN_AGENTS = () => [
   new AgenticSupplyChainAgentClass(),
   new ModelFileScannerClass(),
   new PromptInjectionProberClass(),
+  new AgentTelemetryAgentClass(),
 ];
 
 /** Synchronous build — no plugin support. Used by legacy callers. */
