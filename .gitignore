@@ -7,7 +7,7 @@ praxis-report.html
 # Archive (old reports, samples, generated artifacts)
 archive/
 
-# Claude Code local config
+# Claude Code local config (AGENTS.md is tracked — the cross-agent standard)
 CLAUDE.md
 .claude/
 
