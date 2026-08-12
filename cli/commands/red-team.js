@@ -341,7 +341,7 @@ function outputSARIF(findings, rootPath) {
         defaultConfiguration: {
           level: ['critical', 'high'].includes(f.severity) ? 'error' : 'warning',
         },
-        helpUri: 'https://github.com//praxis',
+        helpUri: 'https://github.com/Ganron007/Praxis',
       };
     }
   }
@@ -354,7 +354,7 @@ function outputSARIF(findings, rootPath) {
         driver: {
           name: 'praxis',
           version: '4.0.0',
-          informationUri: 'https://github.com//praxis',
+          informationUri: 'https://github.com/Ganron007/Praxis',
           rules: Object.values(rules),
         }
       },

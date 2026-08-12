@@ -115,7 +115,7 @@ const scan = program
 
 scan
   .command('full [path]', { isDefault: true })
-  .description('Full audit: secrets + 25 agents + deps + score + remediation plan')
+  .description('Full audit: secrets + 26 agents + deps + score + remediation plan')
   .option('--json', 'Output results as JSON')
   .option('--sarif', 'Output results in SARIF format')
   .option('--csv', 'Output results as CSV')
@@ -172,7 +172,7 @@ scan
 
 scan
   .command('redteam [path]')
-  .description('22 agents in parallel — adversarial scan of 80+ attack classes')
+  .description('26 agents in parallel — adversarial scan of 80+ attack classes')
   .option('--agents <list>', 'Comma-separated list of agents to run')
   .option('--json', 'Output results as JSON')
   .option('--sarif', 'Output results in SARIF format')

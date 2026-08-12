@@ -525,7 +525,7 @@ function outputSARIF(results, rootPath) {
               : f.severity === 'medium' ? 'warning'
               : 'note'
           },
-          helpUri: 'https://github.com//praxis',
+          helpUri: 'https://github.com/Ganron007/Praxis',
         };
       }
     }
@@ -539,7 +539,7 @@ function outputSARIF(results, rootPath) {
         driver: {
           name: 'praxis',
           version: '2.1.0',
-          informationUri: 'https://github.com//praxis',
+          informationUri: 'https://github.com/Ganron007/Praxis',
           rules: Object.values(rules),
         }
       },

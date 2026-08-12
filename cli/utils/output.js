@@ -243,9 +243,9 @@ export function printBanner(version) {
   console.log(chalk.cyan('╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚══════╝'));
   console.log();
   if (version) {
-    console.log(chalk.gray(`  v${version} · 25 agents · From finding to fix, on autopilot.`));
+    console.log(chalk.gray(`  v${version} · 26 agents · From finding to fix, on autopilot.`));
   } else {
-    console.log(chalk.gray('  25 agents · From finding to fix, on autopilot.'));
+    console.log(chalk.gray('  26 agents · From finding to fix, on autopilot.'));
   }
   console.log();
 }

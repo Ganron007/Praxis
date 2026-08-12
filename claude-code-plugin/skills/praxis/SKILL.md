@@ -1,6 +1,6 @@
 ---
 name: praxis
-description: Run a full security audit on this project — 25 agents scan for secrets, injections, auth bypass, SSRF, supply chain, Supabase RLS, MCP security, agentic AI, RAG poisoning, PII compliance, model-file deserialization, prompt-injection signatures, and more. Use when the user wants a security audit, vulnerability scan, or asks if their code is safe to ship.
+description: Run a full security audit on this project — 26 agents scan for secrets, injections, auth bypass, SSRF, supply chain, Supabase RLS, MCP security, agentic AI, RAG poisoning, PII compliance, model-file deserialization, prompt-injection signatures, and more. Use when the user wants a security audit, vulnerability scan, or asks if their code is safe to ship.
 argument-hint: "[path] [--no-deps] [--baseline]"
 ---
 

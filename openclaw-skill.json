@@ -6,7 +6,7 @@
   "permissions": ["read"],
   "author": "praxis contributors",
   "homepage": "",
-  "repository": "https://github.com//praxis",
+  "repository": "https://github.com/Ganron007/Praxis",
   "tags": ["security", "audit", "openclaw", "mcp", "agent-config"],
   "verified": true
 }

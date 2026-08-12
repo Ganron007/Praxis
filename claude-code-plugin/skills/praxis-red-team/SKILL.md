@@ -1,12 +1,12 @@
 ---
 name: praxis-red-team
-description: Run a multi-agent red team scan — 25 specialized security agents scan for 80+ attack classes including injection, auth bypass, SSRF, supply chain, Supabase RLS, MCP security, agentic AI, RAG poisoning, PII compliance, model-file risk, prompt injection, and more. Use when the user wants a deep security analysis beyond just secrets.
+description: Run a multi-agent red team scan — 26 specialized security agents scan for 80+ attack classes including injection, auth bypass, SSRF, supply chain, Supabase RLS, MCP security, agentic AI, RAG poisoning, PII compliance, model-file risk, prompt injection, and more. Use when the user wants a deep security analysis beyond just secrets.
 argument-hint: "[path] [--agents <list>]"
 ---
 
 # Praxis — Red Team Scan
 
-You are running a multi-agent red team scan using Praxis's 25 security agents.
+You are running a multi-agent red team scan using Praxis's 26 security agents.
 
 ## Step 1: Run the red team scan
 
@@ -65,7 +65,7 @@ Based on the results, suggest:
 
 ## Important Notes
 
-- The 13 agents are: InjectionTester, AuthBypassAgent, SSRFProber, SupplyChainAudit, ConfigAuditor, SupabaseRLSAgent, LLMRedTeam, MobileScanner, GitHistoryScanner, CICDScanner, APIFuzzer, ReconAgent, ScoringEngine
+- The 26 built-in agents are: InjectionTester, AuthBypassAgent, SSRFProber, SupplyChainAudit, ConfigAuditor, SupabaseRLSAgent, LLMRedTeam, MobileScanner, GitHistoryScanner, CICDScanner, APIFuzzer, ExceptionHandlerAgent, VibeCodingAgent, PIIComplianceAgent, MCPSecurityAgent, AgenticSecurityAgent, RAGSecurityAgent, MemoryPoisoningAgent, AgentConfigScanner, ManagedAgentScanner, HermesSecurityAgent, AgentAttestationAgent, AgenticSupplyChainAgent, ModelFileScanner, PromptInjectionProber, AgentTelemetryAgent (ReconAgent profiles the stack; ScoringEngine grades the result)
 - Agents run in parallel — the scan should complete in under 60 seconds for most projects
 - Low-confidence findings in test files or documentation are likely false positives
 - Never display actual secret values

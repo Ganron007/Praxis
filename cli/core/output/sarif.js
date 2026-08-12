@@ -21,7 +21,7 @@ export default function sarif(report, options = {}) {
   const {
     toolName = 'praxis',
     toolVersion = report.version || '1.0.0',
-    informationUri = 'https://github.com//praxis',
+    informationUri = 'https://github.com/Ganron007/Praxis',
   } = options;
 
   const findings = report.findings || [];

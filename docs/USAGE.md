@@ -1,8 +1,8 @@
 # Praxis — Complete Usage Guide
 
 AI-native security CLI for AI-augmented codebases. Single binary, find→fix→verify
-loop on autopilot. 25 parallel security agents (23 built-in + ModelFileScanner +
-PromptInjectionProber), multi-source threat intel, modular alignment with 8 AI-security
+loop on autopilot. 26 parallel security agents (23 built-in + ModelFileScanner +
+PromptInjectionProber + AgentTelemetryAgent), multi-source threat intel, modular alignment with 8 AI-security
 standards, LLM-powered remediation with diff review and undo log. Works fully
 offline; LLM features are optional.
 
@@ -49,7 +49,7 @@ entry in `package.json`.
 ## Quick start
 
 ```bash
-praxis scan .                    # Full audit: secrets + 25 agents + deps + score
+praxis scan .                    # Full audit: secrets + 26 agents + deps + score
 praxis fix .                     # Interactive LLM-guided fixes
 praxis agents audit .            # Audit CLAUDE.md, .cursorrules, MCP, skills
 praxis intel update              # Refresh threat-intel feed
@@ -81,7 +81,7 @@ Plus three top-level shortcuts: `praxis vibe`, `praxis score`, and `praxis` alon
 
 ### `scan full [path]` (default)
 
-Full audit: secrets + 25 agents + deps + score + remediation plan.
+Full audit: secrets + 26 agents + deps + score + remediation plan.
 
 | Flag | Description |
 | --- | --- |
@@ -146,7 +146,7 @@ Credential health check: `.env` coverage, source cross-ref, git history.
 
 ### `scan redteam [path]`
 
-22 adversarial agents in parallel — 80+ attack classes.
+26 agents in parallel — 80+ attack classes.
 
 | Flag | Description |
 | --- | --- |

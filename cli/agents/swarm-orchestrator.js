@@ -2,7 +2,7 @@
  * SwarmOrchestrator — K2.6-Powered Parallel Security Swarm
  * ==========================================================
  *
- * Instead of running 23 agents locally in Node.js (chunks of 6),
+ * Instead of running 26 agents locally in Node.js (chunks of 6),
  * --swarm sends the entire task to Kimi K2.6 and lets its native
  * 300-agent swarm handle parallel analysis.
  *

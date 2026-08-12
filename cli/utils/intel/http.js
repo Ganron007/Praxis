@@ -8,7 +8,7 @@
 
 const DEFAULT_TIMEOUT = 30_000;
 const DEFAULT_RETRIES = 2;
-const USER_AGENT = 'praxis-intel/1.0 (+https://github.com//praxis)';
+const USER_AGENT = 'praxis-intel/1.0 (+https://github.com/Ganron007/Praxis)';
 
 export async function safeFetch(url, options = {}) {
   const { timeout = DEFAULT_TIMEOUT, retries = DEFAULT_RETRIES, ...rest } = options;
