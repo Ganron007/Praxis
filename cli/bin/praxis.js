@@ -568,6 +568,223 @@ program
   .action(hooksCommand);
 
 // =============================================================================
+// Legacy top-level surface (back-compat)
+// =============================================================================
+// The original flat `praxis` command set is re-exposed here so existing docs,
+// scripts, GitHub Actions, and Claude Code skills keep working unchanged.
+
+const legacy = (name, description, flags) => {
+  const cmd = program.command(name).description(description);
+  for (const [flag, help, parse] of flags) {
+    if (parse) cmd.option(flag, help, parse);
+    else cmd.option(flag, help);
+  }
+  return cmd;
+};
+
+legacy('ci [path]', 'CI/CD mode: scan, score, exit 1 on failure (alias of `scan ci`)', [
+  ['--threshold <score>', 'Minimum passing score (default: 75)', parseInt],
+  ['--fail-on <severity>', 'Fail on findings at this severity or above'],
+  ['--sarif <file>', 'Write SARIF output for GitHub Code Scanning'],
+  ['--json', 'JSON output'],
+  ['--no-deps', 'Skip dependency audit'],
+  ['--baseline', 'Only check new findings (not in baseline)'],
+  ['--github-pr', 'Post findings as a GitHub PR comment'],
+  ['--strict-intel', 'Fail if threat-intel feed is stale'],
+  ['--max-intel-age <duration>', 'Max acceptable intel age', undefined],
+]).action(ciCommand);
+
+legacy('audit [path]', 'Audit agent configs (CLAUDE.md, .cursorrules, MCP, skills) — alias of `agents audit`', [
+  ['--fix', 'Auto-harden agent configurations'],
+  ['--preflight', 'Exit non-zero on critical findings (for CI)'],
+  ['--red-team', 'Simulate adversarial attacks against agent configs'],
+  ['--json', 'Output results as JSON'],
+]).action(openclawCommand);
+
+legacy('openclaw [path]', 'Agent-config security audit (alias of `agents audit`)', [
+  ['--fix', 'Auto-harden agent configurations'],
+  ['--preflight', 'Exit non-zero on critical findings (for CI)'],
+  ['--red-team', 'Simulate adversarial attacks against agent configs'],
+  ['--json', 'Output results as JSON'],
+]).action(openclawCommand);
+
+legacy('scan-mcp [target]', 'Vet an MCP server tool manifest (alias of `agents mcp`)', [
+  ['--json', 'Output results as JSON'],
+]).action(scanMcpCommand);
+
+legacy('mcp [target]', 'Vet an MCP server tool manifest (alias of `agents mcp`)', [
+  ['--json', 'Output results as JSON'],
+]).action(scanMcpCommand);
+
+legacy('scan-skill [target]', 'Vet an AI agent skill (alias of `agents skill`)', [
+  ['--all', 'Scan all skills defined in openclaw.json'],
+  ['--json', 'Output results as JSON'],
+]).action(scanSkillCommand);
+
+legacy('scan-standard [name] [path]', 'Filter findings by AI-security standard (alias of `scan standard`)', [
+  ['--list', 'List available standards and exit'],
+  ['--control <id>', 'Filter to a single control within the standard'],
+  ['--json', 'Output results as JSON'],
+  ['--sarif', 'Output results in SARIF format'],
+  ['--format <name>', 'Output format from the registry (json, sarif)'],
+]).action((name, targetPath, options) => scanStandardCommand(name, targetPath, options));
+
+legacy('update-intel', 'Refresh threat intel feeds (alias of `intel update`)', [
+  ['--only <sources>', 'Comma-separated subset (e.g. osv,kev,epss)'],
+  ['--force', 'Ignore per-source TTL caches'],
+  ['--list', 'Print available sources and exit'],
+]).action(updateIntelCommand);
+
+legacy('deps [path]', 'Audit dependency CVEs (alias of `intel deps`)', [
+  ['--fix', 'Run package manager fix command after auditing'],
+]).action(depsCommand);
+
+legacy('advisories [path]', 'Check deps against live advisory feeds (alias of `intel advisories`)', [
+  ['--ecosystem <type>', 'Filter by ecosystem (npm, PyPI)'],
+  ['--json', 'Output as JSON'],
+]).action(async (targetPath = '.', options) => {
+  const absolutePath = resolve(targetPath);
+  try {
+    const result = await runLiveAdvisories(absolutePath, options);
+    if (options.json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+    console.log();
+    console.log(chalk.cyan.bold('  Praxis — Live Advisories'));
+    console.log(chalk.gray(`  Checked ${result.checked} dependencies against OSV.dev`));
+    console.log();
+    if (result.advisories.length === 0) {
+      console.log(chalk.green('  ✔ No known advisories for your current dependency versions.\n'));
+    } else {
+      const malware = result.advisories.filter(a => a.isMalware);
+      const vulns = result.advisories.filter(a => !a.isMalware);
+      if (malware.length > 0) {
+        console.log(chalk.red.bold(`  !! ${malware.length} MALWARE ADVISORY(S) FOUND`));
+        for (const a of malware) {
+          console.log(chalk.red(`     ${a.package}@${a.version} — ${a.id}: ${a.summary.slice(0, 80)}`));
+        }
+        console.log();
+      }
+      if (vulns.length > 0) {
+        console.log(chalk.yellow(`  ${vulns.length} vulnerability advisory(s):`));
+        for (const a of vulns) {
+          const sev = a.severity === 'critical' ? chalk.red.bold(a.severity)
+                    : a.severity === 'high' ? chalk.yellow(a.severity)
+                    : chalk.blue(a.severity);
+          console.log(`    ${sev} ${a.package}@${a.version} — ${a.id}`);
+        }
+        console.log();
+      }
+    }
+  } catch (err) {
+    console.error(chalk.red(`  Error: ${err.message}\n`));
+    process.exit(1);
+  }
+});
+
+legacy('remediate [path]', 'Deterministic secret fixer: rewrite source + write .env (alias of `fix quick`)', [
+  ['--dry-run', 'Preview changes without writing'],
+  ['--yes', 'Apply all fixes without prompting'],
+  ['--stage', 'Run git add on modified files'],
+  ['--all', 'Also fix common agent findings'],
+]).action(remediateCommand);
+
+legacy('rotate [path]', 'Open provider dashboards to revoke exposed secrets (alias of `fix rotate`)', [
+  ['--provider <name>', 'Only rotate secrets for a specific provider'],
+  ['--plan <file>', 'Execute a rotation plan'],
+]).action(rotateCommand);
+
+legacy('undo [path]', 'Revert the last fix (alias of `fix undo`)', [
+  ['--all', 'Revert every fix in the log'],
+  ['--dry-run', 'Show what would be reverted'],
+]).action(undoCommand);
+
+legacy('env-template', 'Generate .env.example from found secrets (alias of `fix env-template`)', [
+  ['--dry-run', 'Preview without writing'],
+]).action(legacyFixCommand);
+
+legacy('red-team [path]', 'Adversarial agent pack scan (alias of `scan redteam`)', [
+  ['--agents <list>', 'Comma-separated list of agents to run'],
+  ['--json', 'Output results as JSON'],
+  ['--sarif', 'Output results in SARIF format'],
+  ['--html [file]', 'Generate HTML security report'],
+  ['--sbom [file]', 'Generate CycloneDX SBOM'],
+  ['--no-deps', 'Skip dependency audit'],
+  ['--no-ai', 'Skip AI classification'],
+  ['--deep', 'LLM-powered taint analysis'],
+  ['--swarm', 'AI swarm mode via DeepSeek/Kimi'],
+  ['--think', 'Enable extended thinking mode'],
+  ['--local', 'Use local Ollama model'],
+  ['--model <model>', 'LLM model'],
+  ['--provider <name>', 'LLM provider'],
+  ['--base-url <url>', 'Custom OpenAI-compatible endpoint'],
+  ['--budget <cents>', 'Max spend in cents', parseInt],
+  ['-v, --verbose', 'Verbose output'],
+]).action(redTeamCommand);
+
+legacy('abom [path]', 'Generate Agent Bill of Materials (alias of `agents bom`)', [
+  ['-o, --output <file>', 'Output file path', undefined],
+  ['--json', 'Output to stdout as JSON'],
+]).action(abomCommand);
+
+legacy('legal [path]', 'Legal risk audit (alias of `report legal`)', [
+  ['--json', 'Output results as JSON'],
+]).action(legalCommand);
+
+legacy('team [file]', 'Convert Hermes Agent output into a Praxis report (alias of `report team`)', [
+  ['--html [path]', 'Save as HTML report'],
+  ['--json', 'JSON output'],
+]).action(teamReportCommand);
+
+legacy('checklist', 'Run the launch-day security checklist (alias of `report checklist`)', [
+  ['--no-interactive', 'Print checklist without prompts'],
+]).action(checklistCommand);
+
+legacy('benchmark [path]', 'Compare your score against industry averages (alias of `report benchmark`)', [
+  ['--json', 'Output results as JSON'],
+]).action(benchmarkCommand);
+
+legacy('init', 'Initialize security configs in your project (alias of `project init`)', [
+  ['-f, --force', 'Overwrite existing files'],
+  ['--gitignore', 'Only copy .gitignore'],
+  ['--headers', 'Only copy security headers config'],
+  ['--agents', 'Only add security rules to AI agent instruction files'],
+  ['--openclaw', 'Generate a hardened openclaw.json template'],
+  ['--hermes', 'Bootstrap Hermes Agent security config'],
+  ['--from <url>', 'Fetch a pre-built Hermes config bundle from a setup URL'],
+]).action(initCommand);
+
+legacy('doctor', 'Diagnose environment (alias of `project doctor`)', []).action(doctorCommand);
+
+legacy('baseline [path]', 'Manage findings baseline (alias of `project baseline`)', [
+  ['--diff', 'Show what changed since baseline'],
+  ['--clear', 'Remove the baseline'],
+]).action(baselineCommand);
+
+legacy('guard [action]', 'Install pre-commit/pre-push secret guard (alias of `project guard`)', [
+  ['--pre-commit', 'Install as pre-commit hook instead of pre-push'],
+  ['--generate-hooks', 'Generate defensive Claude Code hooks'],
+]).action(guardCommand);
+
+legacy('watch [path]', 'Continuous security monitoring (alias of `project watch`)', [
+  ['--poll', 'Use polling mode'],
+  ['--configs', 'Watch only agent config files'],
+  ['--deep', 'Run full agent scanning on changes'],
+  ['--stateful', 'Keep Kimi K2.6 conversation context between scans'],
+  ['--model <model>', 'LLM model for stateful watch'],
+  ['--provider <name>', 'LLM provider for stateful watch'],
+  ['--status', 'Show current watch status and exit'],
+  ['--threshold <score>', 'Alert when score drops below threshold', parseInt],
+  ['--debounce <ms>', 'Debounce interval in ms', parseInt],
+  ['--slack [webhook]', 'Post findings to Slack webhook URL'],
+  ['--pr-comment', 'Post inline findings as GitHub PR review comments'],
+]).action(watchCommand);
+
+legacy('shell', 'Interactive REPL (same as `praxis` with no args on a TTY)', [])
+  .action(() => shellCommand('.', {}).then(() => process.exit(0)).catch(() => process.exit(1)));
+
+// =============================================================================
 // PARSE AND RUN
 // =============================================================================
 

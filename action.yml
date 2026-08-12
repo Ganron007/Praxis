@@ -1,5 +1,5 @@
 name: 'Praxis Security Scan'
-description: 'Scan your codebase for secrets, vulnerabilities, CVEs, and misconfigurations with 16 AI security agents'
+description: 'Scan your codebase for secrets, vulnerabilities, CVEs, and misconfigurations with 26 AI security agents'
 author: 'Praxis'
 
 branding:
@@ -82,11 +82,13 @@ runs:
         OPENAI_API_KEY: ${{ env.OPENAI_API_KEY }}
         GOOGLE_AI_API_KEY: ${{ env.GOOGLE_AI_API_KEY }}
       run: |
-        # Build flags
+        # Build flags (single scan run produces both JSON and SARIF)
         FLAGS="--json"
         if [ "${{ inputs.deep }}" = "true" ]; then FLAGS="$FLAGS --deep"; fi
-        if [ "${{ inputs.deps }}" = "true" ]; then FLAGS="$FLAGS --deps"; fi
+        if [ "${{ inputs.deps }}" = "false" ]; then FLAGS="$FLAGS --no-deps"; fi
         if [ "${{ inputs.baseline }}" = "true" ]; then FLAGS="$FLAGS --baseline"; fi
+        if [ -n "${{ inputs.fail-on }}" ]; then FLAGS="$FLAGS --fail-on ${{ inputs.fail-on }}"; fi
+        if [ "${{ inputs.sarif }}" = "true" ]; then FLAGS="$FLAGS --sarif /tmp/praxis-results.sarif"; fi
 
         # Run scan and capture output
         set +e
@@ -110,6 +112,7 @@ runs:
         SECRETS=$(echo "$JSON_LINE" | jq -r '.categories.secrets.findingCount // 0')
         VULNS=$(echo "$JSON_LINE" | jq -r '((.categories.injection.findingCount // 0) + (.categories.auth.findingCount // 0))')
         CVES=$(echo "$JSON_LINE" | jq -r '.totalDepVulns // 0')
+        PASS=$(echo "$JSON_LINE" | jq -r '.pass // false')
 
         # Set outputs
         echo "score=$SCORE" >> $GITHUB_OUTPUT
@@ -118,6 +121,10 @@ runs:
         echo "secrets=$SECRETS" >> $GITHUB_OUTPUT
         echo "vulns=$VULNS" >> $GITHUB_OUTPUT
         echo "cves=$CVES" >> $GITHUB_OUTPUT
+        echo "fail=$FAIL" >> $GITHUB_OUTPUT
+        if [ -f /tmp/praxis-results.sarif ]; then
+          echo "sarif-file=/tmp/praxis-results.sarif" >> $GITHUB_OUTPUT
+        fi
 
         # Save full JSON for later steps
         echo "$JSON_LINE" > /tmp/praxis-report.json
@@ -146,34 +153,17 @@ runs:
 
         EOF
 
-        # Determine pass/fail
+        # Determine pass/fail (CLI already applies threshold/fail-on logic)
         FAIL=0
-        if [ -n "${{ inputs.fail-on }}" ]; then
-          SEVERITY="${{ inputs.fail-on }}"
-          COUNT=$(echo "$JSON_LINE" | jq -r "[.findings[]? | select(.severity == \"$SEVERITY\")] | length")
-          if [ "$COUNT" -gt 0 ]; then
-            echo "::error::Found $COUNT $SEVERITY findings"
-            FAIL=1
-          fi
-        elif [ "$SCORE" -lt "${{ inputs.threshold }}" ]; then
+        if [ "$PASS" != "true" ]; then
           echo "::error::Security score $SCORE is below threshold ${{ inputs.threshold }}"
           FAIL=1
         fi
 
         echo "fail=$FAIL" >> $GITHUB_OUTPUT
 
-    - name: Generate SARIF
-      if: inputs.sarif == 'true'
-      shell: bash
-      run: |
-        # Generate SARIF from the scan results
-        praxis ci "${{ inputs.path }}" --sarif /tmp/praxis-results.sarif --threshold 0 --deps 2>/dev/null || true
-        if [ -f /tmp/praxis-results.sarif ]; then
-          echo "sarif-file=/tmp/praxis-results.sarif" >> $GITHUB_OUTPUT
-        fi
-
     - name: Upload SARIF to GitHub Code Scanning
-      if: inputs.sarif == 'true' && hashFiles('/tmp/praxis-results.sarif') != ''
+      if: inputs.sarif == 'true' && steps.scan.outputs.sarif-file != ''
       uses: github/codeql-action/upload-sarif@ebcb5b36ded6beda4ceefea6a8bc4cc885255bb3 # v3
       with:
         sarif_file: /tmp/praxis-results.sarif
@@ -225,7 +215,7 @@ runs:
         BODY="$BODY
 
         ---
-        <sub>🛡️ Scanned by [Praxis]() — Security toolkit for vibe coders</sub>"
+        <sub>🛡️ Scanned by [Praxis](https://github.com/Ganron007/Praxis) — AI-native security CLI</sub>"
 
         # Find and update existing comment, or create new one
         PR_NUMBER="${{ github.event.pull_request.number }}"

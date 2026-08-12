@@ -151,6 +151,10 @@ export async function ciCommand(targetPath = '.', options = {}) {
       high: allFindings.filter(f => f.severity === 'high').length,
       medium: allFindings.filter(f => f.severity === 'medium').length,
       low: allFindings.filter(f => f.severity === 'low').length,
+      categories: Object.fromEntries(Object.entries(scoreResult.categories).map(([key, c]) => [key, {
+        findingCount: Object.values(c.counts).reduce((a, b) => a + b, 0),
+        counts: c.counts,
+      }])),
       threshold,
       pass: determinePass(scoreResult, allFindings, threshold, failOn),
       duration: `${duration}s`,
@@ -240,8 +244,8 @@ function buildSARIF(findings, rootPath) {
     runs: [{
       tool: {
         driver: {
-          name: 'praxis', version: '5.0.0',
-          informationUri: 'https://github.com//praxis',
+          name: 'praxis', version: '1.0.0',
+          informationUri: 'https://github.com/Ganron007/Praxis',
           rules: Object.values(rules),
         },
       },
