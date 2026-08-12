@@ -10,3 +10,15 @@ archive/
 # Claude Code local config
 CLAUDE.md
 .claude/
+
+# Runtime state (scan context, undo/fix history, caches)
+.praxis/
+*.fixes.jsonl
+~/.praxis/
+
+# Test fixtures
+fixtures/
+showcase-target/
+
+# Local lab journal
+SHOWCASE-LAB-LOG.md
