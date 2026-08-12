@@ -37,8 +37,7 @@ import { createInterface } from 'readline';
 import { execSync, execFileSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
-import pkg from 'write-file-atomic';
-const { writeFile: writeFileAtomic } = pkg;
+import writeFileAtomic from 'write-file-atomic';
 import fg from 'fast-glob';
 import {
   SECRET_PATTERNS,

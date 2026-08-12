@@ -2,7 +2,7 @@
  * Undo Command
  * ============
  *
- * Reverts changes applied by `praxis agent`.
+ * Reverts changes applied by `praxis fix interactive`.
  *
  * Reads .praxis/fixes.jsonl, takes the most recent entry (or all entries
  * with --all), and reverses each edit. Per-fix git commits made by the agent
@@ -28,7 +28,7 @@ export async function undoCommand(targetPath = '.', options = {}) {
 
   if (!fs.existsSync(logPath)) {
     output.error(`No fix log found at ${FIX_LOG_PATH}`);
-    console.log(chalk.gray('  Run `praxis agent` first to apply fixes.'));
+    console.log(chalk.gray('  Run `praxis fix interactive` first to apply fixes.'));
     process.exit(1);
   }
 
