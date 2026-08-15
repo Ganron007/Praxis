@@ -808,7 +808,9 @@ export const SKIP_EXTENSIONS = new Set([
   // Binaries
   '.exe', '.dll', '.so', '.dylib', '.bin', '.o', '.a',
   // Maps
-  '.map'
+  '.map',
+  // Scan report artifacts (machine-generated; re-scanning re-flags old findings)
+  '.sarif'
 ]);
 
 // Auto-generated lockfiles — large, no real secrets, cause false positives

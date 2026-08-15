@@ -19,6 +19,7 @@ CLAUDE.md
 # Test fixtures
 fixtures/
 showcase-target/
+showcase-evidence/
 
 # Local lab journal
 SHOWCASE-LAB-LOG.md
