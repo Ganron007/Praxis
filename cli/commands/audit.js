@@ -435,7 +435,7 @@ export async function auditCommand(targetPath = '.', options = {}) {
   }
 
   // ── Output ────────────────────────────────────────────────────────────────
-  console.log();
+  if (!machineOutput) console.log();
 
   if (options.csv) {
     outputCSV(filteredFindings, depVulns, scoreResult, absolutePath);
@@ -455,22 +455,24 @@ export async function auditCommand(targetPath = '.', options = {}) {
     const htmlPath = typeof options.html === 'string' ? options.html : 'praxis-report.html';
     const reporter = new HTMLReporter();
     reporter.generateFullReport(scoreResult, filteredFindings, depVulns, recon, remediationPlan, absolutePath, htmlPath);
-    console.log();
-    console.log(chalk.cyan(`  Full report: ${chalk.white.bold(htmlPath)}`));
-    console.log(chalk.gray(`  Dashboard:   `) + chalk.cyan(''));
+    // Keep stdout pure JSON/SARIF when combined with machine output
+    const note = machineOutput ? console.error : console.log;
+    note();
+    note(chalk.cyan(`  Full report: ${chalk.white.bold(htmlPath)}`));
+    note(chalk.gray(`  Dashboard:   `) + chalk.cyan(''));
 
     // PDF export
     if (options.pdf) {
       const pdfPath = typeof options.pdf === 'string' ? options.pdf : 'praxis-report.pdf';
       const result = generatePDF(path.resolve(htmlPath), path.resolve(pdfPath));
       if (result) {
-        console.log(chalk.cyan(`  PDF report:  ${chalk.white.bold(pdfPath)}`));
+        note(chalk.cyan(`  PDF report:  ${chalk.white.bold(pdfPath)}`));
       } else {
         // Fallback: print-optimized HTML
         const fallbackPath = pdfPath.replace(/\.pdf$/, '.print.html');
         generatePrintHTML(path.resolve(htmlPath), path.resolve(fallbackPath));
-        console.log(chalk.yellow(`  Chrome not found — saved print-optimized HTML: ${fallbackPath}`));
-        console.log(chalk.gray('  Open in a browser and Print → Save as PDF'));
+        note(chalk.yellow(`  Chrome not found — saved print-optimized HTML: ${fallbackPath}`));
+        note(chalk.gray('  Open in a browser and Print → Save as PDF'));
       }
     }
   }

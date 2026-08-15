@@ -420,7 +420,7 @@ report
   .description('Generate Software Bill of Materials (CycloneDX SBOM)')
   .option('-o, --output <file>', 'Output file path', 'sbom.json')
   .action((targetPath = '.', options) => {
-    const absolutePath = join(process.cwd(), targetPath);
+    const absolutePath = resolve(targetPath);
     const sbom = new SBOMGenerator();
     sbom.generateToFile(absolutePath, options.output);
     console.log(chalk.green(`✔ SBOM saved to ${options.output}`));

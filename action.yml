@@ -96,8 +96,8 @@ runs:
         EXIT_CODE=$?
         set -e
 
-        # Extract JSON from output (last line with JSON)
-        JSON_LINE=$(echo "$RESULT" | grep -E '^\{' | tail -1)
+        # Extract JSON from output (pretty-printed object: from first '{' to end)
+        JSON_LINE=$(echo "$RESULT" | sed -n '/^[[:space:]]*{/,$p')
 
         if [ -z "$JSON_LINE" ]; then
           echo "::error::Praxis scan failed to produce output"

@@ -123,7 +123,7 @@ export class SBOMGenerator {
         tools: [{
           vendor: 'praxis',
           name: 'praxis',
-          version: '5.0.0',
+          version: '1.0.0',
         }],
         component: projectMeta,
         // EU CRA: supplier identification
