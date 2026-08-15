@@ -449,8 +449,9 @@ export async function auditCommand(targetPath = '.', options = {}) {
     printReport(scoreResult, filteredFindings, depVulns, recon, remediationPlan, absolutePath, filesScanned);
   }
 
-  // ── HTML Report (always generate unless machine output) ───────────────────
-  if (!options.json && !options.sarif && !options.csv && !options.md) {
+  // ── HTML Report — always on for human output, or when --html is explicit ──
+  const explicitHtml = typeof options.html === 'string' || options.html === true;
+  if (explicitHtml || (!options.json && !options.sarif && !options.csv && !options.md)) {
     const htmlPath = typeof options.html === 'string' ? options.html : 'praxis-report.html';
     const reporter = new HTMLReporter();
     reporter.generateFullReport(scoreResult, filteredFindings, depVulns, recon, remediationPlan, absolutePath, htmlPath);

@@ -787,6 +787,7 @@ export const SKIP_DIRS = new Set([
   '.docusaurus',
   '.storybook',
   '.praxis',
+  '.praxis-backup',
 ]);
 
 export const SKIP_EXTENSIONS = new Set([

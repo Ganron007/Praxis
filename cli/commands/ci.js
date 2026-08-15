@@ -130,6 +130,7 @@ export async function ciCommand(targetPath = '.', options = {}) {
   // ── Score ────────────────────────────────────────────────────────────────
   const scoringEngine = new ScoringEngine();
   const scoreResult = scoringEngine.compute(allFindings, depVulns);
+  scoreResult.score = Math.round(scoreResult.score * 10) / 10;
   scoringEngine.saveToHistory(absolutePath, scoreResult);
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(1);
