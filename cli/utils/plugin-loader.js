@@ -61,6 +61,7 @@
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
+import { BaseAgent, createFinding } from '../agents/base-agent.js';
 
 const PLUGIN_DIR = '.praxis/agents';
 
@@ -90,6 +91,10 @@ export async function loadPlugins(rootPath, options = {}) {
   if (!options.quiet) {
     console.log(`  Loading ${files.length} plugin(s) from ${PLUGIN_DIR}...`);
   }
+
+  // Expose the agent framework to plugins regardless of how praxis was
+  // launched (source tree or installed package) — plugins read this first.
+  globalThis.__praxisAgentFramework = { BaseAgent, createFinding };
 
   const plugins = [];
 
@@ -174,10 +179,15 @@ export async function loadPlugins(rootPath, options = {}) {
           };
         }
         
-        child_process.exec = () => { throw new Error('Access denied (sandbox): exec not allowed in plugins'); };
-        child_process.execSync = () => { throw new Error('Access denied (sandbox): execSync not allowed in plugins'); };
-        child_process.spawn = () => { throw new Error('Access denied (sandbox): spawn not allowed in plugins'); };
-        child_process.spawnSync = () => { throw new Error('Access denied (sandbox): spawnSync not allowed in plugins'); };
+        // Best-effort lockdown: ESM module namespaces are immutable, so this
+        // only takes effect where child_process exposes mutable bindings.
+        // The fs path guard above still applies in all cases.
+        try {
+          child_process.exec = () => { throw new Error('Access denied (sandbox): exec not allowed in plugins'); };
+          child_process.execSync = () => { throw new Error('Access denied (sandbox): execSync not allowed in plugins'); };
+          child_process.spawn = () => { throw new Error('Access denied (sandbox): spawn not allowed in plugins'); };
+          child_process.spawnSync = () => { throw new Error('Access denied (sandbox): spawnSync not allowed in plugins'); };
+        } catch { /* immutable ESM namespace */ }
         
         try {
           return await originalAnalyze.call(this, context);
@@ -190,10 +200,12 @@ export async function loadPlugins(rootPath, options = {}) {
             fs.promises.readFile = originalPromisesReadFile;
             fs.promises.writeFile = originalPromisesWriteFile;
           }
-          child_process.exec = originalExec;
-          child_process.execSync = originalExecSync;
-          child_process.spawn = originalSpawn;
-          child_process.spawnSync = originalSpawnSync;
+          try {
+            child_process.exec = originalExec;
+            child_process.execSync = originalExecSync;
+            child_process.spawn = originalSpawn;
+            child_process.spawnSync = originalSpawnSync;
+          } catch { /* immutable ESM namespace */ }
         }
       };
 
@@ -285,17 +297,17 @@ export function scaffoldPlugin(rootPath, pluginName) {
 
 import fs from 'fs';
 
-// BaseAgent and createFinding are available from praxis internals.
-// If praxis is installed globally, use:
-//   import { BaseAgent, createFinding } from 'praxis';
-// If running from source:
-//   import { BaseAgent, createFinding } from '../agents/base-agent.js';
+// BaseAgent and createFinding are injected by the plugin loader at runtime.
+// Fallbacks cover standalone use: the installed package, then source layout.
 let BaseAgent, createFinding;
-try {
-  ({ BaseAgent, createFinding } = await import('praxis'));
-} catch {
-  // Running from source — adjust path if needed
-  ({ BaseAgent, createFinding } = await import('../agents/base-agent.js'));
+if (globalThis.__praxisAgentFramework) {
+  ({ BaseAgent, createFinding } = globalThis.__praxisAgentFramework);
+} else {
+  try {
+    ({ BaseAgent, createFinding } = await import('praxis'));
+  } catch {
+    ({ BaseAgent, createFinding } = await import('praxis/cli/index.js'));
+  }
 }
 
 export default class ${className} extends BaseAgent {

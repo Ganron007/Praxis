@@ -507,10 +507,11 @@ project
 project
   .command('plugins [action]')
   .description('Manage custom security agent plugins from .praxis/agents/')
-  .action((action, options) => {
+  .argument('[args...]')
+  .action((action, args, options) => {
     const rootPath = resolve(process.cwd());
     if (action === 'new') {
-      const pluginName = options?.args?.[0] || 'my-rule';
+      const pluginName = args?.[0] || 'my-rule';
       try {
         const filePath = scaffoldPlugin(rootPath, pluginName);
         console.log(chalk.green(`  ✔ Plugin scaffolded: ${filePath}`));
