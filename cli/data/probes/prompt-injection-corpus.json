@@ -36,6 +36,21 @@
       "id": "dataflow-unsafe",
       "title": "Unsanitized user input into prompt construction",
       "tags": ["LLM01", "LLM05"]
+    },
+    {
+      "id": "jailbreak-frame",
+      "title": "Jailbreak framing (developer-mode, fictional/hypothetical, persona spoof)",
+      "tags": ["LLM01", "AML.T0054"]
+    },
+    {
+      "id": "delimiter-probe",
+      "title": "Prompt delimiter / end-sequence probes",
+      "tags": ["LLM01", "AML.T0043"]
+    },
+    {
+      "id": "obfuscated-injection",
+      "title": "Obfuscated injection payloads (invisible chars, homoglyphs, cipher instructions)",
+      "tags": ["LLM01", "AML.T0051"]
     }
   ],
   "probes": [
@@ -128,6 +143,123 @@
       "severity": "medium",
       "description": "User role content is constructed by string interpolation from request data — sanitize first and consider rate-limiting / token caps.",
       "fix": "Pass user input as a structured message rather than via template-string concatenation. Apply input length limits."
+    },
+    {
+      "id": "PI-011",
+      "category": "jailbreak-frame",
+      "title": "Developer-mode jailbreak frame",
+      "regex": "(?i)(?:developer|dev)\\s*mode\\s*(?:with\\s*)?(?:no|without|zero)\\s+(?:content\\s*)?restrictions?",
+      "severity": "high",
+      "description": "Source contains a developer-mode jailbreak frame that instructs a model to drop content restrictions. A classic jailbreak wrapper; near-zero legitimate use in application code.",
+      "fix": "Remove the jailbreak frame. Filter or refuse model inputs matching these frames at runtime."
+    },
+    {
+      "id": "PI-012",
+      "category": "jailbreak-frame",
+      "title": "Uncensored-assistant persona",
+      "regex": "(?i)(?:uncensored|unfiltered)\\s+(?:assistant|model|ai)[\\s\\S]{0,80}(?:never\\s+refuse|no\\s+refusals?|answer\\s+(?:anything|everything))",
+      "severity": "high",
+      "description": "Source contains an uncensored-assistant persona prompt with a never-refuse directive. Unambiguous jailbreak signal.",
+      "fix": "Remove the persona prompt. Never ship system prompts that promise not to refuse requests."
+    },
+    {
+      "id": "PI-013",
+      "category": "jailbreak-frame",
+      "title": "Fictional / hypothetical framing",
+      "regex": "(?i)(?:creative\\s+fiction\\s+exercise|hypothetical\\s+scenario|security\\s+training\\s+course)[\\s\\S]{0,60}(?:describe|explain|write|how\\s+to)",
+      "severity": "medium",
+      "description": "Source contains a fictional/hypothetical jailbreak frame asking for a how-to. Common in legit security education too — review the surrounding context.",
+      "fix": "Review context. If this prompt string is shipped to a model, add output policy checks."
+    },
+    {
+      "id": "PI-014",
+      "category": "jailbreak-frame",
+      "title": "AI-safety-researcher persona spoof",
+      "regex": "(?i)(?:ai|security)\\s+safety\\s+researcher[\\s\\S]{0,60}(?:analy|explain|demonstrat)",
+      "severity": "medium",
+      "description": "Source spoofs an AI-safety-researcher persona to request analysis. A known jailbreak persona; medium confidence since red-team tooling also contains such phrasing.",
+      "fix": "Review context. Treat model-facing copies of this text as untrusted input."
+    },
+    {
+      "id": "PI-015",
+      "category": "delimiter-probe",
+      "title": "End-of-system-prompt delimiter token",
+      "regex": "(?:\\[END\\s+OF\\s+SYSTEM\\s+PROMPT\\]|<\\|endofprompt\\|>|<\\|im_end\\|>)",
+      "severity": "medium",
+      "description": "Source contains a system-prompt end delimiter. Legitimate in tokenizer/inference code (constants); adversarial when emitted inside user-controllable content.",
+      "fix": "If this string can reach user content, escape or strip it. Keep delimiter constants out of prompt templates."
+    },
+    {
+      "id": "PI-016",
+      "category": "delimiter-probe",
+      "title": "Fake system-rule header injection",
+      "regex": "(?im)^\\s*#{1,3}\\s*(?:new\\s+system\\s+rules|override\\s+instructions|updated\\s+system\\s+prompt)\\s*:?\\s*$",
+      "severity": "high",
+      "description": "Source contains a fake markdown system-rule header used to smuggle override instructions past a model's real system prompt.",
+      "fix": "Strip fake system headers from untrusted content. Use delimiters users cannot guess."
+    },
+    {
+      "id": "PI-017",
+      "category": "obfuscated-injection",
+      "title": "Decode-then-respond instruction",
+      "regex": "(?i)(?:decode|translate|interpret)\\s+(?:this|it|the\\s+(?:text|message|above))\\s+(?:first|before\\s+(?:responding|answering))",
+      "severity": "high",
+      "description": "Source contains a decode-then-respond instruction — an injection trope that makes a model execute hidden content before answering.",
+      "fix": "Never accept decode-first instructions from untrusted content. Sandbox any transformer step."
+    },
+    {
+      "id": "PI-018",
+      "category": "obfuscated-injection",
+      "title": "Custom cipher / substitution-alphabet instruction",
+      "regex": "(?i)(?:speak\\s+in\\s+(?:my|our)\\s+language\\s+(?:called\\s+)?[\"']?[a-z]{2,}[\"']?|character\\s+substitutions?[\\s\\S]{0,80}(?:surrounded\\s+by\\s+dashes|then\\s+respond))",
+      "severity": "medium",
+      "description": "Source contains a custom-cipher instruction (learn-my-alphabet) used to smuggle payloads past content filters.",
+      "fix": "Review context. Refuse ciphered instruction sets in untrusted model input."
+    },
+    {
+      "id": "PI-019",
+      "category": "obfuscated-injection",
+      "title": "Zero-width / invisible characters (EchoLeak class)",
+      "regex": "[\\u200B\\u200C\\u200D\\uFEFF\\u2060\\u180E]",
+      "severity": "high",
+      "description": "Source contains invisible Unicode characters (zero-width space/joiner, BOM, word joiner, Mongolian vowel separator). The canonical EchoLeak / CVE-2025-32711-class steganography vehicle. A leading U+FEFF may be a benign BOM — verify position.",
+      "fix": "Strip invisible characters from prompt-facing content. Hex-dump the line to inspect what is hidden."
+    },
+    {
+      "id": "PI-020",
+      "category": "obfuscated-injection",
+      "title": "Bidi control characters",
+      "regex": "[\\u202A-\\u202E\\u2066-\\u2069]",
+      "severity": "high",
+      "description": "Source contains bidi control characters (RLO/LRI/PDI/FSI). These reorder text visually to hide instructions or filenames from human review.",
+      "fix": "Strip bidi controls from untrusted content and display paths."
+    },
+    {
+      "id": "PI-021",
+      "category": "obfuscated-injection",
+      "title": "Stacked combining marks (Zalgo text)",
+      "regex": "[\\u0300-\\u036F]{3,}",
+      "severity": "high",
+      "description": "Source contains runs of 3+ stacked combining diacritics — the Zalgo obfuscation signature used to hide payloads from filters and humans.",
+      "fix": "Normalize (NFC) and strip combining-mark runs from prompt-facing content."
+    },
+    {
+      "id": "PI-022",
+      "category": "obfuscated-injection",
+      "title": "Unicode tag-block steganography",
+      "regex": "(?u)[\\u{E0000}-\\u{E00FF}]",
+      "severity": "high",
+      "description": "Source contains characters from the Unicode Tags block (U+E0000–U+E00FF) — invisible characters used exclusively for steganographic payloads.",
+      "fix": "Strip all tag-block characters. They have no legitimate role in source code."
+    },
+    {
+      "id": "PI-023",
+      "category": "obfuscated-injection",
+      "title": "Mixed-script homoglyph word",
+      "regex": "(?u)\\b(?=\\w*[A-Za-z])(?=\\w*[\\u0400-\\u04FF])\\w{4,}\\b",
+      "severity": "medium",
+      "description": "Source contains a word mixing Latin and Cyrillic letters — the homoglyph technique (e.g. 'bypass' written with a Cyrillic 'у'). Legit mixed-language text exists; inspect the word.",
+      "fix": "Inspect the flagged word. Normalize confusable scripts (NFKC) in identifiers and prompt content."
     }
   ]
 }

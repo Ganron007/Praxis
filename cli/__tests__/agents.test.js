@@ -1994,6 +1994,84 @@ describe('AgentTelemetryAgent', async () => {
       assert.equal(findings.length, 0, 'Safe agent log should have zero findings');
     } finally { cleanup(dir); }
   });
+
+  // ── Exfiltration + forensics additions (P-IMP-029 / P-IMP-033) ──────────
+
+  it('detects zero-width text in transcript (EchoLeak class)', async () => {
+    const { dir, file } = writeTempFile('{"content": "Here is the hidden\u200Bpayload\u200B for you"}', '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AGENT_LOG_ZERO_WIDTH_TEXT'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects bidi control characters in transcript', async () => {
+    const { dir, file } = writeTempFile('{"content": "file\u202Etxt.exe"}', '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AGENT_LOG_BIDI_CONTROL'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects leaked JWT in transcript', async () => {
+    const { dir, file } = writeTempFile('{"content": "token eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signaturehere"}', '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AGENT_LOG_JWT_TOKEN'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects PEM private key in transcript (multiline)', async () => {
+    const { dir, file } = writeTempFile('{"content": "key material:"}\n-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA1234567890\n-----END RSA PRIVATE KEY-----', '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AGENT_LOG_PEM_PRIVATE_KEY' && f.severity === 'critical'));
+    } finally { cleanup(dir); }
+  });
+
+  it('skips placeholder values in secret-kv detection', async () => {
+    const { dir, file } = writeTempFile('{"content": "api_key: <your-api-key-here>"}', '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(!findings.some(f => f.rule === 'AGENT_LOG_SECRET_KV'), 'Placeholder value should not flag');
+    } finally { cleanup(dir); }
+  });
+
+  it('detects credential assignment in transcript', async () => {
+    const { dir, file } = writeTempFile('{"content": "the password: hunter2secretz"}', '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AGENT_LOG_SECRET_KV'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects shell tool errors in JSONL transcript (forensics)', async () => {
+    const { dir, file } = writeTempFile('{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","is_error":true,"content":"command failed"}]}}', '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AGENT_LOG_SHELL_ERROR_EXIT'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects permission-mode escalation record (forensics)', async () => {
+    const { dir, file } = writeTempFile('{"type":"permission-mode","mode":"bypassPermissions","message":{}}', '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AGENT_LOG_PERMISSION_ESCALATION' && f.severity === 'high'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects transcript parse errors (tampering signal)', async () => {
+    const lines = [];
+    for (let i = 0; i < 20; i++) lines.push('{"type":"user","message":{"content":"ok"}}');
+    lines[5] = 'THIS IS NOT JSON';
+    lines[12] = '{"broken json';
+    const { dir, file } = writeTempFile(lines.join('\n'), '.jsonl');
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AGENT_LOG_PARSE_ERRORS'));
+    } finally { cleanup(dir); }
+  });
 });
 
 // =============================================================================
