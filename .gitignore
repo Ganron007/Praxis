@@ -24,6 +24,9 @@ showcase-evidence/
 # Local lab journal
 SHOWCASE-LAB-LOG.md
 
+# Internal planning/assessment docs (not for public release)
+docs/internal/
+
 # npm pack artifacts
 *.tgz
 
