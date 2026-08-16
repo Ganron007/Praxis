@@ -114,6 +114,7 @@ const EXFIL_PATTERNS = [
   {
     rule: 'AGENT_LOG_ZERO_WIDTH_TEXT',
     title: 'Invisible Text in Agent Transcript (EchoLeak class)',
+    // eslint-disable-next-line no-misleading-character-class -- deliberate invisible-char detection
     regex: /[\u200B\u200C\u200D\uFEFF\u2060\u180E]/g,
     severity: 'high',
     cwe: 'CWE-506',
