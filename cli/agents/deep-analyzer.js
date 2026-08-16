@@ -558,7 +558,7 @@ export class DeepAnalyzer {
     const response = await this.provider.complete(
       SINGLE_TIER_SYSTEM,
       prompt,
-      { maxTokens: 1500, ...(model ? { model } : {}) }
+      { maxTokens: 4000, ...(model ? { model } : {}) }
     );
 
     this._trackCost(prompt.length, response.length);
@@ -669,18 +669,59 @@ export class DeepAnalyzer {
       .replace(/\s*```\s*$/i, '')
       .trim();
 
+    let parsed = null;
     try {
-      const parsed = JSON.parse(cleaned);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.filter(item =>
-        item.findingId &&
-        typeof item.tainted === 'boolean' &&
-        typeof item.sanitized === 'boolean' &&
-        ['confirmed', 'likely', 'unlikely', 'false_positive'].includes(item.exploitability)
-      );
+      parsed = JSON.parse(cleaned);
     } catch {
-      return [];
+      parsed = null;
     }
+
+    // Reasoning models often emit prose before/after the JSON despite
+    // instructions — fall back to extracting the first valid JSON array.
+    if (!Array.isArray(parsed)) {
+      parsed = this._extractJsonArray(text);
+    }
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter(item =>
+      item.findingId &&
+      typeof item.tainted === 'boolean' &&
+      typeof item.sanitized === 'boolean' &&
+      ['confirmed', 'likely', 'unlikely', 'false_positive'].includes(item.exploitability)
+    );
+  }
+
+  /**
+   * Scan free text for the first balanced, parseable JSON array.
+   * Handles models that wrap JSON in prose or markdown.
+   */
+  _extractJsonArray(text) {
+    for (let start = 0; start < text.length; start++) {
+      if (text[start] !== '[') continue;
+      let depth = 0, inStr = false, esc = false;
+      for (let i = start; i < text.length; i++) {
+        const ch = text[i];
+        if (inStr) {
+          if (esc) esc = false;
+          else if (ch === '\\') esc = true;
+          else if (ch === '"') inStr = false;
+          continue;
+        }
+        if (ch === '"') inStr = true;
+        else if (ch === '[') depth++;
+        else if (ch === ']') {
+          depth--;
+          if (depth === 0) {
+            try {
+              const candidate = JSON.parse(text.slice(start, i + 1));
+              if (Array.isArray(candidate) && candidate.length > 0) return candidate;
+            } catch { /* not valid JSON — keep scanning */ }
+            break;
+          }
+        }
+      }
+    }
+    return null;
   }
 
   _estimateCost(count) {
