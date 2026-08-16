@@ -236,11 +236,33 @@ small{color:#64748b}
     }).join('\n');
 
     // Finding rows with collapsible detail
+    const fileCache = new Map();
+    const codeContextFor = (f) => {
+      if (f.codeContext && f.codeContext.length > 0) return f.codeContext;
+      if (!f.file || !f.line) return [];
+      let abs = f.file;
+      if (!path.isAbsolute(abs)) abs = path.join(rootPath, f.file);
+      let content = fileCache.get(abs);
+      if (content === undefined) {
+        try { content = fs.readFileSync(abs, 'utf-8'); } catch { content = null; }
+        fileCache.set(abs, content);
+      }
+      if (!content) return [];
+      const lines = content.split('\n');
+      const start = Math.max(0, f.line - 4);
+      const end = Math.min(lines.length, f.line + 2);
+      return lines.slice(start, end).map((text, idx) => ({
+        line: start + idx + 1,
+        text,
+        highlight: start + idx + 1 === f.line,
+      }));
+    };
     const findingRows = findings.slice(0, 500).map((f, i) => {
       const relFile = path.relative(rootPath, f.file).replace(/\\/g, '/');
+      const ctx = codeContextFor(f);
       let codeBlock = '';
-      if (f.codeContext && f.codeContext.length > 0) {
-        const codeLines = f.codeContext.map(c =>
+      if (ctx.length > 0) {
+        const codeLines = ctx.map(c =>
           `<span style="${c.highlight ? 'background:#dc262633;display:block;' : ''}">${String(c.line).padStart(4)} ${this.esc(c.text)}</span>`
         ).join('');
         codeBlock = `<pre class="code-block"><code>${codeLines}</code></pre>`;
@@ -311,6 +333,81 @@ small{color:#64748b}
         <td><small>${this.esc((item.action || '').slice(0, 120))}</small></td>
       </tr>\n`;
     }
+
+    // ── AI attack-surface lanes (P-IMP-021) ────────────────────────────────
+    const AI_LANES = [
+      { id: 'mcp', label: 'MCP Servers & Tools', match: f => /^MCP_|MCP:/i.test(f.rule || '') || /MCP/i.test(f.title || '') },
+      { id: 'agent-config', label: 'Agent Configs & Instructions', match: f => /AGENT_CFG|AGENT_CONFIG|MEMORY_POISON|HOOK/i.test(f.rule || '') },
+      { id: 'prompt-injection', label: 'Prompt Injection & Jailbreaks', match: f => /PROMPT|JAILBREAK|PROBE|DAN/i.test(f.rule || '') },
+      { id: 'model', label: 'Model Artifacts', match: f => /MODEL_FILE|PICKLE|SAFETENSOR/i.test(f.rule || '') },
+      { id: 'rag', label: 'RAG & Vector Stores', match: f => /RAG|VECTOR|EMBEDDING/i.test(f.rule || '') },
+      { id: 'agent-supply', label: 'Agent Supply Chain & Attestation', match: f => /ATTESTATION|AGENTIC_SUPPLY/i.test(f.rule || '') },
+      { id: 'eaa', label: 'Local Agent Abuse (EAA)', match: f => Boolean(f.eaa) },
+      { id: 'llm', label: 'Other AI / LLM Security', match: f => f.category === 'llm' || f.category === 'agentic' },
+    ];
+    const laneSections = AI_LANES.map(lane => {
+      const hits = findings.filter(lane.match);
+      if (hits.length === 0) return '';
+      const sevCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+      for (const h of hits) sevCounts[h.severity] = (sevCounts[h.severity] || 0) + 1;
+      const sevLine = ['critical', 'high', 'medium', 'low']
+        .filter(s => sevCounts[s] > 0)
+        .map(s => `<span style="color:${sevColors[s]}">${sevCounts[s]} ${s}</span>`)
+        .join(' · ');
+      const top = hits.slice(0, 3).map(h => `<li>${this.esc(h.title || h.rule)}</li>`).join('');
+      return `<div class="lane-card">
+        <div class="lane-head"><strong>${lane.label}</strong><span class="lane-count">${hits.length} finding(s)</span></div>
+        <div class="lane-sev">${sevLine}</div>
+        ${top ? `<ul class="lane-top">${top}</ul>` : ''}
+      </div>`;
+    }).join('');
+    const aiLaneHTML = laneSections
+      ? `<div class="lane-grid">${laneSections}</div>`
+      : '<p style="color:#22c55e;font-weight:bold">No AI attack-surface findings.</p>';
+
+    // ── Standards coverage gap map (P-IMP-024) ─────────────────────────────
+    const standardsGapHTML = (scoreResult.standardsSummary
+      ? Object.entries(scoreResult.standardsSummary)
+        .map(([stdName, std]) => {
+          const flagged = (std.controls || []).filter(c => c.status === 'flagged');
+          const clear = (std.controls || []).filter(c => c.status !== 'flagged');
+          const flaggedLine = flagged.length > 0
+            ? `<span style="color:#ef4444">Flagged (${flagged.length}): ${flagged.map(c => this.esc(c.id)).join(', ')}</span>`
+            : '<span style="color:#22c55e">All controls clear</span>';
+          const clearLine = clear.length > 0
+            ? `<br><span style="color:#64748b">Not covered (${clear.length}): ${clear.map(c => this.esc(c.id)).join(', ')}</span>`
+            : '';
+          return `<div class="std-gap-row"><strong>${this.esc(std.title || stdName)}</strong> — ${std.coverage} controls flagged<div style="font-size:0.75rem">${flaggedLine}${clearLine}</div></div>`;
+        }).join('')
+      : '<p style="color:#94a3b8">Standards summary unavailable.</p>');
+
+    // ── Security trend (P-IMP-025) ─────────────────────────────────────────
+    let history = [];
+    try {
+      const historyFile = path.join(rootPath, '.praxis', 'history.json');
+      if (fs.existsSync(historyFile)) {
+        history = JSON.parse(fs.readFileSync(historyFile, 'utf-8'));
+      }
+    } catch { history = []; }
+    const recent = Array.isArray(history) ? history.slice(-8) : [];
+    const trendHTML = recent.length > 0
+      ? `<table>
+        <thead><tr><th>When</th><th>Score</th><th>Grade</th><th>Findings</th><th>Trend</th></tr></thead>
+        <tbody>${recent.map((e, idx) => {
+          const prev = idx > 0 ? recent[idx - 1].score : e.score;
+          const delta = Math.round((e.score - prev) * 10) / 10;
+          const arrow = delta > 0 ? '<span style="color:#22c55e">▲ improving</span>' : delta < 0 ? '<span style="color:#ef4444">▼ declining</span>' : '<span style="color:#64748b">— flat</span>';
+          const barW = Math.max(4, Math.round(e.score));
+          return `<tr>
+            <td>${new Date(e.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+            <td><div class="trend-bar" style="width:${barW}%;background:${gradeColors[e.grade] || '#64748b'}"></div> ${e.score}</td>
+            <td>${this.esc(e.grade || '?')}</td>
+            <td>${e.totalFindings ?? '—'}</td>
+            <td>${idx === 0 ? '<span style="color:#64748b">baseline</span>' : arrow}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`
+      : '<p style="color:#94a3b8">No scan history yet — run more scans to see the trend.</p>';
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -394,6 +491,18 @@ small{color:#94a3b8}
 .footer{text-align:center;color:#475569;margin-top:3rem;padding:2rem;border-top:1px solid #1e293b}
 .footer a{color:#38bdf8}
 .scope-note{margin:0 auto;max-width:760px;font-size:0.72rem;color:#64748b;line-height:1.5;text-align:left}
+/* AI lanes, standards gap, trend */
+.lane-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.lane-card{background:#1e293b;border-radius:8px;padding:1rem;border-left:3px solid #38bdf8}
+.lane-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem}
+.lane-count{background:#334155;border-radius:999px;padding:2px 10px;font-size:0.7rem;color:#94a3b8}
+.lane-sev{font-size:0.75rem;margin-bottom:0.4rem}
+.lane-top{margin:0;padding-left:1.1rem;font-size:0.78rem;color:#94a3b8}
+.lane-top li{margin-bottom:0.25rem}
+.std-gap{background:#1e293b;border-radius:8px;padding:1rem}
+.std-gap-row{padding:0.55rem 0;border-bottom:1px solid #0f172a;font-size:0.85rem}
+.std-gap-row:last-child{border-bottom:none}
+.trend-bar{display:inline-block;height:10px;border-radius:3px;margin-right:0.5rem;vertical-align:middle}
 .share-bar{display:flex;justify-content:center;gap:0.75rem;margin:1.5rem 0}
 .share-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:6px;font-size:0.85rem;font-weight:600;text-decoration:none;cursor:pointer;border:none;transition:opacity .15s}
 .share-btn:hover{opacity:0.85}
@@ -431,6 +540,8 @@ small{color:#94a3b8}
     <a href="#deps">6. Dependency Vulnerabilities (${(depVulns || []).length})</a>
     <a href="#standards">7. AI Security Standards Alignment</a>
     <a href="#surface">8. Attack Surface</a>
+    <a href="#ai-lanes">9. AI Attack-Surface Lanes</a>
+    <a href="#trend">10. Security Trend</a>
   </div>
 
   <h2 id="score">1. Security Score</h2>
@@ -500,6 +611,9 @@ small{color:#94a3b8}
   <h2 id="standards">7. AI Security Standards Alignment</h2>
   <p style="color:#94a3b8;margin-bottom:1rem">Each finding is auto-tagged with all applicable AI-security standards.</p>
   ${renderStandardsAlignment(findings, (s) => this.esc(s))}
+  <h3 style="margin:1.5rem 0 0.75rem">Standards coverage map</h3>
+  <p style="color:#94a3b8;font-size:0.8rem;margin-bottom:1rem">Controls for which this scan produced evidence (flagged) vs controls with no evidence (not covered). Evidence-based mapping — not a compliance certification.</p>
+  <div class="std-gap">${standardsGapHTML}</div>
 
   ${recon ? `<h2 id="surface">8. Attack Surface</h2>
   <table>
@@ -513,6 +627,14 @@ small{color:#94a3b8}
       <tr><td>API Routes</td><td>${(recon.apiRoutes || []).length} discovered</td></tr>
     </tbody>
   </table>` : ''}
+
+  <h2 id="ai-lanes">9. AI Attack-Surface Lanes</h2>
+  <p style="color:#94a3b8;margin-bottom:1rem">Findings grouped by AI-security lane — Praxis's first-class focus.</p>
+  ${aiLaneHTML}
+
+  <h2 id="trend">10. Security Trend</h2>
+  <p style="color:#94a3b8;margin-bottom:1rem">Score history from repeated scans in this project.</p>
+  ${trendHTML}
 
   <div class="share-bar">
     <button class="share-btn share-btn-copy" onclick="copyShareText(this)">Copy Score Summary</button>
