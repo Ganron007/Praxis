@@ -198,94 +198,159 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
       console.log(`      ${severityLabel(f.severity)} ${f.title}${f.line ? chalk.gray(` (line ${f.line})`) : ''}`);
     }
 
-    // Generate plan
-    const planSpinner = ora({ text: 'Generating fix plan...', color: 'cyan', indent: 6 }).start();
-    const planResult = await generateBatchPlan(provider, root, filePath, fileFindings);
-    planSpinner.stop();
+    // ── Plan → apply → verify ladder, with one evidence-fed retry ──────────
+    const maxAttempts = options.maxAttempts || 2;
+    let retryEvidence = '';
+    let decision = null;
+    let finalPlan = null;
+    let finalVerified = null;
+    let snapshots = []; // pre-fix file state, captured once on first attempt
+    let ladderFailed = false; // verification failed with nothing resolved
 
-    if (!planResult.ok) {
-      const detail = describePlanFailure(planResult);
-      console.log(chalk.yellow(`      ${detail.message}`));
-      logFailure(root, { timestamp: new Date().toISOString(), file: filePath, findings: fileFindings.map(f => ({ title: f.title, line: f.line, rule: f.rule })), ...planResult });
-      skipped.push({ file: filePath, findings: fileFindings, reason: detail.reason });
-      continue;
-    }
-    const plan = planResult.plan;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (retryEvidence) {
+        console.log(chalk.yellow(`      Verification failed — retrying plan with failure evidence (attempt ${attempt}/${maxAttempts})`));
+      }
 
-    // Validate (allows new safe files like .env.example)
-    const validation = validatePlan(root, plan);
-    if (!validation.ok) {
-      console.log(chalk.yellow(`      Plan invalid: ${validation.reason}`));
-      logFailure(root, { timestamp: new Date().toISOString(), file: filePath, findings: fileFindings.map(f => ({ title: f.title, line: f.line, rule: f.rule })), reason: 'validation-rejected', detail: validation.reason, plan });
-      skipped.push({ file: filePath, findings: fileFindings, reason: `plan-invalid: ${validation.reason}` });
-      continue;
-    }
+      // Generate plan
+      const planSpinner = ora({ text: retryEvidence ? 'Regenerating fix plan...' : 'Generating fix plan...', color: 'cyan', indent: 6 }).start();
+      const planResult = await generateBatchPlan(provider, root, filePath, fileFindings, retryEvidence);
+      planSpinner.stop();
 
-    // Show plan
-    printPlan(plan, root);
+      if (!planResult.ok) {
+        const detail = describePlanFailure(planResult);
+        console.log(chalk.yellow(`      ${detail.message}`));
+        logFailure(root, { timestamp: new Date().toISOString(), file: filePath, findings: fileFindings.map(f => ({ title: f.title, line: f.line, rule: f.rule })), ...planResult });
+        skipped.push({ file: filePath, findings: fileFindings, reason: detail.reason });
+        finalPlan = null;
+        break;
+      }
+      const plan = planResult.plan;
 
-    if (options.planOnly) {
-      console.log(chalk.gray('      (plan-only mode — not applying)'));
-      continue;
-    }
+      // Validate (allows new safe files like .env.example)
+      const validation = validatePlan(root, plan);
+      if (!validation.ok) {
+        console.log(chalk.yellow(`      Plan invalid: ${validation.reason}`));
+        logFailure(root, { timestamp: new Date().toISOString(), file: filePath, findings: fileFindings.map(f => ({ title: f.title, line: f.line, rule: f.rule })), reason: 'validation-rejected', detail: validation.reason, plan });
+        skipped.push({ file: filePath, findings: fileFindings, reason: `plan-invalid: ${validation.reason}` });
+        finalPlan = null;
+        break;
+      }
 
-    // Decision logic:
-    //   --yolo       → auto-accept everything
-    //   --auto-low   → auto-accept low-risk plans, prompt on medium/high
-    //   default      → prompt every time
-    let decision;
-    const risk = (plan.risk || 'medium').toLowerCase();
-    if (options.yolo || options.ci) {
-      decision = 'a';
-      console.log(chalk.gray(`      (${options.ci ? 'ci' : 'yolo'}: auto-accepting)`));
-    } else if (options.autoLow && risk === 'low') {
-      decision = 'a';
-      console.log(chalk.gray('      (auto-low: low-risk, auto-accepting)'));
-    } else {
-      // Interactive: prompt with [e]dit option
-      decision = await promptDecision(plan, root);
-    }
+      // Show plan
+      printPlan(plan, root);
 
-    if (decision === 'q' || decision === 'quit') {
-      console.log(chalk.gray('      Stopping.'));
-      stopped = true;
+      if (options.planOnly) {
+        console.log(chalk.gray('      (plan-only mode — not applying)'));
+        finalPlan = null;
+        break;
+      }
+
+      // Decision (prompt once; retries reuse the first decision)
+      if (decision === null) {
+        const risk = (plan.risk || 'medium').toLowerCase();
+        if (options.yolo || options.ci) {
+          decision = 'a';
+          console.log(chalk.gray(`      (${options.ci ? 'ci' : 'yolo'}: auto-accepting)`));
+        } else if (options.autoLow && risk === 'low') {
+          decision = 'a';
+          console.log(chalk.gray('      (auto-low: low-risk, auto-accepting)'));
+        } else {
+          decision = await promptDecision(plan, root);
+        }
+      }
+
+      if (decision === 'q' || decision === 'quit') {
+        console.log(chalk.gray('      Stopping.'));
+        stopped = true;
+        finalPlan = null;
+        break;
+      }
+      if (!['a', 'accept', 'y', 'yes'].includes(decision)) {
+        skipped.push({ file: filePath, findings: fileFindings, reason: 'user-skipped' });
+        finalPlan = null;
+        break;
+      }
+
+      // Apply — snapshot file state once (first attempt) so a failed ladder
+      // can restore the repo to its pre-fix state.
+      let applyErr = null;
+      if (attempt === 1) {
+        snapshots = plan.files.map(fc => {
+          const abs = path.resolve(root, fc.path);
+          return { abs, existed: fs.existsSync(abs), content: fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : null };
+        });
+      }
+      try {
+        for (const fileChange of plan.files) {
+          applyEdit(root, fileChange);
+        }
+      } catch (err) {
+        applyErr = err.message;
+      }
+
+      if (applyErr) {
+        console.log(chalk.red(`      Apply failed: ${applyErr}`));
+        skipped.push({ file: filePath, findings: fileFindings, reason: `apply-failed: ${applyErr}` });
+        finalPlan = null;
+        break;
+      }
+
+      // Verify — tiered ladder (build → tests → re-scan)
+      const verifySpinner = ora({ text: 'Verifying (build → tests → re-scan)...', color: 'cyan', indent: 6 }).start();
+      const verified = await verifyFile(root, filePath, fileFindings, options);
+      finalPlan = plan;
+      finalVerified = verified;
+
+      if (verified.allResolved) {
+        const ranTiers = (verified.tiers || []).map(t => t.tier);
+        verifySpinner.succeed(chalk.green(`Fix verified — ${fileFindings.length} finding(s) resolved (${[...ranTiers, 're-scan'].join(' → ')})`));
+        ladderFailed = false;
+        break;
+      }
+
+      if (verified.someResolved) {
+        verifySpinner.warn(chalk.yellow(`Partial: ${verified.resolvedCount}/${fileFindings.length} resolved`));
+        ladderFailed = false;
+      } else {
+        verifySpinner.warn(chalk.yellow(`Verification failed at tier "${verified.failedTier}"`));
+        ladderFailed = true;
+      }
+
+      // Evidence-fed retry
+      if (attempt < maxAttempts && verified.evidence) {
+        retryEvidence = verified.evidence;
+        continue;
+      }
       break;
     }
-    if (!['a', 'accept', 'y', 'yes'].includes(decision)) {
-      skipped.push({ file: filePath, findings: fileFindings, reason: 'user-skipped' });
-      continue;
-    }
 
-    // Apply
-    let applyErr = null;
-    const written = [];
-    try {
-      for (const fileChange of plan.files) {
-        applyEdit(root, fileChange);
-        written.push(path.resolve(root, fileChange.path));
+    // Revert failed fixes (nothing resolved) so the repo stays consistent —
+    // even when the retry plan itself failed to generate.
+    if (ladderFailed && snapshots.length > 0) {
+      for (const s of snapshots) {
+        try {
+          if (s.existed) fs.writeFileSync(s.abs, s.content, 'utf8');
+          else if (fs.existsSync(s.abs)) fs.unlinkSync(s.abs);
+        } catch { /* best-effort restore */ }
       }
-    } catch (err) {
-      applyErr = err.message;
-    }
-
-    if (applyErr) {
-      console.log(chalk.red(`      Apply failed: ${applyErr}`));
-      skipped.push({ file: filePath, findings: fileFindings, reason: `apply-failed: ${applyErr}` });
+      console.log(chalk.yellow('      Reverted failed fix — file(s) restored to pre-fix state.'));
+      logFailure(root, {
+        timestamp: new Date().toISOString(),
+        file: filePath,
+        findings: fileFindings.map(f => ({ title: f.title, line: f.line, rule: f.rule })),
+        reason: 'verification-failed',
+        detail: finalVerified?.evidence || 'verification failed',
+        plan: finalPlan,
+      });
+      skipped.push({ file: filePath, findings: fileFindings, reason: `verification-failed: ${finalVerified?.failedTier || 'unknown'}` });
       continue;
     }
 
-    // Verify by re-scanning
-    const verifySpinner = ora({ text: 'Verifying...', color: 'cyan', indent: 6 }).start();
-    const verified = await verifyFile(root, filePath, fileFindings, options);
-    if (verified.allResolved) {
-      verifySpinner.succeed(chalk.green(`Fix verified — ${fileFindings.length} finding(s) resolved`));
-    } else if (verified.someResolved) {
-      verifySpinner.warn(chalk.yellow(`Partial: ${verified.resolvedCount}/${fileFindings.length} resolved`));
-    } else {
-      verifySpinner.warn(chalk.yellow('Fix applied, but findings still appear'));
-    }
+    if (!finalPlan || !finalVerified) continue;
 
     // Per-fix commit (if branch isolation in use)
+    const written = finalPlan.files.map(fc => path.resolve(root, fc.path));
     let commitHash = null;
     if (branchCreated) {
       try {
@@ -305,13 +370,15 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
       timestamp: new Date().toISOString(),
       file:      filePath,
       findings:  fileFindings.map(f => ({ title: f.title, line: f.line, severity: f.severity, rule: f.rule })),
-      plan,
-      verified:  verified.allResolved,
+      plan:      finalPlan,
+      verified:  finalVerified.allResolved,
+      verificationClass: finalVerified.verification,
+      verificationTiers: (finalVerified.tiers || []).map(t => ({ tier: t.tier, command: t.command, ok: t.ok })),
       branch:    branchCreated,
       commitHash,
     });
 
-    applied.push({ file: filePath, plan, verified });
+    applied.push({ file: filePath, plan: finalPlan, verified: finalVerified });
   }
 
   // ── Final report ─────────────────────────────────────────────────────────
@@ -368,7 +435,7 @@ export async function agentFixCommand(targetPath = '.', options = {}) {
 //       'file-read-failed' | 'provider-error' | 'parse-error' |
 //       'llm-declined' | 'empty-response'
 // Caller decides what to do with the failure (log, persist, skip).
-async function generateBatchPlan(provider, root, filePath, fileFindings) {
+async function generateBatchPlan(provider, root, filePath, fileFindings, retryEvidence = '') {
   const abs = path.resolve(root, filePath);
   let content;
   try {
@@ -426,9 +493,18 @@ RULES:
 - Each "find" string must appear EXACTLY ONCE in the file. Include enough context (3+ lines) for uniqueness.
 - "replace" must be the corrected code. Preserve indentation and surrounding style.
 - Address each finding listed above with at least one edit (or explain in summary why a finding can't be mechanically fixed).
+- GREP FOR SIBLING CALL SITES: search the file (and clearly-related helper files) for every other instance of the same dangerous pattern and fix all of them, not just the flagged line. A fix that leaves variant call sites behind fails verification.
+- REGRESSION TEST: if this project has a test suite, include a test in your edits that fails before your fix and passes after it.
 - Risk: "low" = mechanical, "medium" = behavior change, "high" = architectural. Use "high" sparingly.
 - If you cannot produce a precise mechanical plan, return {"summary":"requires manual review","files":[],"risk":"high"}
-- JSON only. No prose. No code fences.`;
+- JSON only. No prose. No code fences.${retryEvidence ? `
+
+PREVIOUS ATTEMPT FEEDBACK — your earlier plan was applied but automated verification failed:
+
+${retryEvidence}
+
+Produce a corrected plan against the CURRENT file content below. Diagnose the root cause of the
+verification failure (build break, failing test, or finding still present) and fix it.` : ''}`;
 
   let response;
   try {
@@ -722,8 +798,13 @@ function applyEdit(root, fileChange) {
 }
 
 // =============================================================================
-// VERIFY
+// VERIFY — tiered ladder (P-IMP-032)
 // =============================================================================
+// Executable oracles only; no tier is decided by model judgment:
+//   Tier 1  build/lint   — the project's own build (or lint) must still pass
+//   Tier 2  test suite   — the project's test command must still pass
+//   Tier 3  re-scan      — original findings must be gone from the fixed file
+// Failing tier evidence is returned so the caller can feed it into a retry.
 
 function isDockerAvailable() {
   try {
@@ -734,32 +815,116 @@ function isDockerAvailable() {
   }
 }
 
-async function verifyFile(root, filePath, originalFindings, options = {}) {
+function detectBuildCommand(root) {
   try {
-    let result;
-    if (options.sandbox) {
-      if (isDockerAvailable()) {
-        const stdout = execFileSync('docker', [
-          'run', '--rm',
-          '-v', `${root}:/workspace`,
-          '-v', `${praxisDir}:/opt/praxis:ro`,
-          '-w', '/workspace',
-          'node:18-alpine',
-          'node', '/opt/praxis/cli/bin/praxis.js', 'scan', '.', '--json'
-        ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
-        
-        const jsonStart = stdout.search(/^\s*\{/m);
-        let result = { findings: [] };
-        if (jsonStart !== -1) {
-          try { result = JSON.parse(stdout.slice(jsonStart)); } catch { /* partial output */ }
-        }
-      } else {
-        console.log(chalk.yellow('\n      Docker is not running or not installed. Falling back to local verification.'));
-        result = await auditCommand(root, { _agenticInner: true, deep: false, deps: false, noAi: true });
-      }
+    const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+    if (typeof pkg.scripts?.build === 'string') return { label: 'build', command: ['npm', 'run', 'build'] };
+    if (typeof pkg.scripts?.lint === 'string') return { label: 'lint', command: ['npm', 'run', 'lint'] };
+  } catch { /* no package.json */ }
+  if (fs.existsSync(path.join(root, 'Cargo.toml'))) return { label: 'build', command: ['cargo', 'build'] };
+  if (fs.existsSync(path.join(root, 'go.mod'))) return { label: 'build', command: ['go', 'build', './...'] };
+  if (fs.existsSync(path.join(root, 'Makefile'))) return { label: 'build', command: ['make'] };
+  return null;
+}
+
+function detectTestCommand(root) {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+    if (typeof pkg.scripts?.test === 'string') return { label: 'test', command: ['npm', 'test'] };
+  } catch { /* no package.json */ }
+  if (fs.existsSync(path.join(root, 'Cargo.toml'))) return { label: 'test', command: ['cargo', 'test'] };
+  if (fs.existsSync(path.join(root, 'go.mod'))) return { label: 'test', command: ['go', 'test', './...'] };
+  if (fs.existsSync(path.join(root, 'pyproject.toml')) || fs.existsSync(path.join(root, 'pytest.ini'))) return { label: 'test', command: ['pytest'] };
+  return null;
+}
+
+function runProjectCommand(root, command, timeoutMs = 300000) {
+  const [cmd0, ...args] = command;
+  try {
+    let stdout;
+    if (process.platform === 'win32' && /^npm$/.test(cmd0)) {
+      // npm is a .cmd shim on Windows — spawnSync of .cmd files returns EINVAL
+      // without a shell. Commands are fixed internal strings (no user input).
+      const line = `npm.cmd ${args.map(a => `"${a}"`).join(' ')}`;
+      stdout = execFileSync(line, {
+        cwd: root,
+        shell: true,
+        encoding: 'utf-8',
+        timeout: timeoutMs,
+        maxBuffer: 10 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
     } else {
-      result = await auditCommand(root, { _agenticInner: true, deep: false, deps: false, noAi: true });
+      stdout = execFileSync(cmd0, args, {
+        cwd: root,
+        encoding: 'utf-8',
+        timeout: timeoutMs,
+        maxBuffer: 10 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
     }
+    return { ok: true, exitCode: 0, output: String(stdout).slice(-800) };
+  } catch (err) {
+    const output = String((err.stdout || '') + '\n' + (err.stderr || '')).slice(-800);
+    const timedOut = err.killed || /ETIMEDOUT|timed out/i.test(err.message);
+    return { ok: false, exitCode: err.status ?? -1, output, timedOut };
+  }
+}
+
+async function rescanForFile(root, filePath, options) {
+  if (options.sandbox && isDockerAvailable()) {
+    const stdout = execFileSync('docker', [
+      'run', '--rm',
+      '-v', `${root}:/workspace`,
+      '-v', `${praxisDir}:/opt/praxis:ro`,
+      '-w', '/workspace',
+      'node:18-alpine',
+      'node', '/opt/praxis/cli/bin/praxis.js', 'scan', '.', '--json'
+    ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
+
+    const jsonStart = stdout.search(/^\s*\{/m);
+    if (jsonStart === -1) return { findings: [] };
+    try { return JSON.parse(stdout.slice(jsonStart)); } catch { return { findings: [] }; }
+  }
+  return auditCommand(root, { _agenticInner: true, deep: false, deps: false, noAi: true });
+}
+
+export async function verifyFile(root, filePath, originalFindings, options = {}) {
+  const tiers = [];
+
+  try {
+    // Tier 1 — build/lint
+    const build = detectBuildCommand(root);
+    if (build) {
+      const r = runProjectCommand(root, build.command);
+      tiers.push({ tier: 'build', command: build.command.join(' '), ok: r.ok, output: r.output });
+      if (!r.ok) {
+        return {
+          allResolved: false, someResolved: false, resolvedCount: 0,
+          verification: 'failed', failedTier: 'build',
+          evidence: `Build failed (${build.label}): ${r.output}`.slice(0, 1200),
+          tiers,
+        };
+      }
+    }
+
+    // Tier 2 — test suite
+    const test = detectTestCommand(root);
+    if (test) {
+      const r = runProjectCommand(root, test.command, 600000);
+      tiers.push({ tier: 'test', command: test.command.join(' '), ok: r.ok, output: r.output });
+      if (!r.ok) {
+        return {
+          allResolved: false, someResolved: false, resolvedCount: 0,
+          verification: 'failed', failedTier: 'test',
+          evidence: `Tests failed (${test.label}): ${r.output}`.slice(0, 1200),
+          tiers,
+        };
+      }
+    }
+
+    // Tier 3 — re-scan: original findings must be gone from the fixed file
+    const result = await rescanForFile(root, filePath, options);
     const remaining = (result.findings ?? []).filter(f => {
       const fPath = path.resolve(root, f.file);
       const targetPath = path.resolve(root, filePath);
@@ -767,21 +932,33 @@ async function verifyFile(root, filePath, originalFindings, options = {}) {
     });
 
     let resolvedCount = 0;
+    const survivors = [];
     for (const orig of originalFindings) {
       const stillThere = remaining.some(f =>
         f.rule === orig.rule &&
         Math.abs((f.line ?? 0) - (orig.line ?? 0)) <= 2,
       );
       if (!stillThere) resolvedCount++;
+      else survivors.push(orig.rule);
     }
 
+    const allResolved = resolvedCount === originalFindings.length;
     return {
-      allResolved:  resolvedCount === originalFindings.length,
+      allResolved,
       someResolved: resolvedCount > 0,
       resolvedCount,
+      verification: allResolved ? 'passed' : (resolvedCount > 0 ? 'partial' : 'failed'),
+      failedTier: allResolved ? null : 'rescan',
+      evidence: allResolved ? '' : `Re-scan still reports: ${survivors.join(', ')}`,
+      tiers,
     };
-  } catch {
-    return { allResolved: false, someResolved: false, resolvedCount: 0 };
+  } catch (err) {
+    return {
+      allResolved: false, someResolved: false, resolvedCount: 0,
+      verification: 'failed', failedTier: 'verify-error',
+      evidence: err.message || 'verification crashed',
+      tiers,
+    };
   }
 }
 

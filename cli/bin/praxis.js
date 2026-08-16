@@ -243,6 +243,7 @@ fix
   .option('--yolo', 'Auto-accept every plan without prompting')
   .option('--auto-low', 'Auto-accept plans marked risk:low')
   .option('--sandbox', 'Verify each fix in a Docker sandbox')
+  .option('--max-attempts <n>', 'Max plan attempts per file (verification ladder retries)', parseInt)
   .option('--ci', 'Non-interactive CI/CD mode (auto-accept fixes)')
   .action(agentFixCommand);
 
