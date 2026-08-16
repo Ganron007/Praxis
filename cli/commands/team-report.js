@@ -46,8 +46,10 @@ function stripHermesChrome(text) {
     if (t.startsWith('╭─') || t.startsWith('╰─')) { inSplash = !inSplash; continue; }
     if (inSplash) continue;
 
-    // Skip raw system prompt instructions leaked into output
-    if (t.startsWith('EXACTLY this format') || t.startsWith('FINDING: {"severity"')) continue;
+    // Skip raw system prompt instructions leaked into output.
+    // Template lines carry '...' placeholders; real findings parse as JSON.
+    if (t.startsWith('EXACTLY this format')) continue;
+    if (t.startsWith('FINDING: {"severity"') && t.includes('...')) continue;
     if (t.match(/^─{10,}$/)) continue;
 
     // Skip Hermes warning lines

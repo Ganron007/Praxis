@@ -748,8 +748,11 @@ async function verifyFile(root, filePath, originalFindings, options = {}) {
           'node', '/opt/praxis/cli/bin/praxis.js', 'scan', '.', '--json'
         ], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
         
-        const jsonLine = stdout.split('\n').find(l => l.trim().startsWith('{'));
-        result = jsonLine ? JSON.parse(jsonLine) : { findings: [] };
+        const jsonStart = stdout.search(/^\s*\{/m);
+        let result = { findings: [] };
+        if (jsonStart !== -1) {
+          try { result = JSON.parse(stdout.slice(jsonStart)); } catch { /* partial output */ }
+        }
       } else {
         console.log(chalk.yellow('\n      Docker is not running or not installed. Falling back to local verification.'));
         result = await auditCommand(root, { _agenticInner: true, deep: false, deps: false, noAi: true });

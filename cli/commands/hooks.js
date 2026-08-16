@@ -168,6 +168,16 @@ function remove() {
     return;
   }
 
+  // Clean up empty arrays / empty hooks object so settings.json is left tidy
+  for (const event of ['PreToolUse', 'PostToolUse']) {
+    if (Array.isArray(settings.hooks[event]) && settings.hooks[event].length === 0) {
+      delete settings.hooks[event];
+    }
+  }
+  if (Object.keys(settings.hooks).length === 0) {
+    delete settings.hooks;
+  }
+
   writeSettings(settings);
   console.log(chalk.green(`✔ Removed ${removed} praxis hook(s) from ${CLAUDE_SETTINGS_PATH}`));
   console.log(chalk.gray(`  Hook scripts kept at ${STABLE_HOOK_DIR} (safe to delete manually)`));

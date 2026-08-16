@@ -17,14 +17,22 @@ export function mergeIntel(seedData, results) {
   const merged = JSON.parse(JSON.stringify(seedData || {}));
   merged.version = bumpVersion(merged.version || '1.0.0');
   merged.updated = new Date().toISOString();
-  merged.sources = {};
+  merged.sources = merged.sources || {};
 
-  merged.cveAdvisories = merged.cveAdvisories || [];
-  merged.kevList = [];
-  merged.epssScores = {};
-  merged.osvIndex = {};
-  merged.ghsaIndex = {};
-  merged.secretRules = [];
+  // Reset only the collections owned by sources being freshly merged, so a
+  // subset update (--only) preserves data from the other sources.
+  const fresh = new Set(results.filter(r => r.ok && !r.skipped).map(r => r.name));
+  if (fresh.has('kev')) { merged.kevList = []; merged.kevDetails = {}; }
+  if (fresh.has('epss')) { merged.epssScores = {}; }
+  if (fresh.has('nvd')) { merged.nvdDetails = {}; }
+  if (fresh.has('osv')) merged.osvIndex = {};
+  if (fresh.has('ghsa')) merged.ghsaIndex = {};
+  if (fresh.has('gitleaks') || fresh.has('gitguardian')) merged.secretRules = [];
+
+  // Drop stale advisories from sources being refreshed; keep the rest and
+  // rebuild the dedup index from the survivors.
+  merged.cveAdvisories = (merged.cveAdvisories || []).filter(a => !fresh.has(a.source));
+  merged._cveAdvisorySeen = new Set(merged.cveAdvisories.map(a => `${a.cve}@${a.source}`));
 
   for (const r of results) {
     merged.sources[r.name] = {

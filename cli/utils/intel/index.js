@@ -85,8 +85,13 @@ export async function runUpdate(options = {}) {
 
   const allResults = nvdResult ? [...firstResults, nvdResult] : firstResults;
 
-  // Merge into the unified feed.
-  const seed = loadSeed();
+  // Merge into the unified feed. Start from the existing feed when present
+  // so subset updates (--only) don't wipe data owned by other sources.
+  let seed = loadSeed();
+  try {
+    const existing = loadMerged();
+    if (existing && typeof existing === 'object') seed = existing;
+  } catch { /* corrupt feed — rebuild from bundled seed */ }
   const merged = mergeIntel(seed, allResults);
   const out = serialize(merged);
 
