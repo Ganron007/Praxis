@@ -169,3 +169,38 @@ test('ScoringEngine.compute attaches finding.standards and report.standardsSumma
   const piTags = findings[0].standards['owasp-llm'] || [];
   assert.ok(piTags.includes('LLM01'));
 });
+
+// =============================================================================
+// MITRE ATLAS enrichment (vendored knowledge snapshot)
+// =============================================================================
+
+test('atlas knowledge: technique hydration with mitigations + case studies', async () => {
+  const { getTechniqueDetails, atlasSnapshot, isKnownTechnique } = await import('../utils/standards/sources/mitre-atlas.js');
+
+  assert.match(atlasSnapshot(), /^20\d\d-\d\d$/);
+
+  assert.equal(isKnownTechnique('AML.T0051'), true);
+  assert.equal(isKnownTechnique('AML.NOPE999'), false);
+
+  const t = getTechniqueDetails('AML.T0051');
+  assert.ok(t, 'AML.T0051 must resolve');
+  assert.equal(t.name, 'LLM Prompt Injection');
+  assert.ok(t.tactics.length > 0, 'technique has parent tactics');
+  assert.ok(t.mitigations.length > 0, 'technique has mitigations (direct or parent)');
+  assert.ok(t.caseStudies.length > 0, 'technique has case studies');
+  assert.ok(t.url.startsWith('https://atlas.mitre.org/'));
+});
+
+test('atlas knowledge: sub-technique inherits mitigations from parent', async () => {
+  const { getTechniqueDetails } = await import('../utils/standards/sources/mitre-atlas.js');
+  const sub = getTechniqueDetails('AML.T0051.000'); // Direct prompt injection
+  assert.ok(sub, 'sub-technique must resolve');
+  assert.ok(sub.mitigations.length > 0, 'mitigations fall back to parent technique');
+});
+
+test('atlas knowledge: every technique id in the mitre-atlas standard is known', async () => {
+  const mod = await import('../utils/standards/sources/mitre-atlas.js');
+  for (const ctrl of mod.controls) {
+    assert.equal(mod.isKnownTechnique(ctrl.id), true, `${ctrl.id} should exist in the snapshot`);
+  }
+});

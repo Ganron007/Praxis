@@ -4,7 +4,7 @@
 
 ## What this is
 
-Praxis is a single-binary, AI-native security CLI in pure ESM Node.js (≥18): a tight **find→fix→verify** loop that scans a codebase with 26 parallel agents, drafts LLM-guided remediations, asks the user, applies atomically, re-scans, and keeps an undo log. No build step — runs from source via `cli/bin/praxis.js`. Distribution surfaces: npm package (`praxis`), GitHub Action (`action.yml`), Claude Code plugin (`claude-code-plugin/`).
+Praxis is a single-binary, AI-native security CLI in pure ESM Node.js (≥18): a tight **find→fix→verify** loop that scans a codebase with 27 parallel agents, drafts LLM-guided remediations, asks the user, applies atomically, re-scans, and keeps an undo log. No build step — runs from source via `cli/bin/praxis.js`. Distribution surfaces: npm package (`praxis`), GitHub Action (`action.yml`), Claude Code plugin (`claude-code-plugin/`).
 
 ## Quick commands
 

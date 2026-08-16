@@ -3,13 +3,19 @@
  * https://atlas.mitre.org/
  *
  * Subset of techniques observable from static code/config analysis.
+ * Enriched with the vendored ATLAS knowledge snapshot (see atlas-knowledge.js).
  */
+
+import { getTechniqueDetails, atlasSnapshot, isKnownTechnique } from '../atlas-knowledge.js';
 
 export const name = 'mitre-atlas';
 export const version = '2024';
 export const title = 'MITRE ATLAS';
 export const description = 'Adversarial tactics, techniques, and case studies for AI systems.';
 export const url = 'https://atlas.mitre.org/';
+export const enrichmentSnapshot = () => atlasSnapshot();
+
+export { getTechniqueDetails, atlasSnapshot, isKnownTechnique };
 
 export const controls = [
   { id: 'AML.T0010', title: 'ML Supply Chain Compromise',     description: 'Adversary compromises models/datasets/dependencies to gain access.' },

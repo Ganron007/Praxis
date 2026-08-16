@@ -12,7 +12,7 @@ import chalk from 'chalk';
 export const PRODUCT_NAME = 'praxis';
 export const PRODUCT_DISPLAY = 'Praxis';
 export const TAGLINE = 'From finding to fix, on autopilot.';
-export const SUBTITLE = '26 agents. AI-native security with agentic remediation.';
+export const SUBTITLE = '27 agents. AI-native security with agentic remediation.';
 
 /**
  * Print the praxis ASCII banner. Call at the top of any command that

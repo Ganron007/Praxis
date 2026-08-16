@@ -835,6 +835,7 @@ function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remedi
       file: f.file, line: f.line, severity: f.severity, category: f.category,
       rule: f.rule, title: f.title, description: f.description, fix: f.fix,
       cwe: f.cwe, owasp: f.owasp,
+      ...(f.eaa ? { eaa: f.eaa } : {}),
       ...(f.confidence ? { confidence: f.confidence } : {}),
       ...(f.standards ? { standards: f.standards } : {}),
       ...(f.deepAnalysis ? { deepAnalysis: f.deepAnalysis } : {}),

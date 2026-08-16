@@ -1,6 +1,6 @@
 # Praxis Plugin for Claude Code
 
-Security audit your projects directly inside Claude Code. 26 agents, 80+ attack classes, zero setup.
+Security audit your projects directly inside Claude Code. 27 agents, 80+ attack classes, zero setup.
 
 ## Install
 
@@ -12,7 +12,7 @@ claude plugin add github:Ganron007/Praxis
 
 | Command | Description |
 |---------|-------------|
-| `/praxis` | Full security audit — 26 agents, 80+ attack classes, prioritized remediation plan |
+| `/praxis` | Full security audit — 27 agents, 80+ attack classes, prioritized remediation plan |
 | `/praxis-hooks` | Install real-time hooks — block secrets & dangerous commands on every Write/Bash |
 | `/praxis-scan` | Quick scan for leaked secrets (API keys, passwords, tokens) |
 | `/praxis-score` | Security health score (0-100, A-F grade) |
@@ -35,7 +35,7 @@ After this, every Write/Edit call is scanned for secrets before it hits disk,
 and every Bash call is checked for dangerous patterns like curl|bash.
 
 > /praxis
-Runs full audit with all 26 security agents, shows score, findings grouped
+Runs full audit with all 27 security agents, shows score, findings grouped
 by severity, and offers to fix critical issues in your code.
 
 > /praxis-scan src/

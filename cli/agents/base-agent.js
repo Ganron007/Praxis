@@ -40,6 +40,7 @@ export function createFinding({
   confidence = 'high',
   cwe = null,
   owasp = null,
+  eaa = null,
   fix = null,
 }) {
   return {
@@ -55,6 +56,7 @@ export function createFinding({
     confidence,
     cwe,
     owasp,
+    ...(eaa ? { eaa } : {}),
     fix,
   };
 }

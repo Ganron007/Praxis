@@ -56,7 +56,7 @@ flowchart TD
 
     subgraph Orchestrator["Agentic Orchestrator (parallel scan)"]
         direction TB
-        AGENTS["26 Parallel Agents<br/>(LLMRedTeam, InjectionTester, RAGSecurityAgent...)"]
+        AGENTS["27 Parallel Agents<br/>(LLMRedTeam, InjectionTester, RAGSecurityAgent...)"]
         PLUGINS["User Plugins<br/>(.praxis/agents/*.js)"]
     end
 
@@ -99,7 +99,7 @@ flowchart TD
 **Execution Pipeline Lifecycle:**
 1. **CLI Ingress & Parsing** — CLI subcommands are parsed and processed. Target directories are crawled, filtering out files matched by `.gitignore` and `.praxisignore` rules.
 2. **Reconnaissance & Profiling** — `ReconAgent` maps the repository's technology stack (e.g., frameworks, runtime engines) to optimize scanning profiles.
-3. **Concurrent Security Scans** — 26 built-in analysis engines execute in parallel to identify code vulnerabilities and agent misconfigurations. Extensible local plugins are loaded dynamically from `.praxis/agents/*.js`.
+3. **Concurrent Security Scans** — 27 built-in analysis engines execute in parallel to identify code vulnerabilities and agent misconfigurations. Extensible local plugins are loaded dynamically from `.praxis/agents/*.js`.
 4. **Post-Processing Triage** — Suspected secret disclosures are programmatically verified for liveness by `VerifierAgent`, static taint paths are analyzed by `DeepAnalyzer`, and the project security score is computed.
 5. **Standards Compliance Mapping** — Identified vulnerabilities are programmatically mapped to corresponding controls from the 8 supported compliance frameworks.
 6. **Remediation & Repair Verification** — When executing a repair, the `LLMProvider` constructs a context-aware remediation patch (as a unified diff). Once approved, updates are written atomically and verified through a follow-up scan.
@@ -143,7 +143,7 @@ praxis project    Initialize settings, git hooks, Baselines, and plugin policies
 
 ---
 
-## 26 Security Agents
+## 27 Security Agents
 
 The core scanning engines run concurrently, automatically adapting their execution scope to match the project tech stack.
 
@@ -159,6 +159,8 @@ The core scanning engines run concurrently, automatically adapting their executi
 | | **PromptInjectionProber**| Probes inputs for DAN-style jailbreaks and system persona bypass signatures. |
 | | **ManagedAgentScanner** | Flags over-privileged policies (always-allow actions) and unrestricted network permissions. |
 | | **HermesSecurityAgent** | Detects tool registry poisoning, function-call injection, and permission drift. |
+| | **AgentTelemetryAgent** | Audits AI agent session histories (Claude Code, Cursor, Codex, Warp, Cline) for exposed keys, remote-shell, prompt overrides. |
+| | **EndpointAgentAbuseAgent**| Detects local AI-agent abuse (EAA catalog): hook persistence, MCP env-expansion, gateway overrides, committed agent state. |
 | **Code Vulnerabilities**| **InjectionTester** | Detects SQL/NoSQL injections, command injections, path traversals, XSS, and ReDoS. |
 | | **ExceptionHandlerAgent**| Audits for empty catch blocks, unhandled rejections, and leaked stack traces in production. |
 | | **VibeCodingAgent** | Highlights AI-generated code anti-patterns (e.g., TODO-auth, empty catches, missing validation). |

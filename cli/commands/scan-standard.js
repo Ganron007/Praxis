@@ -106,6 +106,22 @@ export async function scanStandardCommand(name, targetPath = '.', options = {}) 
     scannedAt: new Date().toISOString(),
   };
 
+  // ATLAS enrichment: hydrate flagged techniques with mitigations + case studies
+  if (standard.name === 'mitre-atlas') {
+    try {
+      const { getTechniqueDetails, atlasSnapshot } = await import('../utils/standards/sources/mitre-atlas.js');
+      report.atlas = {
+        snapshot: atlasSnapshot(),
+        techniques: Object.fromEntries(
+          standardSummary.controls
+            .filter(c => c.findingCount > 0)
+            .map(c => [c.id, getTechniqueDetails(c.id)])
+            .filter(([, d]) => d)
+        ),
+      };
+    } catch { /* enrichment is best-effort */ }
+  }
+
   if (options.json) {
     console.log(render('json', report));
     return;
@@ -119,7 +135,7 @@ export async function scanStandardCommand(name, targetPath = '.', options = {}) 
     return;
   }
 
-  printHumanReport(standard, report, options);
+  await printHumanReport(standard, report, options);
 }
 
 function buildStandardSummary(standard, findings, controlFilter) {
@@ -164,8 +180,7 @@ function printStandardsList(options) {
   console.log();
 }
 
-function printHumanReport(standard, report) {
-  console.log(chalk.white.bold(`  Coverage: ${report.coverage}  (${report.totalFindings} finding${report.totalFindings === 1 ? '' : 's'})`));
+async function printHumanReport(standard, report) {  console.log(chalk.white.bold(`  Coverage: ${report.coverage}  (${report.totalFindings} finding${report.totalFindings === 1 ? '' : 's'})`));
   console.log();
 
   for (const ctrl of report.controls) {
@@ -176,6 +191,33 @@ function printHumanReport(standard, report) {
     console.log(`  ${statusIcon} ${head}`);
   }
   console.log();
+
+  // ATLAS enrichment: mitigations + case studies for flagged techniques
+  if (standard.name === 'mitre-atlas') {
+    try {
+      const { getTechniqueDetails, atlasSnapshot } = await import('../utils/standards/sources/mitre-atlas.js');
+      const flagged = report.controls.filter(c => c.findingCount > 0);
+      if (flagged.length > 0) {
+        console.log(chalk.gray(`  ATLAS knowledge snapshot: ${atlasSnapshot()}`));
+        console.log(chalk.white.bold('  Recommended mitigations (ATLAS):'));
+        console.log();
+        const shown = new Set();
+        for (const ctrl of flagged) {
+          const details = getTechniqueDetails(ctrl.id);
+          if (!details) continue;
+          for (const m of details.mitigations) {
+            if (shown.has(m.id)) continue;
+            shown.add(m.id);
+            console.log(`    ${chalk.cyan(m.id)}  ${m.name}`);
+          }
+          if (details.caseStudies.length > 0) {
+            console.log(chalk.gray(`      case studies: ${details.caseStudies.map(cs => cs.name).join('; ')}`));
+          }
+        }
+        console.log();
+      }
+    } catch { /* enrichment is best-effort */ }
+  }
 
   if (report.totalFindings === 0) {
     console.log(chalk.green(`  ✔ No findings tagged with ${standard.title}.`));

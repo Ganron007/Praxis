@@ -65,7 +65,7 @@ Based on the results, suggest:
 
 ## Important Notes
 
-- The 26 built-in agents are: InjectionTester, AuthBypassAgent, SSRFProber, SupplyChainAudit, ConfigAuditor, SupabaseRLSAgent, LLMRedTeam, MobileScanner, GitHistoryScanner, CICDScanner, APIFuzzer, ExceptionHandlerAgent, VibeCodingAgent, PIIComplianceAgent, MCPSecurityAgent, AgenticSecurityAgent, RAGSecurityAgent, MemoryPoisoningAgent, AgentConfigScanner, ManagedAgentScanner, HermesSecurityAgent, AgentAttestationAgent, AgenticSupplyChainAgent, ModelFileScanner, PromptInjectionProber, AgentTelemetryAgent (ReconAgent profiles the stack; ScoringEngine grades the result)
+- The 27 built-in agents are: InjectionTester, AuthBypassAgent, SSRFProber, SupplyChainAudit, ConfigAuditor, SupabaseRLSAgent, LLMRedTeam, MobileScanner, GitHistoryScanner, CICDScanner, APIFuzzer, ExceptionHandlerAgent, VibeCodingAgent, PIIComplianceAgent, MCPSecurityAgent, AgenticSecurityAgent, RAGSecurityAgent, MemoryPoisoningAgent, AgentConfigScanner, ManagedAgentScanner, HermesSecurityAgent, AgentAttestationAgent, AgenticSupplyChainAgent, ModelFileScanner, PromptInjectionProber, AgentTelemetryAgent, EndpointAgentAbuseAgent (ReconAgent profiles the stack; ScoringEngine grades the result)
 - Agents run in parallel — the scan should complete in under 60 seconds for most projects
 - Low-confidence findings in test files or documentation are likely false positives
 - Never display actual secret values
