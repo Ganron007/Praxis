@@ -26,3 +26,10 @@ SHOWCASE-LAB-LOG.md
 
 # npm pack artifacts
 *.tgz
+
+# Secrets — never commit real API keys.
+# .env holds your live keys (ignored); .env.example is the tracked template.
+.env
+.env.local
+.env.*.local
+!.env.example

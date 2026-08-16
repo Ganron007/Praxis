@@ -31,6 +31,12 @@ import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 
 import { printBanner, TAGLINE, SUBTITLE } from '../core/branding.js';
+import { loadDotEnv } from '../core/env.js';
+
+// Load .env from the working directory early so API keys and LLM settings
+// (OPENAI_API_KEY, OPENAI_BASE_URL, PRAXIS_LLM_MODEL, ...) are available to
+// every command. Real environment variables always take precedence.
+loadDotEnv(process.cwd());
 
 // Existing command implementations (unchanged — praxis is a new surface,
 // not a reimplementation).

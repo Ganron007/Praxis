@@ -633,23 +633,47 @@ export function createProvider(provider, apiKey, options = {}) {
  * @param {object} options   — { provider, baseUrl, model } explicit overrides
  */
 export function autoDetectProvider(rootPath, options = {}) {
+  // Env-driven defaults (.env is loaded into process.env at CLI startup).
+  // Explicit CLI flags always win over environment variables.
+  const opts = { ...options };
+  if (!opts.model && process.env.PRAXIS_LLM_MODEL) {
+    opts.model = process.env.PRAXIS_LLM_MODEL;
+  }
+  if (!opts.think && !opts.thinkLevel && process.env.PRAXIS_LLM_REASONING) {
+    opts.think = true;
+    opts.thinkLevel = process.env.PRAXIS_LLM_REASONING;
+  }
+  // OPENAI_BASE_URL applies to OpenAI-shaped providers only
+  // (never to anthropic / google / ollama).
+  const requested = (opts.provider || '').toLowerCase();
+  const isOpenAIish =
+    !opts.provider ||
+    requested === 'openai' ||
+    requested === 'gpt' ||
+    Boolean(OPENAI_COMPATIBLE_PRESETS[requested]);
+  if (!opts.baseUrl && isOpenAIish && process.env.OPENAI_BASE_URL) {
+    opts.baseUrl = process.env.OPENAI_BASE_URL;
+  }
+
   // Explicit provider name requested
-  if (options.provider) {
-    const apiKey = resolveApiKey(options.provider, rootPath);
-    return createProvider(options.provider, apiKey, {
-      model:      options.model,
-      baseUrl:    options.baseUrl,
-      think:      options.think,
-      thinkLevel: options.thinkLevel,
+  if (opts.provider) {
+    const apiKey = resolveApiKey(opts.provider, rootPath);
+    return createProvider(opts.provider, apiKey, {
+      model:      opts.model,
+      baseUrl:    opts.baseUrl,
+      think:      opts.think,
+      thinkLevel: opts.thinkLevel,
     });
   }
 
   // baseUrl supplied without a provider name → openai-compatible with auto key
-  if (options.baseUrl) {
+  if (opts.baseUrl) {
     const apiKey = process.env.OPENAI_API_KEY || resolveApiKey('openai', rootPath) || '';
     return new OpenAICompatibleProvider('custom', apiKey, {
-      baseUrl: options.baseUrl,
-      model:   options.model || 'default',
+      baseUrl:    opts.baseUrl,
+      model:      opts.model || 'default',
+      think:      opts.think,
+      thinkLevel: opts.thinkLevel,
     });
   }
 
@@ -670,7 +694,11 @@ export function autoDetectProvider(rootPath, options = {}) {
 
   for (const [envVar, providerName] of Object.entries(envKeys)) {
     if (process.env[envVar]) {
-      return createProvider(providerName, process.env[envVar], { model: options.model });
+      return createProvider(providerName, process.env[envVar], {
+        model:      opts.model,
+        think:      opts.think,
+        thinkLevel: opts.thinkLevel,
+      });
     }
   }
 
@@ -682,7 +710,13 @@ export function autoDetectProvider(rootPath, options = {}) {
         const content = fs.readFileSync(envPath, 'utf-8');
         for (const [envVar, providerName] of Object.entries(envKeys)) {
           const match = content.match(new RegExp(`^${envVar}\\s*=\\s*["']?([^"'\\s]+)`, 'm'));
-          if (match) return createProvider(providerName, match[1], { model: options.model });
+          if (match) {
+            return createProvider(providerName, match[1], {
+              model:      opts.model,
+              think:      opts.think,
+              thinkLevel: opts.thinkLevel,
+            });
+          }
         }
       } catch { /* ignore */ }
     }
