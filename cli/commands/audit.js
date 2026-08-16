@@ -94,7 +94,9 @@ export async function auditCommand(targetPath = '.', options = {}) {
   }
 
   // ── Cache Layer ──────────────────────────────────────────────────────────
-  const useCache = options.cache !== false;
+  // --deep forces a fresh scan so taint analysis covers every finding,
+  // not just the ones from files changed since the last cached run.
+  const useCache = options.cache !== false && !options.deep;
   const cache = new CacheManager(absolutePath);
   let cacheData = useCache ? cache.load() : null;
   let cacheDiff = null;
@@ -833,7 +835,14 @@ function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remedi
       file: f.file, line: f.line, severity: f.severity, category: f.category,
       rule: f.rule, title: f.title, description: f.description, fix: f.fix,
       cwe: f.cwe, owasp: f.owasp,
+      ...(f.confidence ? { confidence: f.confidence } : {}),
       ...(f.standards ? { standards: f.standards } : {}),
+      ...(f.deepAnalysis ? { deepAnalysis: f.deepAnalysis } : {}),
+      ...(f.aiClassification ? {
+        aiClassification: f.aiClassification,
+        ...(f.aiReason ? { aiReason: f.aiReason } : {}),
+        ...(f.aiFix ? { aiFix: f.aiFix } : {}),
+      } : {}),
     })),
     depVulns: depVulns.map(d => ({
       severity: d.severity, package: d.package || d.id, description: d.description,
