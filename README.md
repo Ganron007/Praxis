@@ -260,9 +260,33 @@ praxis project plugins new my-rule
 | :--- | :--- |
 | **[docs/USAGE.md](./docs/USAGE.md)** | Full CLI usage reference: commands, environment variables, settings, and baseline policies. |
 | **[docs/THREAT_INTEL.md](./docs/THREAT_INTEL.md)** | Threat intelligence architecture, database schemas, and custom source integration. |
+| **[docs/THIRD_PARTY_NOTICES.md](./docs/THIRD_PARTY_NOTICES.md)** | Licenses and attribution for vendored data assets (MITRE ATLAS, EAA catalog). |
 | **[.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md)** | Developer workflow, linting rules, tests structure, and guidelines for authoring agents. |
 | **[.github/SECURITY.md](./.github/SECURITY.md)** | Security disclosure guidelines and contact endpoints. |
 | **[CHANGELOG.md](./CHANGELOG.md)** | Version tag history and released changelog logs. |
+
+---
+
+## Scope & Limitations
+
+Praxis is an **AI-security-first** scanner. Please read this honestly:
+
+- **Complements, not replaces, general SAST.** Praxis focuses on the AI/agent attack
+  surface (LLM calls, MCP, RAG, agent configs, model artifacts, prompt injection) plus a
+  baseline of classic web/secret checks. For deep web SAST (Semgrep, CodeQL, Snyk Code
+  class), use those tools *alongside* Praxis.
+- **Detection is regex + LLM-assisted, not AST/dataflow.** Complex multi-step taint flows
+  may be missed; findings carry confidence levels and optional `--deep` LLM verdicts to
+  help you judge them.
+- **A clean scan is not proof of absence.** No scanner provides 100% coverage; Praxis does
+  not claim to.
+- **Standards mapping is evidence-based, not certification.** Findings are tagged with
+  controls from 8 frameworks (OWASP LLM/ML/Agentic, MITRE ATLAS, NIST AI 600-1, AVID,
+  EU AI Act, ISO 42001, Google SAIF) for which the scan produced evidence. This supports
+  compliance work — it does not certify compliance.
+- **Remediations are gated and reversible.** LLM fixes are drafted as diffs, applied only
+  with your approval (or explicit `--yolo`/`--ci` automation), verified by re-scan, and
+  logged for `praxis fix undo`. Review diffs before applying them to production systems.
 
 ---
 
