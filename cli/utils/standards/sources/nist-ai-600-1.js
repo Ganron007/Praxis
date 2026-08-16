@@ -33,13 +33,13 @@ export function mapFinding(finding) {
   const rule = (finding.rule || '').toLowerCase();
   const title = (finding.title || '').toLowerCase();
 
-  if (cat === 'agent-config' || cat === 'agentic') { ids.add('GV-1.3-GAI'); ids.add('GV-4.1-GAI'); }
+  if (cat === 'agentic' || /agent.?config|\.cursorrules|CLAUDE\.md|\.windsurfrules/.test(rule + title)) { ids.add('GV-1.3-GAI'); ids.add('GV-4.1-GAI'); }
   if (/prompt.?inject|jailbreak/.test(rule + title) || owasp === 'ASI01') { ids.add('MP-5.1-GAI'); ids.add('MS-2.7-GAI'); }
-  if (cat === 'memory-poisoning' || cat === 'rag' || owasp === 'ASI05') ids.add('MP-5.1-GAI');
+  if (owasp === 'ASI05' || /poison|tamper|memory|rag\b|embedding/.test(rule + title)) ids.add('MP-5.1-GAI');
   if (cat === 'llm' && /toxic|harm|unsafe/.test(rule + title)) { ids.add('MP-2.3-GAI'); ids.add('MS-2.6-GAI'); }
   if (cat === 'secrets' || cwe === 'CWE-200' || cwe === 'CWE-312' || cwe === 'CWE-798' || owasp === 'ASI06') { ids.add('MG-2.2-GAI'); ids.add('MS-2.10-GAI'); }
   if (cat === 'supply-chain' || cat === 'deps' || owasp === 'ASI04') ids.add('MG-3.2-GAI');
-  if (cat === 'mcp' || owasp === 'ASI08' || owasp === 'ASI10') ids.add('MG-4.1-GAI');
+  if (/mcp|tool.?poison/.test(rule + title) || owasp === 'ASI08' || owasp === 'ASI10') ids.add('MG-4.1-GAI');
 
   return [...ids];
 }

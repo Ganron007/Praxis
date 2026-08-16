@@ -41,13 +41,13 @@ export function mapFinding(finding) {
   const title = (finding.title || '').toLowerCase();
 
   if (cat === 'supply-chain' || cat === 'deps' || owasp === 'ASI04') ids.add('AML.T0010');
-  if (cat === 'memory-poisoning' || owasp === 'ASI05') { ids.add('AML.T0018'); ids.add('AML.T0034'); }
+  if (owasp === 'ASI05' || /poison|tamper|memory/.test(rule + title)) { ids.add('AML.T0018'); ids.add('AML.T0034'); }
   if (cat === 'secrets' || cwe === 'CWE-200' || cwe === 'CWE-312' || owasp === 'ASI06') { ids.add('AML.T0024'); ids.add('AML.T0057'); }
   if (cat === 'api' && /llm|inference|model/.test(rule + title)) ids.add('AML.T0040');
   if (/jailbreak|dan|roleplay|ignore.?instructions/.test(rule + title)) ids.add('AML.T0054');
   if (/prompt.?inject|indirect.?inject/.test(rule + title) || owasp === 'ASI01') { ids.add('AML.T0043'); ids.add('AML.T0051'); }
-  if (cat === 'mcp' || owasp === 'ASI02') ids.add('AML.T0053');
-  if (cat === 'rag' || /retrieval|vector.?store/.test(rule + title)) ids.add('AML.T0070');
+  if (owasp === 'ASI02' || /mcp|tool.?poison/.test(rule + title)) ids.add('AML.T0053');
+  if (/retrieval|vector.?store|rag\b|embedding/.test(rule + title)) ids.add('AML.T0070');
   if (owasp === 'ASI10') ids.add('AML.T0048');
 
   return [...ids];

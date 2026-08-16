@@ -30,9 +30,9 @@ export function mapFinding(finding) {
 
   if (cat === 'auth' || cat === 'config' || cat === 'secrets' || /^CWE-(287|306|269|250|798|312)$/.test(cwe)) ids.add('SAIF-1');
   if (/log.?inject|missing.?logg|silent|hide.?output/.test(rule + title) || owasp === 'ASI06') ids.add('SAIF-2');
-  if (cat === 'supply-chain' || cat === 'deps' || cat === 'history' || owasp === 'ASI04') ids.add('SAIF-3');
-  if (cat === 'mcp' || cat === 'agent-config' || cat === 'agentic' || cat === 'rag') ids.add('SAIF-4');
-  if (cat === 'memory-poisoning' || owasp === 'ASI05' || owasp === 'ASI10') ids.add('SAIF-5');
+  if (cat === 'supply-chain' || cat === 'deps' || cat === 'git-history' || owasp === 'ASI04') ids.add('SAIF-3');
+  if (/mcp|tool.?poison|rag\b|retrieval|vector.?store|agent.?config|\.cursorrules|CLAUDE\.md/.test(rule + title) || cat === 'agentic') ids.add('SAIF-4');
+  if (owasp === 'ASI05' || owasp === 'ASI10' || /poison|tamper|memory/.test(rule + title)) ids.add('SAIF-5');
   if (owasp === 'ASI08' || cat === 'llm') ids.add('SAIF-6');
 
   return [...ids];

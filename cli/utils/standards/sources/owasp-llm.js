@@ -31,13 +31,13 @@ export function mapFinding(finding) {
   const title = (finding.title || '').toLowerCase();
 
   if (owasp === 'ASI01' || /prompt.?inject|jailbreak|goal.?hijack/.test(rule + title)) ids.add('LLM01');
-  if (cat === 'secrets' || cat === 'history' || cwe === 'CWE-200' || cwe === 'CWE-312' || cwe === 'CWE-522' || cwe === 'CWE-798' || owasp === 'ASI06') ids.add('LLM02');
+  if (cat === 'secrets' || cat === 'git-history' || cwe === 'CWE-200' || cwe === 'CWE-312' || cwe === 'CWE-522' || cwe === 'CWE-798' || owasp === 'ASI06') ids.add('LLM02');
   if (cat === 'supply-chain' || cat === 'deps' || owasp === 'ASI04') ids.add('LLM03');
-  if (cat === 'memory-poisoning' || owasp === 'ASI05' || /poison|tamper/.test(rule + title)) ids.add('LLM04');
+  if (owasp === 'ASI05' || /poison|tamper/.test(rule + title)) ids.add('LLM04');
   if (cwe === 'CWE-79' || cwe === 'CWE-94' || cwe === 'CWE-116' || /output.?handl|unescaped/.test(rule + title)) ids.add('LLM05');
   if (cwe === 'CWE-269' || cwe === 'CWE-250' || owasp === 'ASI02' || owasp === 'ASI03') ids.add('LLM06');
   if (/system.?prompt|prompt.?leak/.test(rule + title)) ids.add('LLM07');
-  if (cat === 'rag' || /vector|embedding/.test(rule + title)) ids.add('LLM08');
+  if (/vector|embedding|rag\b|retrieval/.test(rule + title)) ids.add('LLM08');
   if (owasp === 'ASI10' || /halluc|misinform/.test(rule + title)) ids.add('LLM09');
   if (cat === 'api' || /rate.?limit|token.?abuse|unbounded|dos/.test(rule + title)) ids.add('LLM10');
 

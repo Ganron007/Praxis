@@ -32,7 +32,7 @@ export function mapFinding(finding) {
   const title = (finding.title || '').toLowerCase();
 
   if (/adversarial|prompt.?inject|jailbreak/.test(rule + title) || owasp === 'ASI01') ids.add('ML01');
-  if (cat === 'memory-poisoning' || cat === 'rag' || owasp === 'ASI05') { ids.add('ML02'); ids.add('ML10'); }
+  if (owasp === 'ASI05' || /poison|tamper|rag\b|embedding/.test(rule + title)) { ids.add('ML02'); ids.add('ML10'); }
   if (/inversion|extract.?training/.test(rule + title)) ids.add('ML03');
   if (/membership.?inference/.test(rule + title)) ids.add('ML04');
   if (/model.?(?:theft|steal|exfil)|weights.?leak/.test(rule + title)) ids.add('ML05');

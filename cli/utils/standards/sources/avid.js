@@ -34,10 +34,10 @@ export function mapFinding(finding) {
 
   if (cat === 'injection' || cat === 'auth' || cat === 'config' || /^CWE-/.test(cwe)) ids.add('S0100');
   if (cat === 'supply-chain' || cat === 'deps' || owasp === 'ASI04') ids.add('S0200');
-  if (cat === 'secrets' || cat === 'history' || cwe === 'CWE-200' || cwe === 'CWE-312' || owasp === 'ASI06') ids.add('S0301');
+  if (cat === 'secrets' || cat === 'git-history' || cwe === 'CWE-200' || cwe === 'CWE-312' || owasp === 'ASI06') ids.add('S0301');
   if (/jailbreak|prompt.?inject|bypass/.test(rule + title) || owasp === 'ASI01') ids.add('S0400');
-  if (cat === 'memory-poisoning' || owasp === 'ASI05') ids.add('P0201');
-  if (cat === 'rag' && /retrieve|exfil/.test(rule + title)) ids.add('S0500');
+  if (owasp === 'ASI05' || /poison|tamper|memory/.test(rule + title)) ids.add('P0201');
+  if (/retrieval|vector.?store|rag\b|embedding/.test(rule + title)) ids.add('S0500');
   if (/halluc|confabul|misinform/.test(rule + title) || owasp === 'ASI10') ids.add('P0301');
   if (/bias|fairness|discriminat/.test(rule + title)) ids.add('E0101');
 
