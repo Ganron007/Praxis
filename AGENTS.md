@@ -18,10 +18,23 @@ New test files under `cli/__tests__/` **must** be added to the `test` script in 
 ## Conventions
 
 - ESM throughout, 2-space indent, single quotes; `npm run lint` is the source of truth.
-- Extend the registries (`cli/agents/index.js`, `cli/core/output/index.js`, `cli/utils/intel/index.js`, `cli/utils/standards/index.js`) instead of inlining code paths in commands.
+- Extend the registries instead of inlining code paths in commands:
+  - `cli/agents/index.js` — add a scanner by extending `BaseAgent`
+  - `cli/core/output/index.js` — add an output formatter
+  - `cli/utils/intel/index.js` — add a threat-intel source
+  - `cli/utils/standards/index.js` — add a standards mapper
+  - `cli/utils/mcp-trust.js` — MCP trust registry lookups (update `cli/data/known-mcps.json` + its embedded SHA-256 together)
 - Use `cli/core/fs.js` (`validatePath` / `validateDir` / `ensureDir`) — they replaced 16+ duplicated copies.
 - One change per PR; reasoning in the description, not just the diff.
-- Agent framework: scanners extend `BaseAgent` (`cli/agents/base-agent.js`); register in `BUILT_IN_AGENTS` (`cli/agents/index.js`) + smoke test (`cli/__tests__/agents.test.js`).
+- Agent framework: scanners extend `BaseAgent` (`cli/agents/base-agent.js`); register in `BUILT_IN_AGENTS` (`cli/agents/index.js`) + smoke test (`cli/__tests__/agents.test.js`), then update the agent count everywhere it appears (`cli/core/branding.js`, `cli/utils/output.js`, `action.yml`, `claude-code-plugin/`, `vscode-extension/package.json`, `docs/USAGE.md`, `README.md`).
+- Post-processors (like `VerifierAgent`, `DeepAnalyzer`, and the governance absence-audits in `cli/agents/governance-audits.js`) are NOT in the agent pool — wire them in `cli/agents/orchestrator.js`.
+- Knowledge lives in data, not code:
+  - `cli/data/probes/prompt-injection-corpus.json` — probe signatures (own phrasing only; ReDoS guard enforced at compile; bump `version` + `_refresh_policy.lastReviewed` on change)
+  - `cli/data/atlas-knowledge.json` — vendored MITRE ATLAS snapshot (see `cli/utils/standards/atlas-knowledge.js` for hydration; keep the `_attribution` block)
+  - `cli/data/eaa-catalog.json` — CC0 EAA technique catalog backing `EndpointAgentAbuseAgent`
+  - `cli/data/known-mcps.json` — MCP trust registry (SHA-256 in `mcp-trust.js` must match)
+- Vendored data obligations live in `docs/THIRD_PARTY_NOTICES.md` — update it whenever a data asset is added or re-synced.
+- Secret-redaction invariant: raw matched secret values must never appear in report output — the renderers in `cli/core/output/` redact centrally; keep the invariant test green (`cli/__tests__/agents.test.js`).
 
 ## Workspace rigor (umbrella — applies to all CADRE-Platform projects)
 

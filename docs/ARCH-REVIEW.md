@@ -6,6 +6,15 @@
 > **Overall Grade:** B (Solid Beta — Not Yet Release-Ready)
 > **Release Readiness Score:** 62/100
 
+> [!NOTE]
+> **Historical snapshot — superseded.** This review reflects the codebase as of
+> 2026-07-17 (25 agents, 62/100). Since then: every release blocker it lists has
+> been resolved — CI workflow, CONTRIBUTING/SECURITY, agent-count consistency,
+> plugin sandbox fix, legacy command surface, JSON/SARIF fixes, plus major
+> additions (28 agents, verification ladder, net-new PR gating, MCP trust
+> registry, governance audits, professional report, 8-standards enrichment,
+> 259 tests). See `CHANGELOG.md` and `docs/USAGE.md` for the current state.
+
 ---
 
 ## Executive Summary

@@ -16,6 +16,8 @@ offline; LLM features are optional.
 4. [`praxis scan` — security scans](#praxis-scan--security-scans)
 5. [`praxis fix` — apply remediations](#praxis-fix--apply-remediations)
 6. [`praxis agents` — AI agent surface](#praxis-agents--ai-agent-surface)
+   - [MCP trust registry](#mcp-trust-registry)
+   - [Governance absence-audits](#governance-absence-audits)
 7. [`praxis intel` — threat intelligence](#praxis-intel--threat-intelligence)
 8. [`praxis report` — format/share results](#praxis-report--formatshare-results)
 9. [`praxis project` — setup & state](#praxis-project--setup--state)
@@ -186,6 +188,8 @@ CI/CD pipeline mode: scan, score, exit 1 on failure.
 | --- | --- |
 | `--threshold <score>` | Minimum passing score (default 75) |
 | `--fail-on <severity>` | Fail on findings ≥ this severity |
+| `--always-fail-on <severity>` | Severity floor that even an accepted baseline cannot suppress |
+| `--include-findings` | Include finding identities (`file`/`rule`/`severity`) in JSON output — used by the GitHub Action's net-new PR diff |
 | `--sarif <file>` | Write SARIF for GitHub Code Scanning |
 | `--json` | JSON output |
 | `--no-deps` | Skip dependency audit |
@@ -200,7 +204,15 @@ CI/CD pipeline mode: scan, score, exit 1 on failure.
 
 ### `fix interactive [path]` (default)
 
-Interactive LLM-guided: scan → plan → diff → ask → apply → verify.
+Interactive LLM-guided: scan → plan → diff → ask → apply → **verification ladder**.
+
+The verification ladder (all gates are executable oracles, never model judgment):
+
+1. **Build/lint** — the project's own build or lint command must still pass (npm/cargo/go/make detected automatically)
+2. **Test suite** — the project's test command must still pass
+3. **Re-scan** — the original findings must be gone from the fixed file
+
+On failure, the failing tier's evidence is fed into a retry plan; if the final attempt still fails, the fix is **automatically reverted** and the file restored. Fix prompts require sibling-call-site coverage and a regression test in the diff. Every applied fix is recorded in `.praxis/fixes.jsonl` with its verification class.
 
 | Flag | Description |
 | --- | --- |
@@ -214,7 +226,9 @@ Interactive LLM-guided: scan → plan → diff → ask → apply → verify.
 | `--pr` | Push branch + open PR via `gh` (requires `--branch`) |
 | `--yolo` | Auto-accept every plan (dangerous) |
 | `--auto-low` | Auto-accept plans marked `risk:low` |
+| `--max-attempts <n>` | Max plan attempts per file (verification-ladder retries, default 2) |
 | `--sandbox` | Verify each fix in a Docker sandbox |
+| `--ci` | Non-interactive CI/CD mode (auto-accept fixes) |
 
 ### `fix quick [path]`
 
@@ -308,6 +322,30 @@ Generate Agent Bill of Materials (CycloneDX ABOM).
 ### `agents serve`
 
 Start praxis as an MCP server (Claude Desktop, Cursor, Windsurf).
+
+### MCP trust registry
+
+Every scan consults a bundled registry of known MCP servers
+(`cli/data/known-mcps.json`, SHA-256 integrity-checked at load):
+
+- **verified** (official reference servers, trust 90) and **community** (trust 50–70) packages pass silently.
+- Anything else triggers `MCP_UNVERIFIED_SOURCE` (medium) — an unknown MCP server gains the agent's tools, credentials, and filesystem context.
+- Typosquat detection (edit distance ≤ 3) covers the full registry, not just the official list.
+
+Registry updates are quarterly + incident-driven; a tampered registry degrades gracefully (integrity check fails → unknown-tier lookups) instead of silently trusting anything.
+
+---
+
+## Governance absence-audits
+
+Beyond finding what *is* there, Praxis detects what *isn't*:
+
+| Rule | What it checks | Framing |
+| --- | --- | --- |
+| `NO_HUMAN_OVERSIGHT` (high) | High-blast-radius agent actions (financial/destructive tools, excessive agency) with **no approval-gate pattern** anywhere in the repo (`interrupt_before`, `requires_approval`, `human_in_the_loop`, ...) | EU AI Act Art. 14, ISO 42001 A.12.4 |
+| `NO_OBSERVABILITY` (medium) | AI is in use but **no tracing wiring** exists outside dependency manifests (LangSmith, Langfuse, Helicone, OpenTelemetry, ... — a transitive dependency is not proof of wiring) | EU AI Act Art. 12, ISO 42001 A.6.2.6 |
+
+Both run as post-processors on every full scan — no flags needed.
 
 ---
 
@@ -493,17 +531,28 @@ Compute a 0–100 security health score.
 ## AI security standards alignment
 
 Every finding is auto-tagged with all applicable AI-security standards. Reports
-include a per-standard coverage summary.
+include a per-standard coverage summary with a **3-state coverage map**:
+
+| State | Meaning |
+| --- | --- |
+| **Flagged** | This scan produced evidence for that control |
+| **No evidence in this scan** | The tool can detect it; this repo showed nothing — *not proof of safety* |
+| **No detection rule** | Praxis has no code-level check for this control (e.g. registration duties, fundamental-rights impact assessments) — an honest tool-gap marker |
+
+MITRE ATLAS findings are enriched from the vendored official knowledge
+snapshot (2026-04): every flagged `AML.T####` technique renders its tactic,
+recommended mitigations (`AML.M####`), and real-world case studies
+(`AML.CS####`). The snapshot date is shown in reports.
 
 | Standard | Module name | Controls |
 | --- | --- | --- |
 | OWASP Top 10 for LLM Applications (2025) | `owasp-llm` | LLM01–LLM10 |
-| MITRE ATLAS | `mitre-atlas` | AML.T0010, T0018, T0024, T0034, T0040, T0043, T0048, T0051, T0053, T0054, T0057, T0070 |
+| MITRE ATLAS (2026-04 snapshot) | `mitre-atlas` | AML.T0010, T0018, T0024, T0034, T0040, T0043, T0048, T0051, T0053, T0054, T0057, T0070 |
 | NIST AI 600-1 (Generative AI Profile) | `nist-ai-600-1` | GV/MP/MS/MG actions tagged `-GAI` |
 | AVID — AI Vulnerability Database taxonomy | `avid` | S0100, S0200, S0301, S0400, S0500, P0201, P0204, P0301, E0101 |
 | OWASP ML Security Top 10 | `owasp-ml` | ML01–ML10 |
-| EU AI Act (Regulation 2024/1689) | `eu-ai-act` | Articles 10, 13, 14, 15, 50, 53, 55, 72 |
-| ISO/IEC 42001 (AI Management System) | `iso-42001` | A.5.2, A.6.2.4/6, A.7.4, A.8.2/4, A.9.2, A.10.2/3 |
+| EU AI Act (Regulation 2024/1689) | `eu-ai-act` | Articles 5, 9–15, 17, 25–27, 49, 50, 53, 55, 72, 73 (18 controls) |
+| ISO/IEC 42001 (AI Management System) | `iso-42001` | A.5–A.13 Annex outline (21 controls) |
 | Google Secure AI Framework (SAIF) | `google-saif` | SAIF-1 through SAIF-6 |
 
 ```bash
@@ -516,21 +565,27 @@ praxis scan standard owasp-llm .
 # Filter to a single control within a standard
 praxis scan standard owasp-llm . --control LLM01
 
-# Programmatic JSON for tooling
+# Programmatic JSON for tooling (mitre-atlas includes the enrichment block)
 praxis scan standard mitre-atlas . --json
+
+# Audit-ready compliance export (GRC report)
+praxis scan standard nist-ai-600-1 . --format compliance
 ```
 
 In the JSON / SARIF / HTML reports:
 - Each finding carries `standards: { 'owasp-llm': ['LLM01'], ... }`.
-- The top-level `standardsSummary` shows per-standard coverage (e.g. `4/10`).
+- The top-level `standardsSummary` shows per-standard coverage (e.g. `4/10`) with per-control `status` and `detectable` flags.
+- `mitre-atlas` JSON reports include an `atlas` block hydrating flagged techniques with tactics, mitigations, and case studies.
 - SARIF embeds standards as `result.properties.standards` plus a flat `tags`
   array — GitHub Code Scanning will display them as labels.
-- HTML reports render a "AI Security Standards Alignment" section.
+- HTML reports render a "Standards Compliance" section with the 3-state coverage map and a reading legend.
 
 **Adding a new standard**: drop a module under
 `cli/utils/standards/sources/<name>.js` exporting `name`, `version`, `title`,
 `description`, `url`, `controls`, and `mapFinding(finding)`; register it in
 `ALL_STANDARDS` in `cli/utils/standards/index.js`. No other changes needed.
+Mark controls with `detectable: false` when no `mapFinding` path can ever
+produce them, so reports can distinguish tool gaps from absent evidence.
 
 ---
 
@@ -544,9 +599,34 @@ In the JSON / SARIF / HTML reports:
 | `OPENAI_API_KEY` | OpenAI (GPT-4 / GPT-4o / o1) |
 | `GOOGLE_AI_API_KEY` | Gemini |
 | `MOONSHOT_API_KEY` | Kimi |
-| `OPENAI_BASE_URL` | Custom OpenAI-compatible endpoint (Groq, Together, LM Studio, etc.) |
+| `OPENAI_BASE_URL` | Custom OpenAI-compatible endpoint (OpenRouter, Groq, DeepSeek, StepFun, LM Studio, vLLM, ...) |
+| `PRAXIS_LLM_MODEL` | Default model when no `--model` flag is given |
+| `PRAXIS_LLM_REASONING` | `low`/`medium`/`high` — enables extended thinking (reasoning_effort) |
 
 `--local` uses Ollama; no key needed.
+
+### `.env` loading
+
+Praxis loads a `.env` file from your **working directory** at startup
+(`.env.example` in the repo is the documented template; `.env` is gitignored).
+Real environment variables always win over `.env`; CLI flags
+(`--provider`, `--model`, `--base-url`) win over both. `OPENAI_BASE_URL`
+applies only to OpenAI-shaped providers (never anthropic/google/ollama).
+
+```bash
+# .env — cloud LLM features without any flags
+OPENAI_API_KEY=sk-...
+OPENAI_BASE_URL=https://api.stepfun.ai/step_plan/v1/chat/completions
+PRAXIS_LLM_MODEL=step-3.7-flash
+PRAXIS_LLM_REASONING=high
+
+praxis project doctor          # connectivity check ("custom LLM responding successfully")
+praxis scan full . --deep      # LLM taint analysis, no flags needed
+praxis fix interactive .       # LLM remediation planning
+```
+
+Run Praxis from the directory that holds your `.env` (the config is the
+operator's, not the target's).
 
 ### Threat intelligence (raise rate limits)
 
@@ -657,7 +737,7 @@ The output formatter registry lives in `cli/core/output/`. Built-in formats:
 | --- | --- | --- |
 | `json` | `--json` | `schemaVersion: 3`, `findings[]`, `standardsSummary`, `compliance`, `agenticSummary` |
 | `sarif` | `--sarif [file]` | SARIF 2.1.0; `result.properties.standards` + flat `tags` |
-| `html` | `--html [file]` | Standalone interactive report with severity filter, search, standards alignment section |
+| `html` | `--html [file]` | **Professional assessment report** — sidebar navigation, executive risk narrative, findings grouped by category (each card: *what it means · evidence · how to fix · references*), remediation roadmap, 3-state standards compliance map, AI attack-surface lanes, score trend, scope & limitations footer |
 | `pdf` | `--pdf [file]` | Print-rendered PDF (requires Chrome/Chromium) |
 | `csv` | `--csv` | Tabular |
 | `md` | `--md` | Markdown |
@@ -665,6 +745,10 @@ The output formatter registry lives in `cli/core/output/`. Built-in formats:
 Add a new format by writing `cli/core/output/<name>.js` exporting
 `default function(report, options): string` and registering it in `REGISTRY`
 in `cli/core/output/index.js`.
+
+**Secret redaction invariant:** secret-category findings never expose their
+raw matched value in any report output — `matched` is redacted centrally
+(`sk-***`) in the output renderers, and SARIF carries no matched values.
 
 ---
 
@@ -684,11 +768,21 @@ uploads SARIF.
     deps: 'true'
     sarif: 'true'
     comment: 'true'
+    # PR regression gating — scan the base ref and fail only on NEW findings
+    net-new: 'true'
+    fail-on-new: 'high'
+    # severity floor a baseline can't suppress
+    always-fail-on: 'critical'
   env:
     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
 Outputs: `score`, `grade`, `findings`, `secrets`, `vulns`, `cves`, `sarif-file`.
+
+**Net-new PR gating** (`net-new: true`, pull-request events only): the action
+checks out the PR base into a worktree, scans it, and diffs finding identities
+(`file:rule`) against the head scan. Only findings *introduced by the PR* can
+fail the build, at or above `fail-on-new`. Pre-existing debt never blocks.
 
 ### Plain GitHub Actions
 
