@@ -1,0 +1,26 @@
+{
+  "_provenance": {
+    "source": "Praxis-curated MCP trust registry (our own curation — no third-party code)",
+    "version": "1.0",
+    "note": "Trust tiers: verified = official/well-audited, community = widely used community servers, unknown = everything else (trust 0 at lookup). Update cadence: quarterly + incident-driven."
+  },
+  "servers": {
+    "@modelcontextprotocol/server-filesystem": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-github": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-gitlab": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-google-maps": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-memory": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-postgres": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-puppeteer": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-slack": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-sqlite": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-brave-search": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-fetch": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-everything": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "@modelcontextprotocol/server-sequential-thinking": { "tier": "verified", "trust": 90, "note": "Official reference MCP server" },
+    "playwright": { "tier": "community", "trust": 70, "note": "Microsoft Playwright MCP — widely used browser automation" },
+    "mcp-server-git": { "tier": "community", "trust": 60, "note": "Popular community git MCP server" },
+    "mcp-chrome": { "tier": "community", "trust": 50, "note": "Community chrome automation" },
+    "mcp-server-fetch": { "tier": "community", "trust": 50, "note": "Community fetch tool" }
+  }
+}

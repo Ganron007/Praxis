@@ -20,6 +20,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { BaseAgent } from './base-agent.js';
+import { lookupTrust, listKnown } from '../utils/mcp-trust.js';
 
 // =============================================================================
 // MCP SECURITY PATTERNS
@@ -305,6 +306,7 @@ export class MCPSecurityAgent extends BaseAgent {
     for (const file of configFiles) {
       findings = findings.concat(this._checkMcpTyposquatting(file));
       findings = findings.concat(this._checkOverPermissioned(file));
+      findings = findings.concat(this._checkTrustRegistry(file));
     }
 
     // ── 5. Detect shadow MCP configs (not in version control) ───────────
@@ -384,6 +386,50 @@ export class MCPSecurityAgent extends BaseAgent {
   }
 
   /**
+   * Trust-registry check: flag npx packages that aren't in the curated
+   * known-MCP registry (unknown trust), and surface community-tier scores.
+   */
+  _checkTrustRegistry(filePath) {
+    const content = this.readFile(filePath);
+    if (!content) return [];
+    const findings = [];
+
+    let config;
+    try {
+      config = JSON.parse(content);
+    } catch {
+      return findings;
+    }
+
+    const servers = config.mcpServers || config.servers || {};
+    for (const [name, server] of Object.entries(servers)) {
+      const fullCmd = `${server.command || ''} ${(server.args || []).join(' ')}`;
+      const npxMatch = fullCmd.match(/npx\s+(?:-[^\s]+\s+)*([^\s]+)/);
+      if (!npxMatch) continue;
+      const pkg = npxMatch[1];
+
+      const trust = lookupTrust(pkg);
+      if (trust.tier === 'verified' || trust.tier === 'community') continue;
+
+      findings.push({
+        file: filePath, line: 1, column: 0,
+        severity: 'medium',
+        category: this.category,
+        rule: 'MCP_UNVERIFIED_SOURCE',
+        title: `MCP: Unverified Server Source "${pkg}"`,
+        description: `MCP server "${name}" runs package "${pkg}", which is not in the curated known-MCP trust registry. An unverified MCP server gains the agent's tools, credentials, and filesystem context — treat it as untrusted until reviewed.${trust.tier === 'unverified-registry' ? ' (Trust registry failed its integrity check.)' : ''}`,
+        matched: pkg,
+        confidence: 'medium',
+        cwe: 'CWE-1357',
+        owasp: 'ASI04',
+        eaa: 'EAA-006',
+        fix: 'Verify the package publisher, pin a reviewed version with a checksum, and prefer servers from the trust registry (praxis scan standard mitre-atlas for context).',
+      });
+    }
+    return findings;
+  }
+
+  /**
    * Detect possible typosquatted MCP server names in config.
    */
   _checkMcpTyposquatting(filePath) {
@@ -400,11 +446,13 @@ export class MCPSecurityAgent extends BaseAgent {
         const args = (server.args || []).join(' ');
         const fullCmd = `${cmd} ${args}`;
 
-        // Check if server uses an npx package that looks like a typosquat of official ones
+        // Check if server uses an npx package that looks like a typosquat of
+        // official/community known servers (trust registry + built-in list).
         const npxMatch = fullCmd.match(/npx\s+(?:-[^\s]+\s+)*([^\s]+)/);
         if (npxMatch) {
           const pkg = npxMatch[1];
-          for (const official of OFFICIAL_MCP_SERVERS) {
+          const knownSet = new Set([...OFFICIAL_MCP_SERVERS, ...listKnown()]);
+          for (const official of knownSet) {
             const distance = this._levenshtein(pkg, official);
             if (distance > 0 && distance <= 3 && pkg !== official) {
               findings.push({

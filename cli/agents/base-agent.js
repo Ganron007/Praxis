@@ -18,7 +18,7 @@
 import fs from 'fs';
 import path from 'path';
 import fg from 'fast-glob';
-import { SKIP_DIRS, SKIP_EXTENSIONS, SKIP_FILENAMES, MAX_FILE_SIZE, loadGitignorePatterns } from '../utils/patterns.js';
+import { SKIP_DIRS, SKIP_EXTENSIONS, SKIP_FILENAMES, MAX_FILE_SIZE, MAX_SCAN_FILES, loadGitignorePatterns } from '../utils/patterns.js';
 
 // =============================================================================
 // FINDING FACTORY
@@ -129,13 +129,19 @@ export class BaseAgent {
       dot: true,
     });
 
-    return allFiles.filter(file => {
+    const capped = allFiles.length > MAX_SCAN_FILES ? allFiles.slice(0, MAX_SCAN_FILES) : allFiles;
+
+    return capped.filter(file => {
       const ext = path.extname(file).toLowerCase();
       if (SKIP_EXTENSIONS.has(ext)) return false;
       const basename = path.basename(file);
       if (SKIP_FILENAMES.has(basename)) return false;
       if (basename.endsWith('.min.js') || basename.endsWith('.min.css')) return false;
       try {
+        // Scanner hardening: refuse symlinks (a hostile repo could link to
+        // files outside the workspace) and cap file size.
+        const lstats = fs.lstatSync(file);
+        if (lstats.isSymbolicLink()) return false;
         const stats = fs.statSync(file);
         if (stats.size > MAX_FILE_SIZE) return false;
       } catch {

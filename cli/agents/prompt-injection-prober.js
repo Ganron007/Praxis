@@ -42,7 +42,7 @@ function loadCorpus() {
       } catch {
         regex = null;
       }
-      return { ...p, regex, categoryTitle: cat.title || p.category, tags: cat.tags || [] };
+      return { ...p, patternSource: p.regex, regex, categoryTitle: cat.title || p.category, tags: cat.tags || [] };
     });
     _cachedCorpus = { version: data.version, probes };
     return _cachedCorpus;
@@ -60,8 +60,15 @@ function compileProbeRegex(pattern) {
     for (const f of m[1]) if ('imsu'.includes(f) && !flags.includes(f)) flags += f;
     body = body.slice(m[0].length);
   }
+  // Scanner hardening: reject nested-quantifier constructs that risk
+  // catastrophic backtracking on adversarial input.
+  if (NESTED_QUANTIFIER.test(body)) {
+    throw new Error('ReDoS-unsafe probe regex (nested quantifiers)');
+  }
   return new RegExp(body, flags);
 }
+
+const NESTED_QUANTIFIER = /\((?:[^()\\]|\\.)*[+*]\)[+*{]/;
 
 export class PromptInjectionProber extends BaseAgent {
   constructor() {

@@ -2194,3 +2194,84 @@ describe('EndpointAgentAbuseAgent', async () => {
   });
 });
 
+// =============================================================================
+// MCP TRUST REGISTRY + SCANNER HARDENING (P-IMP-037 / P-IMP-038)
+// =============================================================================
+
+describe('MCP trust registry', async () => {
+  const trust = await import('../utils/mcp-trust.js');
+
+  it('registry passes integrity check', () => {
+    assert.equal(trust.registryIntegrityOk(), true);
+  });
+
+  it('looks up verified servers with high trust', () => {
+    const t = trust.lookupTrust('@modelcontextprotocol/server-filesystem');
+    assert.equal(t.tier, 'verified');
+    assert.equal(t.trust, 90);
+  });
+
+  it('returns unknown tier + zero trust for unlisted packages', () => {
+    const t = trust.lookupTrust('definitely-not-a-real-mcp-package');
+    assert.equal(t.tier, 'unknown');
+    assert.equal(t.trust, 0);
+  });
+});
+
+describe('MCPSecurityAgent trust registry integration', async () => {
+  const { MCPSecurityAgent } = await import('../agents/mcp-security-agent.js');
+  const agent = new MCPSecurityAgent();
+
+  it('flags unverified MCP package in config', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-trust-'));
+    const file = path.join(dir, '.mcp.json');
+    fs.writeFileSync(file, JSON.stringify({ mcpServers: { x: { command: 'npx', args: ['-y', 'some-random-unverified-pkg'] } } }));
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'MCP_UNVERIFIED_SOURCE'));
+    } finally { cleanup(dir); }
+  });
+
+  it('does not flag verified registry servers', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-trust-'));
+    const file = path.join(dir, '.mcp.json');
+    fs.writeFileSync(file, JSON.stringify({ mcpServers: { fs: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem'] } } }));
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(!findings.some(f => f.rule === 'MCP_UNVERIFIED_SOURCE'));
+    } finally { cleanup(dir); }
+  });
+});
+
+describe('scanner hardening', async () => {
+  const { _internals } = await import('../agents/prompt-injection-prober.js');
+
+  it('ReDoS guard rejects nested-quantifier probe regexes', () => {
+    assert.throws(() => _internals.compileProbeRegex('(a+)+b'), /ReDoS-unsafe/);
+  });
+
+  it('ReDoS guard accepts all corpus probes', () => {
+    const corpus = _internals.loadCorpus();
+    for (const p of corpus.probes) {
+      const compiled = _internals.compileProbeRegex(p.patternSource);
+      assert.ok(compiled instanceof RegExp, `probe ${p.id} compiles`);
+    }
+  });
+
+  it('secret values never appear in SARIF output (redaction invariant)', async () => {
+    const { buildOrchestrator } = await import('../agents/index.js');
+    const { createFinding } = await import('../agents/base-agent.js');
+    const secret = 'sk-proj-supersecretvalue1234567890abcdef1234567890ABCDEF';
+    const finding = createFinding({
+      file: '/tmp/app.js', line: 1, severity: 'critical', category: 'secrets',
+      rule: 'SECRET', title: 'Secret', description: 'x',
+      matched: secret, confidence: 'high', fix: 'rotate',
+    });
+    // ci.js SARIF builder is internal — validate the output registry's JSON
+    // serializer never emits the matched raw secret.
+    const { render } = await import('../core/output/index.js');
+    const out = render('json', { findings: [finding], totalFindings: 1 });
+    assert.ok(!out.includes(secret), 'raw secret must not appear in report output');
+    assert.equal(typeof buildOrchestrator, 'function');
+  });
+});

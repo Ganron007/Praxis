@@ -833,6 +833,11 @@ export const SKIP_FILENAMES = new Set([
 // Maximum file size to scan (1MB)
 export const MAX_FILE_SIZE = 1_000_000;
 
+// Scanner hardening: cap files materialized per scan so a pathological
+// repo (or a hostile one) can't exhaust memory. Generous by design —
+// 200k files exceeds any realistic repo; hostile trees are truncated.
+export const MAX_SCAN_FILES = 200_000;
+
 // =============================================================================
 // .GITIGNORE LOADING
 // =============================================================================
