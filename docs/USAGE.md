@@ -1,7 +1,7 @@
 # Praxis — Complete Usage Guide
 
 AI-native security CLI for AI-augmented codebases. Single binary, find→fix→verify
-loop on autopilot. 27 parallel security agents (24 built-in + ModelFileScanner +
+loop on autopilot. 28 parallel security agents (24 built-in + ModelFileScanner +
 PromptInjectionProber + AgentTelemetryAgent + EndpointAgentAbuseAgent), multi-source threat intel, modular alignment with 8 AI-security
 standards, LLM-powered remediation with diff review and undo log. Works fully
 offline; LLM features are optional.
@@ -49,7 +49,7 @@ entry in `package.json`.
 ## Quick start
 
 ```bash
-praxis scan .                    # Full audit: secrets + 27 agents + deps + score
+praxis scan .                    # Full audit: secrets + 28 agents + deps + score
 praxis fix .                     # Interactive LLM-guided fixes
 praxis agents audit .            # Audit CLAUDE.md, .cursorrules, MCP, skills
 praxis intel update              # Refresh threat-intel feed
@@ -81,7 +81,7 @@ Plus three top-level shortcuts: `praxis vibe`, `praxis score`, and `praxis` alon
 
 ### `scan full [path]` (default)
 
-Full audit: secrets + 27 agents + deps + score + remediation plan.
+Full audit: secrets + 28 agents + deps + score + remediation plan.
 
 | Flag | Description |
 | --- | --- |
@@ -146,7 +146,7 @@ Credential health check: `.env` coverage, source cross-ref, git history.
 
 ### `scan redteam [path]`
 
-27 agents in parallel — 80+ attack classes.
+28 agents in parallel — 80+ attack classes.
 
 | Flag | Description |
 | --- | --- |
@@ -821,7 +821,7 @@ mcpServers:
 | Tool | Input | Returns | Description |
 |------|-------|---------|-------------|
 | `scan_secrets` | `{ path }` | findings[] | Scan a file/directory for hardcoded secrets |
-| `scan_repo` | `{ path, deep? }` | findings[] + score | Full orchestrator scan (all 27 agents + intel) |
+| `scan_repo` | `{ path, deep? }` | findings[] + score | Full orchestrator scan (all 28 agents + intel) |
 | `analyze_file` | `{ path }` | findings[] | Deep LLM analysis of a single file |
 | `get_findings` | `{ severity? }` | findings[] | Retrieve cached findings (optionally filtered) |
 | `get_checklist` | — | checklist[] | Launch-day security checklist items |

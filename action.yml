@@ -1,5 +1,5 @@
 name: 'Praxis Security Scan'
-description: 'Scan your codebase for secrets, vulnerabilities, CVEs, and misconfigurations with 27 AI security agents'
+description: 'Scan your codebase for secrets, vulnerabilities, CVEs, and misconfigurations with 28 AI security agents'
 author: 'Praxis'
 
 branding:

@@ -37,6 +37,7 @@ export { ModelFileScanner } from './model-file-scanner.js';
 export { PromptInjectionProber } from './prompt-injection-prober.js';
 export { AgentTelemetryAgent } from './agent-telemetry-agent.js';
 export { EndpointAgentAbuseAgent } from './endpoint-agent-abuse-agent.js';
+export { AiInfraInventoryAgent } from './ai-infra-inventory-agent.js';
 export { VerifierAgent } from './verifier-agent.js';
 export { DeepAnalyzer } from './deep-analyzer.js';
 export { ScoringEngine, GRADES, CATEGORIES } from './scoring-engine.js';
@@ -45,7 +46,7 @@ export { PolicyEngine } from './policy-engine.js';
 export { HTMLReporter } from './html-reporter.js';
 
 /**
- * Create a fully configured orchestrator with all 27 scanning agents.
+ * Create a fully configured orchestrator with all 28 scanning agents.
  * (VerifierAgent and DeepAnalyzer run as post-processors, not in the agent pool.)
  *
  * Plugin system: if rootPath is provided, custom agents from
@@ -80,6 +81,7 @@ import { ModelFileScanner as ModelFileScannerClass } from './model-file-scanner.
 import { PromptInjectionProber as PromptInjectionProberClass } from './prompt-injection-prober.js';
 import { AgentTelemetryAgent as AgentTelemetryAgentClass } from './agent-telemetry-agent.js';
 import { EndpointAgentAbuseAgent as EndpointAgentAbuseAgentClass } from './endpoint-agent-abuse-agent.js';
+import { AiInfraInventoryAgent as AiInfraInventoryAgentClass } from './ai-infra-inventory-agent.js';
 import { loadPlugins } from '../utils/plugin-loader.js';
 
 const BUILT_IN_AGENTS = () => [
@@ -110,6 +112,7 @@ const BUILT_IN_AGENTS = () => [
   new PromptInjectionProberClass(),
   new AgentTelemetryAgentClass(),
   new EndpointAgentAbuseAgentClass(),
+  new AiInfraInventoryAgentClass(),
 ];
 
 /** Synchronous build — no plugin support. Used by legacy callers. */

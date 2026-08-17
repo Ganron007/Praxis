@@ -2348,3 +2348,79 @@ describe('governance audits', async () => {
     } finally { cleanup(dir); }
   });
 });
+
+// =============================================================================
+// AI INFRA INVENTORY AGENT (P-IMP-035)
+// =============================================================================
+
+describe('AiInfraInventoryAgent', async () => {
+  const { AiInfraInventoryAgent } = await import('../agents/ai-infra-inventory-agent.js');
+  const agent = new AiInfraInventoryAgent();
+
+  function makeProject(files) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-infr-'));
+    for (const [rel, content] of Object.entries(files)) {
+      const abs = path.join(dir, rel);
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, content);
+    }
+    return dir;
+  }
+
+  it('detects LiteLLM gateway config (lane 1)', async () => {
+    const dir = makeProject({ 'litellm-config.yaml': 'model_list:\n  - model_name: gpt-4\n' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'litellm-config.yaml')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_GATEWAY_LITELLM'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects self-hosted LLM runtime in Dockerfile (lane 2)', async () => {
+    const dir = makeProject({ 'Dockerfile': 'FROM ghcr.io/ollama/ollama:latest\n' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'Dockerfile')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_INFRA_RUNTIME_DEPLOYMENT'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects managed AI compute in Terraform (lane 2)', async () => {
+    const dir = makeProject({ 'main.tf': 'resource "aws_bedrock_provisioned_model_throughput" "x" {}' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'main.tf')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_MANAGED_BEDROCK'));
+    } finally { cleanup(dir); }
+  });
+
+  it('inventories OpenAPI spec routes + BOLA candidates (lane 3)', async () => {
+    const spec = {
+      openapi: '3.0.0',
+      paths: {
+        '/users/{id}': { get: {} },
+        '/health': { get: {} },
+      },
+      components: { securitySchemes: { bearer: { type: 'http', scheme: 'bearer' } } },
+    };
+    const dir = makeProject({ 'openapi.json': JSON.stringify(spec) });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'openapi.json')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_API_SPEC_INVENTORY'));
+      assert.ok(findings.some(f => f.rule === 'AI_API_BOLA_CANDIDATE'));
+    } finally { cleanup(dir); }
+  });
+
+  it('discovers FastAPI routes with object-id segments (lane 3)', async () => {
+    const dir = makeProject({ 'main.py': '@app.get("/items/{item_id}")\nasync def read(item_id: int):\n    pass\n' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'main.py')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_API_FRAMEWORK_ROUTES'));
+    } finally { cleanup(dir); }
+  });
+
+  it('returns no findings for a plain web project', async () => {
+    const dir = makeProject({ 'src/app.js': 'const x = 1;\n', 'package.json': '{"name":"x"}' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'src/app.js'), path.join(dir, 'package.json')], recon: {}, options: {} });
+      assert.equal(findings.length, 0);
+    } finally { cleanup(dir); }
+  });
+});
