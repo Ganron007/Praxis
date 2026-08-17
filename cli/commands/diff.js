@@ -133,7 +133,7 @@ export async function diffCommand(ref, options) {
 
   const orchestrator = buildOrchestrator();
   const results = await orchestrator.runAll(absolutePath, {
-    timeout: options.timeout || 30_000,
+    timeout: options.timeout ?? 30_000,
     changedFiles,
   });
 

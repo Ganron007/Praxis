@@ -53,7 +53,7 @@ export async function redTeamCommand(targetPath = '.', options = {}) {
       provider: options.provider,
       model: options.model,
       verbose: options.verbose,
-      budgetCents: options.budget || 200,
+      budgetCents: options.budget ?? 200,
     });
 
     if (!swarm) {

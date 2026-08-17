@@ -224,7 +224,7 @@ export class Orchestrator {
       const analyzer = DeepAnalyzer.create(absolutePath, {
         local: options.local,
         model: options.model,
-        budgetCents: options.budget || 50,
+        budgetCents: options.budget ?? 50,
         verbose: options.verbose,
       });
 

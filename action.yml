@@ -35,6 +35,18 @@ inputs:
     description: 'Only report new findings (compare against baseline)'
     required: false
     default: 'false'
+  net-new:
+    description: 'PR mode: scan the base ref in a worktree and fail only on findings INTRODUCED by this PR'
+    required: false
+    default: 'false'
+  fail-on-new:
+    description: 'With net-new: minimum severity of introduced findings that fails the PR (default: high)'
+    required: false
+    default: 'high'
+  always-fail-on:
+    description: 'Severity floor that even an accepted baseline cannot suppress'
+    required: false
+    default: ''
   comment:
     description: 'Post scan summary as PR comment'
     required: false
@@ -88,6 +100,8 @@ runs:
         if [ "${{ inputs.deps }}" = "false" ]; then FLAGS="$FLAGS --no-deps"; fi
         if [ "${{ inputs.baseline }}" = "true" ]; then FLAGS="$FLAGS --baseline"; fi
         if [ -n "${{ inputs.fail-on }}" ]; then FLAGS="$FLAGS --fail-on ${{ inputs.fail-on }}"; fi
+        if [ -n "${{ inputs.always-fail-on }}" ]; then FLAGS="$FLAGS --always-fail-on ${{ inputs.always-fail-on }}"; fi
+        if [ "${{ inputs.net-new }}" = "true" ]; then FLAGS="$FLAGS --include-findings"; fi
         if [ "${{ inputs.sarif }}" = "true" ]; then FLAGS="$FLAGS --sarif /tmp/praxis-results.sarif"; fi
 
         # Run scan and capture output
@@ -228,6 +242,62 @@ runs:
         else
           gh api "repos/$REPO/issues/$PR_NUMBER/comments" -f body="$BODY"
         fi
+
+    - name: Net-new PR gate (base vs head)
+      if: inputs.net-new == 'true' && github.event_name == 'pull_request'
+      id: netnew
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        # Scan the PR base in a worktree and diff finding identities
+        BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        echo "::group::Scanning base ref $BASE_SHA"
+        git fetch --depth 1 origin "$BASE_SHA"
+        git worktree add /tmp/praxis-base "$BASE_SHA" > /dev/null 2>&1 || true
+        set +e
+        BASE_JSON=$(cd /tmp/praxis-base && praxis ci . --json --include-findings --threshold 0 --no-deps 2>&1 | sed -n '/^[[:space:]]*{/,$p')
+        BASE_EXIT=$?
+        set -e
+        echo "::endgroup::"
+        if [ "$BASE_EXIT" -ne 0 ]; then
+          echo "::warning::Base scan failed — skipping net-new gate"
+          echo "introduced=0" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Introduced = findings present in head but absent from base (file:rule identity)
+        FLOOR="${{ inputs.fail-on-new }}"
+        HEAD_JSON="/tmp/praxis-report.json"
+        echo "$BASE_JSON" > /tmp/praxis-base-report.json
+        INTRODUCED=$(jq -n \
+          --slurpfile base /tmp/praxis-base-report.json \
+          --slurpfile head "$HEAD_JSON" \
+          --arg floor "$FLOOR" '
+            ($base[0].findings // []) as $bf |
+            ($head[0].findings // []) as $hf |
+            ($bf | map(.file + ":" + (.rule // "")) | unique) as $baseIds |
+            ($hf | map(select(.file + ":" + (.rule // "") as $id | ($baseIds | index($id)) == null))) as $new |
+            { total: ($new | length),
+              blocking: ($new | map(select(.severity == $floor or .severity == "critical")) | length) }
+          ')
+
+        NEW_TOTAL=$(echo "$INTRODUCED" | jq -r '.total // 0')
+        NEW_BLOCKING=$(echo "$INTRODUCED" | jq -r '.blocking // 0')
+        echo "introduced=$NEW_TOTAL" >> $GITHUB_OUTPUT
+        echo "blocking=$NEW_BLOCKING" >> $GITHUB_OUTPUT
+        echo "::notice::Net-new gate: $NEW_TOTAL introduced finding(s), $NEW_BLOCKING at/above $FLOOR"
+        if [ "$NEW_BLOCKING" -gt 0 ]; then
+          echo "::error::PR introduces $NEW_BLOCKING finding(s) at/above severity $FLOOR"
+          echo "fail=1" >> $GITHUB_OUTPUT
+        else
+          echo "fail=0" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Fail on introduced findings
+      if: steps.netnew.outputs.fail == '1'
+      shell: bash
+      run: exit 1
 
     - name: Check threshold
       if: steps.scan.outputs.fail == '1'

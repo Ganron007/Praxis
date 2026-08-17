@@ -44,8 +44,9 @@ import fg from 'fast-glob';
 
 export async function ciCommand(targetPath = '.', options = {}) {
   const absolutePath = path.resolve(targetPath);
-  const threshold = options.threshold || 75;
+  const threshold = options.threshold ?? 75;
   const failOn = options.failOn || null;
+  const alwaysFailOn = options.alwaysFailOn || null;
   const sarifPath = options.sarif || null;
 
   if (!fs.existsSync(absolutePath)) {
@@ -122,6 +123,10 @@ export async function ciCommand(targetPath = '.', options = {}) {
   const policy = PolicyEngine.load(absolutePath);
   allFindings = policy.applyPolicy(allFindings);
 
+  // --always-fail-on floor must beat the baseline: check the pre-baseline
+  // set for floor violations, but gate threshold/fail-on on the filtered set.
+  const preBaselineFindings = allFindings;
+
   // Apply baseline filter
   if (options.baseline) {
     allFindings = filterBaseline(allFindings, absolutePath);
@@ -156,8 +161,14 @@ export async function ciCommand(targetPath = '.', options = {}) {
         findingCount: Object.values(c.counts).reduce((a, b) => a + b, 0),
         counts: c.counts,
       }])),
+      ...(options.includeFindings ? {
+        findings: allFindings.map(f => ({
+          file: path.relative(absolutePath, f.file).replace(/\\/g, '/'),
+          line: f.line, rule: f.rule, severity: f.severity,
+        })),
+      } : {}),
       threshold,
-      pass: determinePass(scoreResult, allFindings, threshold, failOn),
+      pass: determinePass(scoreResult, allFindings, threshold, failOn, alwaysFailOn, preBaselineFindings),
       duration: `${duration}s`,
     }, null, 2));
   } else {
@@ -191,11 +202,13 @@ export async function ciCommand(targetPath = '.', options = {}) {
   }
 
   // ── Exit Code ────────────────────────────────────────────────────────────
-  const pass = determinePass(scoreResult, allFindings, threshold, failOn);
+  const pass = determinePass(scoreResult, allFindings, threshold, failOn, alwaysFailOn, preBaselineFindings);
   if (!pass) {
     if (!options.json) {
       if (failOn) {
         console.log(`[praxis] FAIL: Found ${failOn}-severity findings`);
+      } else if (alwaysFailOn) {
+        console.log(`[praxis] FAIL: Found ${alwaysFailOn}-or-worse findings (--always-fail-on floor)`);
       } else {
         console.log(`[praxis] FAIL: Score ${scoreResult.score} < threshold ${threshold}`);
       }
@@ -213,13 +226,22 @@ export async function ciCommand(targetPath = '.', options = {}) {
 // HELPERS
 // =============================================================================
 
-function determinePass(scoreResult, findings, threshold, failOn) {
+function determinePass(scoreResult, findings, threshold, failOn, alwaysFailOn, preBaselineFindings = null) {
   if (failOn) {
     const sevOrder = ['critical', 'high', 'medium', 'low'];
     const failIndex = sevOrder.indexOf(failOn);
     if (failIndex === -1) return scoreResult.score >= threshold;
     const blockingSevs = sevOrder.slice(0, failIndex + 1);
     return !findings.some(f => blockingSevs.includes(f.severity));
+  }
+  if (alwaysFailOn) {
+    const sevOrder = ['critical', 'high', 'medium', 'low'];
+    const floorIndex = sevOrder.indexOf(alwaysFailOn);
+    if (floorIndex === -1) return scoreResult.score >= threshold;
+    const floorSevs = sevOrder.slice(0, floorIndex + 1);
+    // Floor beats everything: even an accepted baseline cannot suppress it.
+    const floorSet = preBaselineFindings || findings;
+    if (floorSet.some(f => floorSevs.includes(f.severity))) return false;
   }
   return scoreResult.score >= threshold;
 }
