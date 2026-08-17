@@ -12,312 +12,128 @@
   <img src="https://img.shields.io/badge/Status-Public%20Beta-yellow.svg" alt="Status: Public Beta">
 </p>
 
-Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — AI-security scan → remediate → verify CLI that runs fully standalone.
+**Praxis is an AI-security-first audit CLI with a working fix loop.** 28 parallel
+agents scan your codebase — secrets, code vulnerabilities, and the entire AI/agent
+attack surface (LLM calls, MCP servers, RAG pipelines, model files, agent configs,
+agent telemetry) — then an LLM drafts fixes you approve, applies, verifies, and can
+undo. Offline by default. No registration, no data leaves your machine.
 
-> [!NOTE]
-> **Public Beta.** The core scan / fix / verify flows are stable and CI-tested; agent coverage and integration surfaces (GitHub Action, Claude Code plugin) are still being validated in the wild. Expect CLI flags, agents, and docs to keep evolving.
+Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — fully standalone.
 
 > [!IMPORTANT]
-> **Local Privacy & Autopilot Safety.** Praxis is designed with an offline-first architecture. It will never transmit your source code to external servers or AI providers unless you explicitly configure LLM remediation. When LLM features are enabled, Praxis works in a **gated confirmation loop** — no file changes are written without your explicit approval, and every modification is fully reversible via local logs.
-
-Praxis is an enterprise-grade autonomous AI-security audit framework designed to detect vulnerabilities and automate patch engineering. Operating as a command-line interface (CLI), Praxis analyzes application codebases, Model Context Protocol (MCP) server configurations, and AI agent integration points to identify traditional vulnerabilities and modern generative AI exposure risks. 
-
-Unlike passive scanning tools that only generate static finding logs, Praxis provides an autonomous, closed-loop remediation pipeline. When vulnerabilities are detected, Praxis leverages cloud or local Large Language Models (LLMs) to automatically construct precise, context-aware code repairs (as unified diff patches). After user verification, the patches are written atomically to disk and immediately re-scanned to programmatically verify that the issue has been successfully resolved.
+> **Local & gated by design.** Core scans run entirely offline. LLM remediation is
+> opt-in, drafts diffs for your approval, writes atomically, and logs every change
+> for undo.
 
 ---
 
-## Key Capabilities
+## What it does
 
-* **AI-Security & Agentic Surface Auditing** — 28 parallel agents scan and validate AI configuration artifacts: agent prompts (`.cursorrules`, `CLAUDE.md`), MCP server tool declarations, model files (pickle deserialization hazards in `.pkl`/`.pt`/`.ckpt`), vector-database/RAG sources, local AI-agent abuse (EAA catalog: hook persistence, MCP env-expansion, gateway overrides), agent session telemetry (secrets, exfiltration, forensics), and the production AI stack (model gateways like LiteLLM/Portkey/OpenRouter, self-hosted runtimes in Docker/K8s/Terraform, and AI API endpoints with BOLA candidates).
-* **MCP Trust Registry** — bundled registry of known MCP servers with trust scores (verified/community/unknown), SHA-256 integrity-checked; unverified sources are flagged, typosquats caught by edit distance.
-* **Governance Absence-Audits** — detects missing controls, not just present bugs: `no-human-oversight` (financial/destructive agent actions without approval gates → EU AI Act Art. 14) and `no-observability` (AI in use with zero tracing wiring → Art. 12).
-* **Autonomous Remediation Loop with Verification Ladder** — drafts context-aware unified diffs, presents them for interactive validation, writes atomically, then verifies through a tiered executable ladder (build → test suite → re-scan) with evidence-fed retries and automatic revert of failed fixes. Every fix is undo-logged.
-* **Offline-First Security Architecture** — Operates entirely locally with zero registration requirements or mandatory external data transmission. Core threat intelligence databases are stored and queried on-premise, preserving source code privacy and intellectual property.
-* **Correlated Threat Intelligence** — Integrates and aggregates security data from 6 public feeds (OSV.dev, GitHub Advisory Database, CISA KEV, EPSS, NVD, and Gitleaks) and optionally correlates observations with 5 enterprise feeds (Snyk, Socket.dev, GitGuardian, Sonatype OSS Index, and Phylum) into a local repository database.
-* **AI Compliance Mapping** — Programmatically aligns all findings with 8 regulatory and industry frameworks (OWASP LLM/ML/Agentic Top 10, MITRE ATLAS — with technique mitigations and real-world case studies, NIST AI 600-1, AVID, EU AI Act with 18 article-level controls, ISO 42001 with 21 Annex controls, Google SAIF). Reports show a 3-state coverage map: flagged / no evidence / no detection rule — evidence-based mapping, never certification.
-* **Professional Assessment Report** — a navigable HTML report with sidebar TOC, executive risk narrative, findings grouped by category (each explained: what it means · evidence · how to fix), remediation roadmap, compliance matrix, AI attack-surface lanes, and score trend.
+| Capability | In one line |
+| --- | --- |
+| **AI/agent surface audit** | 28 concurrent agents: prompt injection, MCP tool abuse, agent-memory poisoning, pickle-based model files, RAG, agent session telemetry, local agent-abuse (EAA), and AI infrastructure inventory (gateways, runtimes, API endpoints) |
+| **Find → fix → verify** | LLM drafts a diff → you approve → atomic apply → tiered verification ladder (build → tests → re-scan) with auto-revert of failed fixes → undo log |
+| **Governance audits** | Detects *missing* controls: no human-oversight gates, no observability wiring — EU AI Act Art. 14 / 12 evidence |
+| **MCP trust registry** | Known MCP servers with trust scores (SHA-256 integrity-checked); unverified sources and typosquats flagged |
+| **Threat intel** | 6 free feeds cached locally (OSV, GHSA, KEV, EPSS, NVD, Gitleaks) + 5 optional paid; findings enriched with exploit likelihood |
+| **Compliance mapping** | Findings tagged against 8 frameworks — OWASP LLM/ML/Agentic, MITRE ATLAS (+ mitigations & case studies), NIST AI 600-1, AVID, EU AI Act, ISO 42001, Google SAIF |
+| **Professional report** | Navigable HTML: executive summary, per-finding *what/evidence/fix*, remediation roadmap, 3-state compliance map, score trend |
+| **CI-native** | `scan ci` gates, SARIF for Code Scanning, net-new PR gating (fails only on *introduced* findings), `--always-fail-on` floor |
 
----
+## Quick start
 
-## Tool Flow
+```bash
+npm install && npm link
 
-Praxis orchestrates codebase analysis, post-processing triage, and interactive remediation through a structured pipeline:
+praxis scan .        # full 28-agent audit
+praxis fix .         # interactive LLM-guided fixes
+praxis agents audit .# audit the AI/agent surface
+praxis intel update  # refresh local threat feeds
+praxis vibe .        # emoji-graded A–F score
+```
+
+`praxis --help` lists everything. Run `praxis` with no args for the interactive REPL.
+
+## How it works
 
 ```mermaid
-flowchart TD
-    subgraph CLI["CLI Ingress (cli/bin/praxis.js)"]
-        SCAN["praxis scan"]
-        FIX["praxis fix"]
-        INTEL["praxis intel update"]
-        REPL["praxis (REPL)"]
-    end
-
-    subgraph Config["Configuration & Discovery"]
-        DISC["FS Discovery<br/>(ignores .gitignore, .praxisignore)"]
-        CONF["Config Loader<br/>(standards, profiles)"]
-    end
-
-    subgraph Orchestrator["Agentic Orchestrator (parallel scan)"]
-        direction TB
-        AGENTS["28 parallel agents<br/>(LLMRedTeam, InjectionTester, RAGSecurityAgent...)"]
-        PLUGINS["User Plugins<br/>(.praxis/agents/*.js)"]
-    end
-
-    subgraph Post["Post-Processing & Triage"]
-        DEDUPE["Deduplication Engine"]
-        VERIFY_AP["VerifierAgent<br/>(Secret Liveness validation)"]
-        GOV["Governance Audits<br/>(no-oversight, no-observability)"]
-        DEEP["DeepAnalyzer<br/>(LLM-based Taint/Dataflow)"]
-        SCORE["ScoringEngine<br/>(A-F Grade & Score)"]
-        MAP["Standards Mapper<br/>(8 frameworks + ATLAS enrichment)"]
-    end
-
-    subgraph Output["Reporting"]
-        SARIF["SARIF Format"]
-        JSON["JSON Report"]
-        HTML["Professional Assessment Report<br/>(sidebar TOC, finding cards, compliance map)"]
-    end
-
-    subgraph FixLoop["Remediation Loop (praxis fix)"]
-        LLM_PROV["LLMProvider<br/>(Anthropic, OpenAI, Google, Ollama)"]
-        ASK["Interactive Diff Review<br/>(User Ask / REPL)"]
-        APPLY["Atomic Write<br/>(write-file-atomic + Undo Log)"]
-        VERIFY["Re-Scan Verification"]
-    end
-
-    SCAN --> CONF --> DISC --> Orchestrator
-    Orchestrator --> Post
-    Post --> Output
-
-    FIX --> CONF --> DISC --> Orchestrator
-    Post --> LLM_PROV
-    LLM_PROV --> ASK
-    ASK -->|Approved| APPLY
-    APPLY --> VERIFY
-    VERIFY -->|Re-check| Orchestrator
-    
-    INTEL --> INTEL_FEED[("Threat Intel Feed<br/>~/.praxis/threat-intel.json")]
-    Orchestrator -->|Enriched by| INTEL_FEED
+flowchart LR
+    A["praxis scan ."] --> B["ReconAgent<br/>(tech-stack profiling)"]
+    B --> C["28 agents in parallel"]
+    C --> D["Dedupe → verify → score (A–F)"]
+    D --> E["Standards mapping<br/>(8 frameworks)"]
+    E --> F["Report<br/>(HTML · SARIF · JSON)"]
+    F -. "praxis fix" .-> G["LLM drafts diff"]
+    G --> H["You approve"]
+    H --> I["Atomic apply → verify → undo log"]
 ```
 
-**Execution Pipeline Lifecycle:**
-1. **CLI Ingress & Parsing** — CLI subcommands are parsed and processed. Target directories are crawled, filtering out files matched by `.gitignore` and `.praxisignore` rules.
-2. **Reconnaissance & Profiling** — `ReconAgent` maps the repository's technology stack (e.g., frameworks, runtime engines) to optimize scanning profiles.
-3. **Concurrent Security Scans** — 28 built-in analysis engines execute in parallel to identify code vulnerabilities and agent misconfigurations. Extensible local plugins are loaded dynamically from `.praxis/agents/*.js`.
-4. **Post-Processing Triage** — Suspected secret disclosures are programmatically verified for liveness by `VerifierAgent`, static taint paths are analyzed by `DeepAnalyzer`, governance absence-audits check for missing human-oversight and observability controls, and the project security score is computed.
-5. **Standards Compliance Mapping** — Identified vulnerabilities are programmatically mapped to corresponding controls from the 8 supported compliance frameworks, with MITRE ATLAS techniques enriched with official mitigations and case studies (2026-04 knowledge snapshot).
-6. **Remediation & Repair Verification** — When executing a repair, the `LLMProvider` constructs a context-aware remediation patch (as a unified diff). Once approved, updates are written atomically and verified through a tiered ladder: project build → test suite → re-scan, with evidence-fed retries and automatic revert of failed fixes.
+## Command groups
 
----
+```
+praxis scan       secrets · full · changed · env · redteam · standard · ci
+praxis fix        interactive · quick · from-report · rotate · undo · env-template
+praxis agents     audit · skill · mcp · bom · serve (MCP server)
+praxis intel      update · deps · advisories
+praxis report     team · legal · checklist · sbom · benchmark
+praxis project    init · doctor · hooks · guard · watch · baseline · plugins · policy
+```
 
-## Quick Start
+## 28 agents at a glance
+
+| Cluster | Agents | Covers |
+| --- | --- | --- |
+| AI / LLM security | 13 | Prompt injection, MCP, agentic AI, RAG, memory poisoning, model files, agent configs, agent telemetry & abuse (EAA), AI infra inventory |
+| Code vulnerabilities | 4 | Injection, SSRF, XSS, ReDoS, exception handling, vibe-coding anti-patterns |
+| Auth & API | 3 | JWT flaws, CSRF, IDOR/BOLA, Supabase RLS, unauthenticated routes |
+| Supply chain | 3 | Typosquatting, malicious scripts, agent attestation, CI permissions |
+| Config & platform | 5 | Docker, K8s, Terraform, CORS/CSP, mobile, CICD, git history, PII |
+
+Full agent list and rule IDs: **[docs/USAGE.md](docs/USAGE.md)**.
+
+## LLM configuration
+
+Optional, for `--deep` analysis and `fix interactive`. Put a `.env` in your working
+directory — any OpenAI-compatible gateway works:
 
 ```bash
-# Install and link globally
-npm install
-npm link
-
-# Run a full scan (secrets, code vulnerabilities, AI agent configurations, dependency CVEs)
-praxis scan .
-
-# Run interactive LLM-guided fixes
-praxis fix .
-
-# Refresh threat intelligence local feeds
-praxis intel update
-
-# View an emoji-graded A–F summary score
-praxis vibe .
+OPENAI_API_KEY=sk-...
+OPENAI_BASE_URL=https://your-gateway.example/v1/chat/completions
+PRAXIS_LLM_MODEL=your-model
+PRAXIS_LLM_REASONING=high   # low | medium | high
 ```
 
----
+Template: [`.env.example`](.env.example) · Verify with `praxis project doctor`.
 
-## The Six Command Groups
+## CI
 
-```
-praxis scan       Run security scans (optionally filter by security standards)
-praxis fix        Apply remediations (interactive LLM, deterministic, or PR-based)
-praxis agents     Audit AI/agent surface (skills, MCP tool safety, attestation, SBOM/ABOM)
-praxis intel      Update and query the local threat-intelligence database
-praxis report     Format, diff, and export scan reports (SARIF, HTML, JSON)
-praxis project    Initialize settings, git hooks, Baselines, and plugin policies
-```
-
-*Plus top-level shortcuts: `praxis vibe`, `praxis score`, and standard `praxis` (without arguments) which opens an interactive TTY REPL.*
-
----
-
-## 28 security agents
-
-The core scanning engines run concurrently, automatically adapting their execution scope to match the project tech stack.
-
-| Category | Agent | Description |
-| :--- | :--- | :--- |
-| **AI / LLM Security** | **LLMRedTeam** | Audits OWASP LLM Top 10 vulnerabilities, excessive agency, and system prompt leakage. |
-| | **MCPSecurityAgent** | Detects Model Context Protocol (MCP) server misuse, tool poisoning, and inputs validation issues. |
-| | **AgenticSecurityAgent** | Identifies OWASP Agentic AI Top 10 vulnerabilities: privilege escalation and agent hijacking. |
-| | **RAGSecurityAgent** | Scans for vector database access control issues and context document poisoning. |
-| | **MemoryPoisoningAgent**| Analyzes agent memory files (`.json`, `.md`) for hidden unicode payloads or instruction injections. |
-| | **AgentConfigScanner** | Checks prompt configurations (`.cursorrules`, `CLAUDE.md`) and hooks for prompt injection. |
-| | **ModelFileScanner** | Identifies pickle deserialization risk in model artifacts (`.pkl`, `.pt`, `.ckpt`) and missing model cards. |
-| | **PromptInjectionProber**| Probes inputs for DAN-style jailbreaks and system persona bypass signatures. |
-| | **ManagedAgentScanner** | Flags over-privileged policies (always-allow actions) and unrestricted network permissions. |
-| | **HermesSecurityAgent** | Detects tool registry poisoning, function-call injection, and permission drift. |
-| | **AgentTelemetryAgent** | Audits AI agent session histories (Claude Code, Cursor, Codex, Warp, Cline) for exposed keys, remote-shell, prompt overrides. |
-| | **EndpointAgentAbuseAgent**| Detects local AI-agent abuse (EAA catalog): hook persistence, MCP env-expansion, gateway overrides, committed agent state. |
-| | **AiInfraInventoryAgent**| Maps the production AI system: model gateways (LiteLLM/Portkey/Helicone/OpenRouter), AI runtimes in IaC, API endpoints + BOLA candidates. |
-| **Code Vulnerabilities**| **InjectionTester** | Detects SQL/NoSQL injections, command injections, path traversals, XSS, and ReDoS. |
-| | **ExceptionHandlerAgent**| Audits for empty catch blocks, unhandled rejections, and leaked stack traces in production. |
-| | **VibeCodingAgent** | Highlights AI-generated code anti-patterns (e.g., TODO-auth, empty catches, missing validation). |
-| **Authentication** | **AuthBypassAgent** | Flags JWT flaws (`alg:none`, weak secrets), CSRF, IDOR/BOLA, and disabled TLS verification. |
-| | **SupabaseRLSAgent** | Scans for Supabase tables without Row Level Security (RLS) and client-leaked service_role keys. |
-| | **APIFuzzer** | Detects unauthenticated API routes, mass assignments, and exposed GraphQL debug schema endpoints. |
-| **Supply Chain** | **SupplyChainAudit** | Audits package manifests for typosquatting, wildcard dependencies, and suspicious scripts. |
-| | **AgentAttestationAgent**| Flags unpinned agent dependencies, unsigned manifests, and missing integrity hashes. |
-| | **AgenticSupplyChainAgent**| Detects over-privileged CI runner permissions, OAuth scope creep, and unsigned AI webhook receivers. |
-| **Configuration** | **ConfigAuditor** | Audits Docker (root user, `:latest`), Kubernetes, Terraform, loose CORS, CSP, and Firebase settings. |
-| | **MobileScanner** | Maps OWASP Mobile Top 10: insecure local storage, WebView injections, and debug builds. |
-| **Secrets** | **GitHistoryScanner**| Performs deep git history scans to detect leaked API tokens, private keys, and credentials. |
-| **CI/CD** | **CICDScanner** | Audits pipelines for runner poisoning, unpinned workflow actions, and secret logging hazards. |
-| **Compliance** | **PIIComplianceAgent**| Scans codebase files for regulated personal data (SSNs, credit cards, emails, phone numbers). |
-| | **LegalRiskAgent** | *(Opt-in)* Scans dependencies for copyleft/GPL contamination, dual-licensing, and IP/DMCA risks. |
-| **Core Profiling** | **ReconAgent** | profiles framework types and technology vectors to configure the orchestration baseline. |
-
-### Post-Processors
-* **VerifierAgent** — Validates suspected secret leaks via live local checks to minimize false positives.
-* **DeepAnalyzer** — Runs opt-in (`--deep`) LLM-based static taint and dataflow analysis.
-
----
-
-## AI Security Standards Alignment
-
-Every finding is automatically tagged with its corresponding control IDs from eight supported security frameworks:
-
-* `owasp-llm` (OWASP Top 10 for LLM Applications)
-* `mitre-atlas` (MITRE ATLAS Matrix)
-* `nist-ai-600-1` (NIST Generative AI Profile)
-* `avid` (AI Vulnerability Database)
-* `owasp-ml` (OWASP Machine Learning Security Top 10)
-* `eu-ai-act` (EU Artificial Intelligence Act)
-* `iso-42001` (ISO/IEC 42001 AI Management System)
-* `google-saif` (Google Secure AI Framework)
-
-You can run standard-specific scans to filter and verify compliance against a specific framework:
-```bash
-# List all available standards
-praxis scan standard --list
-
-# Filter findings to OWASP LLM Top 10 controls only
-praxis scan standard owasp-llm .
-
-# Filter findings to a specific control index
-praxis scan standard owasp-llm . --control LLM01
+```yaml
+- uses: Ganron007/Praxis@master
+  with:
+    threshold: '80'
+    net-new: 'true'        # fail only on findings introduced by the PR
+    fail-on-new: 'high'
+    always-fail-on: 'critical'
+    sarif: 'true'          # upload to GitHub Code Scanning
 ```
 
----
+## Documentation
 
-## Threat Intelligence Integration
+| Document | Content |
+| --- | --- |
+| [docs/USAGE.md](docs/USAGE.md) | Complete command & flag reference |
+| [docs/THREAT_INTEL.md](docs/THREAT_INTEL.md) | Feed architecture & schemas |
+| [docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md) | Vendored data attribution |
+| [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) | Contributing & agent authoring |
+| [.github/SECURITY.md](.github/SECURITY.md) | Reporting vulnerabilities |
 
-Praxis aggregates threat feeds into a queryable local JSON database (`~/.praxis/threat-intel.json`) to enrich findings with vulnerability metrics:
+## Scope & limitations
 
-* **Core Feeds (Free & Offline)** — OSV.dev, GitHub Advisory Database (GHSA), CISA Known Exploited Vulnerabilities (KEV), Exploit Prediction Scoring System (EPSS), NVD, and Gitleaks patterns.
-* **Optional Feeds (Paid API Keys)** — Snyk, Socket.dev, GitGuardian, Sonatype OSS Index, and Phylum.
-
-By syncing feeds locally, findings are automatically enriched with KEV exploitation indicators and EPSS likelihood scores to prioritize remediation.
-
-For threat-intel configuration and customization guide, see **[docs/THREAT_INTEL.md](./docs/THREAT_INTEL.md)**.
-
----
-
-## CI/CD Integration
-
-Integrate Praxis into your build pipelines to block vulnerable code commits or publish SARIF reports directly to GitHub Code Scanning:
-
-```bash
-# Fail CI build if codebase security score falls below 80
-praxis scan ci . --threshold 80
-
-# Severity floor that even an accepted baseline cannot suppress
-praxis scan ci . --always-fail-on critical
-
-# Generate SARIF report for GitHub Code Scanning tab
-praxis scan ci . --sarif results.sarif
-
-# Enforce fresh threat feed and fail if intel database is older than 7 days
-praxis scan ci . --strict-intel --max-intel-age 7d
-
-# Diff mode: include finding identities for net-new PR gating
-praxis scan ci . --include-findings --json
-```
-
-Praxis includes a composite GitHub Action out-of-the-box with **net-new PR gating**: set `net-new: true` to scan the PR base in a worktree and fail only on findings *introduced* by the PR (by `file:rule` identity), with `fail-on-new` severity and the `--always-fail-on` floor. Refer to **[docs/USAGE.md](./docs/USAGE.md#cicd-integration)** for workflow integration details.
-
----
-
-## LLM Configuration
-
-Cloud LLM features (`--deep` taint analysis, `fix interactive` remediation) read a `.env` file from your working directory — no flags needed once configured:
-
-```bash
-# .env (gitignored — see .env.example for the template)
-OPENAI_API_KEY=sk-...                      # your key
-OPENAI_BASE_URL=https://api.openai.com/v1/chat/completions   # OpenAI or any OpenAI-compatible gateway
-PRAXIS_LLM_MODEL=gpt-5.4-mini              # default model
-PRAXIS_LLM_REASONING=high                  # low|medium|high extended thinking
-```
-
-Works with OpenAI directly or any OpenAI-compatible gateway (OpenRouter, Groq, DeepSeek, LM Studio, vLLM, ...) by changing `OPENAI_BASE_URL` and `PRAXIS_LLM_MODEL`. Real environment variables always win over `.env`; CLI flags (`--provider`, `--model`, `--base-url`) win over both. `praxis project doctor` verifies connectivity.
-
----
-
-## Plugin System
-
-Extend the agent orchestrator by adding custom JavaScript rule sets. Any class extending `BaseAgent` saved inside `.praxis/agents/` is automatically registered and run in parallel:
-
-```bash
-# Create a new local plugin template
-praxis project plugins new my-rule
-```
-
----
-
-## Documentation Reference
-
-| Document | Description |
-| :--- | :--- |
-| **[docs/USAGE.md](./docs/USAGE.md)** | Full CLI usage reference: commands, environment variables, settings, and baseline policies. |
-| **[docs/THREAT_INTEL.md](./docs/THREAT_INTEL.md)** | Threat intelligence architecture, database schemas, and custom source integration. |
-| **[docs/THIRD_PARTY_NOTICES.md](./docs/THIRD_PARTY_NOTICES.md)** | Licenses and attribution for vendored data assets (MITRE ATLAS, EAA catalog). |
-| **[.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md)** | Developer workflow, linting rules, tests structure, and guidelines for authoring agents. |
-| **[.github/SECURITY.md](./.github/SECURITY.md)** | Security disclosure guidelines and contact endpoints. |
-
----
-
-## Scope & Limitations
-
-Praxis is an **AI-security-first** scanner. Please read this honestly:
-
-- **Complements, not replaces, general SAST.** Praxis focuses on the AI/agent attack
-  surface (LLM calls, MCP, RAG, agent configs, model artifacts, prompt injection) plus a
-  baseline of classic web/secret checks. For deep web SAST (Semgrep, CodeQL, Snyk Code
-  class), use those tools *alongside* Praxis.
-- **Detection is regex + LLM-assisted, not AST/dataflow.** Complex multi-step taint flows
-  may be missed; findings carry confidence levels and optional `--deep` LLM verdicts to
-  help you judge them.
-- **A clean scan is not proof of absence.** No scanner provides 100% coverage; Praxis does
-  not claim to.
-- **Standards mapping is evidence-based, not certification.** Findings are tagged with
-  controls from 8 frameworks (OWASP LLM/ML/Agentic, MITRE ATLAS, NIST AI 600-1, AVID,
-  EU AI Act, ISO 42001, Google SAIF) for which the scan produced evidence. This supports
-  compliance work — it does not certify compliance.
-- **Remediations are gated and reversible.** LLM fixes are drafted as diffs, applied only
-  with your approval (or explicit `--yolo`/`--ci` automation), verified by re-scan, and
-  logged for `praxis fix undo`. Review diffs before applying them to production systems.
-
----
+Praxis is an **AI-security-first** scanner — it complements, not replaces,
+Semgrep/CodeQL-class SAST. Detection is regex + LLM-assisted (no AST/dataflow); a
+clean scan is not proof of absence. Standards mapping reports controls with evidence,
+not compliance certification. Review fixes before applying them to production.
 
 ## License
 
-This project is licensed under the MIT License — see the **[LICENSE](./LICENSE)** file for details.
-
-> Copyright (c) 2026 Praxis contributors.
+MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Praxis contributors.
