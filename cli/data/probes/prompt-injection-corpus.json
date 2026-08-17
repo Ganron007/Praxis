@@ -1,5 +1,11 @@
 {
-  "version": "1.0",
+  "version": "1.1",
+  "_refresh_policy": {
+    "cadence": "Quarterly review + incident-driven additions",
+    "process": "1. Review OWASP LLM/Agentic Top 10 releases and known jailbreak-family reports. 2. Add probes with own-phrased signatures (never copy AGPL/copyrighted prompt text verbatim). 3. Bump version. 4. Run npm test (prober tests enforce compilation + ReDoS guard).",
+    "owner": "Praxis contributors",
+    "lastReviewed": "2026-08-16"
+  },
   "description": "Prompt-injection probe corpus. Each entry is a static-detectable signal (regex) that a code path is constructing or accepting an LLM prompt in a way that matches a known injection class.",
   "categories": [
     {
