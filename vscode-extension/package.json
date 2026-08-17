@@ -5,7 +5,6 @@
   "version": "1.0.0",
   "publisher": "praxis",
   "license": "MIT",
-  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/Ganron007/Praxis"

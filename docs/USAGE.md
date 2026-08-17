@@ -900,7 +900,7 @@ mcpServers:
     args: ["praxis", "mcp"]
 ```
 
-In Docker (DarkAI lab):
+In Docker (a container running praxis):
 
 ```yaml
 mcpServers:

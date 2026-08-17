@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Status-Public%20Beta-yellow.svg" alt="Status: Public Beta">
 </p>
 
-Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — AI-security scan → remediate → verify CLI (also used by DarkAI; runs standalone).
+Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — AI-security scan → remediate → verify CLI that runs fully standalone.
 
 > [!NOTE]
 > **Public Beta.** The core scan / fix / verify flows are stable and CI-tested; agent coverage and integration surfaces (GitHub Action, Claude Code plugin) are still being validated in the wild. Expect CLI flags, agents, and docs to keep evolving.

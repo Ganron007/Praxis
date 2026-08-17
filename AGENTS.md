@@ -38,4 +38,4 @@ New test files under `cli/__tests__/` **must** be added to the `test` script in 
 
 ## Workspace rigor (umbrella — applies to all CADRE-Platform projects)
 
-> Full contract (local-only): `../CADRE/docs/internal/workspace-rigor-contract.md`. Gist: **evidence-before-claims · no fabrication · multi-stage gates · human-approval boundary · target-as-data · honest reporting · verify-before-agreeing.** Umbrella pointer: `../CADRE/docs/internal/ACTIVE.md`.
+> Gist: **evidence-before-claims · no fabrication · multi-stage gates · human-approval boundary · target-as-data · honest reporting · verify-before-agreeing.** When developing inside the CADRE umbrella workspace, the full contract is at `../CADRE/docs/internal/workspace-rigor-contract.md` (local-only; not part of this repository).
