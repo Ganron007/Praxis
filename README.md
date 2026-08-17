@@ -266,7 +266,7 @@ PRAXIS_LLM_MODEL=gpt-5.4-mini              # default model
 PRAXIS_LLM_REASONING=high                  # low|medium|high extended thinking
 ```
 
-Works with OpenAI directly or any OpenAI-compatible gateway (OpenRouter, Groq, DeepSeek, StepFun, LM Studio, vLLM, ...) by changing `OPENAI_BASE_URL` and `PRAXIS_LLM_MODEL`. Real environment variables always win over `.env`; CLI flags (`--provider`, `--model`, `--base-url`) win over both. `praxis project doctor` verifies connectivity.
+Works with OpenAI directly or any OpenAI-compatible gateway (OpenRouter, Groq, DeepSeek, LM Studio, vLLM, ...) by changing `OPENAI_BASE_URL` and `PRAXIS_LLM_MODEL`. Real environment variables always win over `.env`; CLI flags (`--provider`, `--model`, `--base-url`) win over both. `praxis project doctor` verifies connectivity.
 
 ---
 
@@ -290,7 +290,6 @@ praxis project plugins new my-rule
 | **[docs/THIRD_PARTY_NOTICES.md](./docs/THIRD_PARTY_NOTICES.md)** | Licenses and attribution for vendored data assets (MITRE ATLAS, EAA catalog). |
 | **[.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md)** | Developer workflow, linting rules, tests structure, and guidelines for authoring agents. |
 | **[.github/SECURITY.md](./.github/SECURITY.md)** | Security disclosure guidelines and contact endpoints. |
-| **[CHANGELOG.md](./CHANGELOG.md)** | Version tag history and released changelog logs. |
 
 ---
 

@@ -84,7 +84,7 @@ const CREDENTIAL_VAR = /(?:TOKEN|SECRET|KEY|PASSWORD|PASSWD|CRED|AWS_|GH_|GITHUB
 // EAA-007: provider endpoint overrides
 const GATEWAY_VARS = /^(?:ANTHROPIC_BASE_URL|ANTHROPIC_API_BASE|ANTHROPIC_AUTH_TOKEN|OPENAI_BASE_URL|OPENAI_API_BASE|GEMINI_API_BASE|GOOGLE_AI_BASE_URL)$/;
 const KNOWN_ENDPOINTS = /(?:api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|localhost|127\.0\.0\.1|0\.0\.0\.0)/i;
-const KNOWN_GATEWAYS = /(?:openrouter\.ai|together\.xyz|api\.groq\.com|api\.deepseek\.com|api\.moonshot\.ai|api\.mistral\.ai|api\.x\.ai|api\.stepfun\.ai|api\.perplexity\.ai|api\.cohere\.com|api\.fireworks\.ai|api\.together\.xyz)/i;
+const KNOWN_GATEWAYS = /(?:openrouter\.ai|together\.xyz|api\.groq\.com|api\.deepseek\.com|api\.moonshot\.ai|api\.mistral\.ai|api\.x\.ai|api\.perplexity\.ai|api\.cohere\.com|api\.fireworks\.ai|api\.together\.xyz)/i;
 
 // EAA-012: telemetry/observability endpoints and raw-content logging
 const TELEMETRY_VARS = /^(?:OTEL_EXPORTER_OTLP_ENDPOINT|OTEL_EXPORTER_OTLP_TRACES_ENDPOINT|CLAUDE_CODE_ENABLE_TELEMETRY|OTEL_LOG_TOOL_CONTENT|OTEL_LOG_PROMPTS)$/;

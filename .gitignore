@@ -11,6 +11,10 @@ archive/
 CLAUDE.md
 .claude/
 
+# Local-only working docs (not shipped in the public repo)
+AGENTS.md
+CHANGELOG.md
+
 # Runtime state (scan context, undo/fix history, caches)
 .praxis/
 *.fixes.jsonl

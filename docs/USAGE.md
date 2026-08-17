@@ -599,7 +599,7 @@ produce them, so reports can distinguish tool gaps from absent evidence.
 | `OPENAI_API_KEY` | OpenAI (GPT-4 / GPT-4o / o1) |
 | `GOOGLE_AI_API_KEY` | Gemini |
 | `MOONSHOT_API_KEY` | Kimi |
-| `OPENAI_BASE_URL` | Custom OpenAI-compatible endpoint (OpenRouter, Groq, DeepSeek, StepFun, LM Studio, vLLM, ...) |
+| `OPENAI_BASE_URL` | Custom OpenAI-compatible endpoint (OpenRouter, Groq, DeepSeek, LM Studio, vLLM, ...) |
 | `PRAXIS_LLM_MODEL` | Default model when no `--model` flag is given |
 | `PRAXIS_LLM_REASONING` | `low`/`medium`/`high` — enables extended thinking (reasoning_effort) |
 
@@ -616,8 +616,8 @@ applies only to OpenAI-shaped providers (never anthropic/google/ollama).
 ```bash
 # .env — cloud LLM features without any flags
 OPENAI_API_KEY=sk-...
-OPENAI_BASE_URL=https://api.stepfun.ai/step_plan/v1/chat/completions
-PRAXIS_LLM_MODEL=step-3.7-flash
+OPENAI_BASE_URL=https://your-gateway.example/v1/chat/completions
+PRAXIS_LLM_MODEL=your-model-name
 PRAXIS_LLM_REASONING=high
 
 praxis project doctor          # connectivity check ("custom LLM responding successfully")
