@@ -54,8 +54,7 @@ const FALLBACK_CATEGORY_MAP = {
   'recon': null,               // skip recon findings
 };
 
-const GRADES = [
-  { min: 90, letter: 'A', label: 'Ship it!',                    color: 'green' },
+const GRADES = [  { min: 90, letter: 'A', label: 'Ship it!',                    color: 'green' },
   { min: 75, letter: 'B', label: 'Minor issues to review',       color: 'cyan' },
   { min: 60, letter: 'C', label: 'Fix before shipping',          color: 'yellow' },
   { min: 40, letter: 'D', label: 'Significant security risks',   color: 'red' },
@@ -270,5 +269,5 @@ export class ScoringEngine {
   }
 }
 
-export { GRADES, CATEGORIES };
+export { GRADES, CATEGORIES, FALLBACK_CATEGORY_MAP };
 export default ScoringEngine;

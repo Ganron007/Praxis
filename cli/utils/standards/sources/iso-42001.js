@@ -29,7 +29,7 @@ export const controls = [
   { id: 'A.8.4',   title: 'Tooling for AI systems',                description: 'Tools used in AI development, validation, and operation are evaluated and controlled.' },
   // A.9 — AI system lifecycle
   { id: 'A.9.2',   title: 'Information for users of AI systems',   description: 'Intended use, limitations, and risks communicated to users and interested parties.' },
-  { id: 'A.9.3',   title: 'AI system design and development',      description: 'Lifecycle objectives, processes, and acceptance criteria defined and followed.' },
+  { id: 'A.9.3',   title: 'AI system design and development', detectable: false,      description: 'Lifecycle objectives, processes, and acceptance criteria defined and followed.' },
   { id: 'A.9.4',   title: 'AI system verification and validation', description: 'Verification and validation against acceptance criteria before deployment.' },
   { id: 'A.9.5',   title: 'AI system operation and monitoring',    description: 'Deployed AI systems operated per policy and monitored for drift, misuse, and incidents.' },
   // A.10 — Data for AI systems
@@ -37,7 +37,7 @@ export const controls = [
   { id: 'A.10.3',  title: 'Suppliers',                             description: 'AI-relevant supplier relationships governed by defined requirements and controls.' },
   { id: 'A.10.4',  title: 'Data provenance and preparation',       description: 'Origin, transformation, and preparation of AI data is recorded and controlled.' },
   // A.11 — Information for interested parties
-  { id: 'A.11.2',  title: 'Reporting concerns',                    description: 'Concerns about AI system impacts can be raised, reviewed, and resolved.' },
+  { id: 'A.11.2',  title: 'Reporting concerns', detectable: false,                    description: 'Concerns about AI system impacts can be raised, reviewed, and resolved.' },
   { id: 'A.11.5',  title: 'Communication of incidents',            description: 'AI incidents communicated to relevant interested parties, including authorities where required.' },
   // A.12 — Use of AI systems
   { id: 'A.12.4',  title: 'Human oversight of AI use',             description: 'Appropriate human oversight applied to AI use to limit unintended consequences.' },
