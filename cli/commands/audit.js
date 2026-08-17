@@ -86,7 +86,8 @@ export async function auditCommand(targetPath = '.', options = {}) {
 
   if (!fs.existsSync(absolutePath)) {
     console.error(chalk.red(`  Path does not exist: ${absolutePath}`));
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   if (!machineOutput) {
@@ -585,8 +586,12 @@ export async function auditCommand(targetPath = '.', options = {}) {
   }
 
   // ── Exit code logic ─────────────────────────────────────────────────────
-  let threshold = 75;
+  // Only gate the exit code when --fail-below is explicitly requested;
+  // a plain scan reports findings and exits 0 (CI gating belongs to `scan ci`).
+  // Use process.exitCode (natural event-loop drain) instead of process.exit()
+  // so in-flight libuv handles (plugin dynamic imports, etc.) close cleanly.
   if (options.failBelow !== undefined) {
+    let threshold = 75;
     if (options.failBelow === 'baseline') {
       // Read baseline score from .praxis/hermes-baseline.json
       const baselinePath = path.join(absolutePath, '.praxis', 'hermes-baseline.json');
@@ -603,11 +608,11 @@ export async function auditCommand(targetPath = '.', options = {}) {
         threshold = 0;
       }
     } else {
-      threshold = parseInt(options.failBelow, 10) || 75;
+      const parsed = parseInt(options.failBelow, 10);
+      threshold = Number.isNaN(parsed) ? 75 : parsed;
     }
+    process.exitCode = scoreResult.score >= threshold ? 0 : 1;
   }
-
-  process.exit(scoreResult.score >= threshold ? 0 : 1);
 }
 
 /**
