@@ -261,6 +261,13 @@ export class Orchestrator {
     // ── 9. Context-aware confidence tuning ──────────────────────────────────
     allFindings = this.tuneConfidence(allFindings);
 
+    // ── 9.5 Governance absence-audits (no-human-oversight, no-observability)
+    try {
+      const { runGovernanceAudits } = await import('./governance-audits.js');
+      const governance = runGovernanceAudits({ rootPath: absolutePath, files, findings: allFindings });
+      allFindings = allFindings.concat(governance);
+    } catch { /* governance audits are additive — never break a scan */ }
+
     // ── 10. Sort by severity ──────────────────────────────────────────────────
     const sevOrder = { critical: 0, high: 1, medium: 2, low: 3 };
     allFindings.sort((a, b) =>

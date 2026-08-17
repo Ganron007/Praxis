@@ -2275,3 +2275,76 @@ describe('scanner hardening', async () => {
     assert.equal(typeof buildOrchestrator, 'function');
   });
 });
+
+// =============================================================================
+// GOVERNANCE ABSENCE-AUDITS (P-IMP-036)
+// =============================================================================
+
+describe('governance audits', async () => {
+  const { runGovernanceAudits } = await import('../agents/governance-audits.js');
+
+  it('flags missing human oversight for high-blast-radius agent actions', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-gov-'));
+    const files = [path.join(dir, 'agent.js')];
+    fs.writeFileSync(files[0], 'const agent = new Agent({ tools: [refundTool] });');
+    try {
+      const findings = [
+        { rule: 'AGENT_FINANCIAL_ACTION', title: 'Financial action exposed to agent', category: 'llm', file: files[0], line: 1, severity: 'high' },
+      ];
+      const audits = runGovernanceAudits({ rootPath: dir, files, findings });
+      assert.ok(audits.some(a => a.rule === 'NO_HUMAN_OVERSIGHT'));
+      assert.ok(audits.some(a => a.owasp === 'ASI08'));
+    } finally { cleanup(dir); }
+  });
+
+  it('does not flag oversight when approval gates exist', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-gov-'));
+    const files = [path.join(dir, 'agent.js')];
+    fs.writeFileSync(files[0], 'interrupt_before: ["refundTool"]\nconst agent = new Agent({ tools: [refundTool] });');
+    try {
+      const findings = [
+        { rule: 'AGENT_FINANCIAL_ACTION', title: 'Financial action exposed to agent', category: 'llm', file: files[0], line: 2, severity: 'high' },
+      ];
+      const audits = runGovernanceAudits({ rootPath: dir, files, findings });
+      assert.ok(!audits.some(a => a.rule === 'NO_HUMAN_OVERSIGHT'));
+    } finally { cleanup(dir); }
+  });
+
+  it('flags missing observability when AI is in use', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-gov-'));
+    const files = [path.join(dir, 'src', 'app.js')];
+    fs.mkdirSync(path.dirname(files[0]), { recursive: true });
+    fs.writeFileSync(files[0], 'const r = await openai.chat.completions.create({});');
+    try {
+      const findings = [{ rule: 'LLM_SDK_CALL', title: 'LLM SDK call', category: 'llm', file: files[0], line: 1, severity: 'medium' }];
+      const audits = runGovernanceAudits({ rootPath: dir, files, findings });
+      assert.ok(audits.some(a => a.rule === 'NO_OBSERVABILITY'));
+    } finally { cleanup(dir); }
+  });
+
+  it('does not flag observability when tracing is wired', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-gov-'));
+    const files = [path.join(dir, 'src', 'app.js'), path.join(dir, 'src', 'trace.js')];
+    fs.mkdirSync(path.dirname(files[0]), { recursive: true });
+    fs.writeFileSync(files[0], 'const r = await openai.chat.completions.create({});');
+    fs.writeFileSync(files[1], 'import langfuse from "langfuse";');
+    try {
+      const findings = [{ rule: 'LLM_SDK_CALL', title: 'LLM SDK call', category: 'llm', file: files[0], line: 1, severity: 'medium' }];
+      const audits = runGovernanceAudits({ rootPath: dir, files, findings });
+      assert.ok(!audits.some(a => a.rule === 'NO_OBSERVABILITY'));
+    } finally { cleanup(dir); }
+  });
+
+  it('does not count manifest dependencies as observability wiring', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-gov-'));
+    const files = [path.join(dir, 'src', 'app.js'), path.join(dir, 'package.json')];
+    fs.mkdirSync(path.dirname(files[0]), { recursive: true });
+    fs.writeFileSync(files[0], 'const r = await openai.chat.completions.create({});');
+    fs.writeFileSync(files[1], JSON.stringify({ dependencies: { langsmith: '^1.0.0' } }));
+    try {
+      const findings = [{ rule: 'LLM_SDK_CALL', title: 'LLM SDK call', category: 'llm', file: files[0], line: 1, severity: 'medium' }];
+      const audits = runGovernanceAudits({ rootPath: dir, files, findings });
+      assert.ok(audits.some(a => a.rule === 'NO_OBSERVABILITY'), 'transitive dep is not wiring');
+    } finally { cleanup(dir); }
+  });
+});
