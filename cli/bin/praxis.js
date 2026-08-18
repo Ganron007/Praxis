@@ -128,6 +128,7 @@ scan
   .option('--csv', 'Output results as CSV')
   .option('--md', 'Output results as Markdown')
   .option('--html [file]', 'HTML report path (default: praxis-report.html)')
+  .option('--html-dir [dir]', 'Generate granular multi-page report suite in directory')
   .option('--compare', 'Show detailed comparison with last scan')
   .option('--timeout <ms>', 'Per-agent timeout in milliseconds (default: 30000)', parseInt)
   .option('--no-deps', 'Skip dependency audit')

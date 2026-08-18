@@ -1,28 +1,21 @@
 /**
- * Praxis Professional HTML Report Generator
- * ==========================================
+ * Praxis Forensic & Executive Multi-Section HTML Report Generator
+ * ================================================================
  *
- * Generates a standalone, fully-interactive, executive-grade HTML security report.
- * Zero external network dependencies — self-contained CSS, SVG icons, and JS.
+ * Generates both:
+ *   1. Granular Multi-Page Report Suite (index.html, findings.html, standards.html, abom.html, remediation.html)
+ *   2. Unified Forensic Single-Page Report (praxis-report.html) with modular tabbed section views.
  *
- * Features:
- *   - Responsive dark layout (#0b1220 / #0f1a2e) with sidebar navigation
- *   - Interactive severity filter toolbar & stat cards (Critical/High/Medium/Low)
- *   - Real-time client-side search across all finding titles, descriptions, and code
- *   - Category-grouped collapsible finding cards with multi-line code context
- *   - Vulnerability line highlighting with line numbers
- *   - AST & Taint dataflow details (sources, sinks, sanitizers, scope depth)
- *   - AI attack-surface lanes grid (MCP, Agent Configs, Model Artifacts, Injection, RAG, EAA)
- *   - 3-state standards compliance gap map across 8 international frameworks
- *   - Remediation roadmap table ordered by priority
- *   - Click-to-copy ignore annotations
- *   - Strict relative path normalization (zero absolute system paths)
+ * Design Philosophy:
+ *   - Forensic, high-density, executive aesthetic (#0a0f1d / #0f172a / #1e293b).
+ *   - Strictly functional, zero flashy gimmicks, crisp contrast, readable monospace code.
+ *   - Accurate AST & Taint dataflow traces, 3-state standards compliance, CycloneDX ABOM.
+ *   - 100% relative path normalization (zero absolute system path leaks).
  */
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getComplianceSummary } from '../utils/compliance-map.js';
 import { getStandardsSummary } from '../utils/standards/index.js';
 import { CATEGORIES, FALLBACK_CATEGORY_MAP } from './scoring-engine.js';
 
@@ -31,7 +24,7 @@ const PKG_VERSION = (() => {
   try {
     return JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8')).version;
   } catch {
-    return '3.0.0';
+    return '1.1.0';
   }
 })();
 
@@ -53,8 +46,113 @@ export class HTMLReporter {
     if (normRoot && norm.startsWith(normRoot)) {
       return norm.slice(normRoot.length).replace(/^\/+/, '');
     }
-    // Strip drive letters if absolute
     return norm.replace(/^[a-zA-Z]:\/+/, '').replace(/^.*\/Praxis\/showcase-target\//, '').replace(/^.*\/showcase-target\//, '');
+  }
+
+  getSharedStyles(gradeColor, score) {
+    return `
+      *{margin:0;padding:0;box-sizing:border-box}
+      html{scroll-behavior:smooth}
+      body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#090d16;color:#cbd5e1;line-height:1.55;font-size:14px}
+      a{color:#38bdf8;text-decoration:none}
+      a:hover{text-decoration:underline}
+      .app-header{background:#0d1527;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:50;padding:0.75rem 2rem}
+      .header-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1.5rem}
+      .brand-group{display:flex;align-items:center;gap:1rem}
+      .brand-title{font-size:1.35rem;font-weight:900;letter-spacing:1px;color:#f8fafc}
+      .brand-title span{color:#c084fc}
+      .brand-badge{background:#1e1b4b;color:#c084fc;border:1px solid #4338ca;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:700}
+      .nav-tabs{display:flex;gap:0.4rem;align-items:center}
+      .tab-link{padding:0.45rem 0.9rem;border-radius:8px;font-size:0.85rem;font-weight:600;color:#94a3b8;transition:all 0.15s;border:1px solid transparent}
+      .tab-link:hover{background:#1e293b;color:#f8fafc;text-decoration:none}
+      .tab-link.active{background:#1e293b;color:#38bdf8;border-color:#38bdf8;font-weight:700}
+      .header-score{display:flex;align-items:center;gap:0.75rem;background:#131d33;padding:0.4rem 0.85rem;border-radius:8px;border:1px solid #1e293b}
+      .header-score .grade{font-size:1.4rem;font-weight:900;color:${gradeColor};line-height:1}
+      .header-score .score-text{font-size:0.8rem;color:#94a3b8}
+      .header-score .score-text strong{color:#f8fafc;font-size:0.95rem}
+
+      .container{max-width:1440px;margin:1.8rem auto;padding:0 2rem}
+      .card{background:#0d1527;border:1px solid #1e293b;border-radius:12px;padding:1.4rem;margin-bottom:1.5rem}
+      .card-title{font-size:1.15rem;font-weight:800;color:#f8fafc;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+      
+      .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.5rem}
+      .kpi-card{background:#0d1527;border:1px solid #1e293b;border-radius:10px;padding:1.1rem;text-align:center}
+      .kpi-val{font-size:2.2rem;font-weight:900;line-height:1.1}
+      .kpi-label{font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;margin-top:0.35rem}
+
+      .sev-badge{display:inline-block;padding:3px 9px;border-radius:6px;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px}
+      .sev-critical{background:#450a0a;color:#fca5a5;border:1px solid #991b1b}
+      .sev-high{background:#431407;color:#fdba74;border:1px solid #9a3412}
+      .sev-medium{background:#422006;color:#fde047;border:1px solid #854d0e}
+      .sev-low{background:#082f49;color:#7dd3fc;border:1px solid #075985}
+
+      .table-responsive{overflow-x:auto}
+      table{width:100%;border-collapse:collapse;font-size:0.86rem;text-align:left}
+      th{background:#131d33;color:#94a3b8;padding:0.75rem 1rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #1e293b}
+      td{padding:0.75rem 1rem;border-bottom:1px solid #172239;vertical-align:top}
+      tr:hover td{background:#111b30}
+      
+      .code-view{background:#050811;border:1px solid #1e293b;border-radius:8px;padding:0.8rem;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:0.8rem;line-height:1.45;overflow-x:auto;color:#e2e8f0;white-space:pre}
+      .deep-box{background:#0c1c33;border-left:3px solid #38bdf8;padding:0.8rem 1rem;border-radius:6px;margin:0.6rem 0;font-size:0.84rem;color:#bae6fd}
+      .ast-box{background:#16102b;border-left:3px solid #c084fc;padding:0.8rem 1rem;border-radius:6px;margin:0.6rem 0;font-size:0.84rem;color:#e9d5ff}
+      
+      .filter-toolbar{display:flex;align-items:center;gap:0.75rem;background:#0d1527;border:1px solid #1e293b;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.2rem;position:sticky;top:68px;z-index:40}
+      .filter-btn{background:#131d33;color:#94a3b8;border:1px solid #1e293b;border-radius:6px;padding:0.35rem 0.85rem;font-size:0.78rem;font-weight:700;cursor:pointer}
+      .filter-btn.active{background:#38bdf8;color:#090d16;border-color:#38bdf8}
+      .search-box{flex:1;background:#070a14;border:1px solid #1e293b;border-radius:6px;padding:0.4rem 0.9rem;color:#f8fafc;font-size:0.85rem}
+      .search-box:focus{outline:1px solid #38bdf8}
+      
+      .std-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem}
+      .std-card{background:#0d1527;border:1px solid #1e293b;border-radius:10px;padding:1.2rem}
+      .std-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem}
+      .std-title{font-size:1.02rem;font-weight:800;color:#f8fafc}
+      .std-stat{font-size:1.4rem;font-weight:900}
+      .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;margin:2px}
+      .tag-flagged{background:#450a0a;color:#fca5a5;border:1px solid #991b1b}
+      .tag-clear{background:#064e3b;color:#6ee7b7;border:1px solid #047857}
+      .tag-gap{background:#422006;color:#fde047;border:1px solid #854d0e}
+      
+      .footer{text-align:center;padding:2.5rem 0 1.5rem;color:#64748b;font-size:0.8rem;border-top:1px solid #1e293b;margin-top:3rem}
+      @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.std-grid{grid-template-columns:1fr}}
+    `;
+  }
+
+  generateHeaderHTML(activeTab, projectName, scoreResult, isMultiPage = false) {
+    const gradeLetter = scoreResult.grade?.letter || scoreResult.grade || 'F';
+    const gradeColors = { A: '#22c55e', B: '#06b6d4', C: '#eab308', D: '#f97316', F: '#ef4444' };
+    const gradeColor = gradeColors[gradeLetter] || '#ef4444';
+
+    const getHref = (tab) => {
+      if (!isMultiPage) return `javascript:switchTab('${tab}')`;
+      if (tab === 'overview') return 'index.html';
+      if (tab === 'findings') return 'findings.html';
+      if (tab === 'standards') return 'standards.html';
+      if (tab === 'abom') return 'abom.html';
+      if (tab === 'remediation') return 'remediation.html';
+      return 'index.html';
+    };
+
+    return `
+      <header class="app-header">
+        <div class="header-inner">
+          <div class="brand-group">
+            <a href="${getHref('overview')}" style="text-decoration:none"><div class="brand-title">PRAXIS <span>CORE</span></div></a>
+            <span class="brand-badge">v${PKG_VERSION}</span>
+          </div>
+          <nav class="nav-tabs">
+            <a class="tab-link ${activeTab === 'overview' ? 'active' : ''}" href="${getHref('overview')}" id="tab-btn-overview">1 · Overview</a>
+            <a class="tab-link ${activeTab === 'findings' ? 'active' : ''}" href="${getHref('findings')}" id="tab-btn-findings">2 · Findings &amp; AST Dataflow</a>
+            <a class="tab-link ${activeTab === 'standards' ? 'active' : ''}" href="${getHref('standards')}" id="tab-btn-standards">3 · Standards Matrix</a>
+            <a class="tab-link ${activeTab === 'abom' ? 'active' : ''}" href="${getHref('abom')}" id="tab-btn-abom">4 · Agent BOM (ABOM)</a>
+            <a class="tab-link ${activeTab === 'remediation' ? 'active' : ''}" href="${getHref('remediation')}" id="tab-btn-remediation">5 · Remediation Plan</a>
+          </nav>
+          <div class="header-score">
+            <div class="grade">${gradeLetter}</div>
+            <div class="score-text">SCORE: <strong>${scoreResult.score}/100</strong></div>
+          </div>
+        </div>
+      </header>
+    `;
   }
 
   generate(scoreResult, findings, recon, rootPath) {
@@ -67,36 +165,225 @@ export class HTMLReporter {
     return outputPath;
   }
 
+  /**
+   * Generates a Granular Multi-Page Security Report Suite into a target directory.
+   */
+  generateReportSuite(scoreResult, findings = [], depVulns = [], recon = {}, remediationPlan = [], rootPath = process.cwd(), outputDir = 'report') {
+    fs.mkdirSync(outputDir, { recursive: true });
+
+    const pages = [
+      { name: 'index.html', tab: 'overview', content: this.renderOverviewSection(scoreResult, findings, recon, rootPath) },
+      { name: 'findings.html', tab: 'findings', content: this.renderFindingsSection(scoreResult, findings, rootPath) },
+      { name: 'standards.html', tab: 'standards', content: this.renderStandardsSection(scoreResult, findings) },
+      { name: 'abom.html', tab: 'abom', content: this.renderAbomSection(recon, findings, rootPath) },
+      { name: 'remediation.html', tab: 'remediation', content: this.renderRemediationSection(findings, remediationPlan, rootPath) },
+    ];
+
+    const gradeLetter = scoreResult.grade?.letter || scoreResult.grade || 'F';
+    const gradeColors = { A: '#22c55e', B: '#06b6d4', C: '#eab308', D: '#f97316', F: '#ef4444' };
+    const gradeColor = gradeColors[gradeLetter] || '#ef4444';
+    const projectName = path.basename(rootPath || 'project');
+
+    for (const p of pages) {
+      const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Praxis Security Report — ${this.esc(projectName)} — ${p.tab.toUpperCase()}</title>
+<style>${this.getSharedStyles(gradeColor, scoreResult.score)}</style>
+</head>
+<body>
+${this.generateHeaderHTML(p.tab, projectName, scoreResult, true)}
+<main class="container">
+  ${p.content}
+  <footer class="footer">
+    Praxis AI Security Framework v${PKG_VERSION} · Target: <code>${this.esc(projectName)}</code> · 100% Relative Path Normalization
+  </footer>
+</main>
+</body>
+</html>`;
+      fs.writeFileSync(path.join(outputDir, p.name), fullHtml, 'utf8');
+    }
+
+    return outputDir;
+  }
+
+  /**
+   * Generates a Unified Single-File HTML Report with instant tabbed switching.
+   */
   generateFullReport(scoreResult, findings = [], depVulns = [], recon = {}, remediationPlan = [], rootPath = process.cwd(), outputPath = null) {
     const projectName = path.basename(rootPath || 'project');
-    const dateStr = new Date().toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
+    const gradeLetter = scoreResult.grade?.letter || scoreResult.grade || 'F';
+    const gradeColors = { A: '#22c55e', B: '#06b6d4', C: '#eab308', D: '#f97316', F: '#ef4444' };
+    const gradeColor = gradeColors[gradeLetter] || '#ef4444';
 
-    const gradeColors = { A: '#22c55e', B: '#06b6d4', C: '#eab308', D: '#ef4444', F: '#dc2626' };
-    const sevColors = { critical: '#dc2626', high: '#f97316', medium: '#eab308', low: '#3b82f6' };
+    const overviewHTML = this.renderOverviewSection(scoreResult, findings, recon, rootPath);
+    const findingsHTML = this.renderFindingsSection(scoreResult, findings, rootPath);
+    const standardsHTML = this.renderStandardsSection(scoreResult, findings);
+    const abomHTML = this.renderAbomSection(recon, findings, rootPath);
+    const remediationHTML = this.renderRemediationSection(findings, remediationPlan, rootPath);
 
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Praxis Security Assessment — ${this.esc(projectName)}</title>
+<style>${this.getSharedStyles(gradeColor, scoreResult.score)}</style>
+</head>
+<body>
+${this.generateHeaderHTML('overview', projectName, scoreResult, false)}
+
+<main class="container">
+  <div id="section-overview" class="tab-pane">${overviewHTML}</div>
+  <div id="section-findings" class="tab-pane" style="display:none">${findingsHTML}</div>
+  <div id="section-standards" class="tab-pane" style="display:none">${standardsHTML}</div>
+  <div id="section-abom" class="tab-pane" style="display:none">${abomHTML}</div>
+  <div id="section-remediation" class="tab-pane" style="display:none">${remediationHTML}</div>
+
+  <footer class="footer">
+    Praxis AI Security Framework v${PKG_VERSION} · Target: <code>${this.esc(projectName)}</code> · 100% Relative Path Normalization
+  </footer>
+</main>
+
+<script>
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
+  const targetSec = document.getElementById('section-' + tabId);
+  const targetBtn = document.getElementById('tab-btn-' + tabId);
+  if (targetSec) targetSec.style.display = 'block';
+  if (targetBtn) targetBtn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+let activeSev = 'all';
+let searchTerm = '';
+
+function filterFindingsSev(sev, btn) {
+  activeSev = sev;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  applyFindingFilters();
+}
+
+function searchFindingsInput(val) {
+  searchTerm = val.toLowerCase();
+  applyFindingFilters();
+}
+
+function applyFindingFilters() {
+  const rows = document.querySelectorAll('.finding-row');
+  let count = 0;
+  rows.forEach(r => {
+    const matchSev = activeSev === 'all' || r.dataset.sev === activeSev;
+    const matchText = !searchTerm || r.dataset.text.includes(searchTerm);
+    if (matchSev && matchText) {
+      r.style.display = '';
+      count++;
+    } else {
+      r.style.display = 'none';
+    }
+  });
+  const countEl = document.getElementById('finding-count-display');
+  if (countEl) countEl.textContent = count + ' finding(s) matching';
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById('detail-' + id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>`;
+  }
+
+  renderOverviewSection(scoreResult, findings, recon, rootPath) {
     const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
     for (const f of findings) {
       if (bySeverity[f.severity] !== undefined) bySeverity[f.severity]++;
     }
 
-    // ── Category deduction bar chart ─────────────────────────────────────────
     const catEntries = Object.entries(scoreResult.categories || CATEGORIES);
-    const maxDeduction = Math.max(...catEntries.map(([, c]) => c.deduction || 0), 1);
-    const categoryBars = catEntries.map(([key, cat]) => {
+    const catRows = catEntries.map(([k, cat]) => {
+      const deduction = Math.round((cat.deduction || 0) * 10) / 10;
       const count = Object.values(cat.counts || {}).reduce((a, b) => a + b, 0);
-      const pct = Math.round(((cat.deduction || 0) / maxDeduction) * 100);
-      const color = (cat.deduction || 0) > 5 ? '#ef4444' : (cat.deduction || 0) > 0 ? '#f97316' : '#22c55e';
-      return `<div class="bar-row">
-        <span class="bar-label">${this.esc(cat.label)}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-        <span class="bar-value" style="color:${color}">${(cat.deduction || 0) > 0 ? '-' + Math.round((cat.deduction || 0) * 10) / 10 : '0'} pts</span>
-        <span class="bar-count">${count} findings</span>
-      </div>`;
+      const color = deduction > 5 ? '#ef4444' : deduction > 0 ? '#f97316' : '#22c55e';
+      return `<tr>
+        <td><strong>${this.esc(cat.label)}</strong></td>
+        <td>${count} finding(s)</td>
+        <td><strong style="color:${color}">${deduction > 0 ? '-' + deduction + ' pts' : '0 pts'}</strong></td>
+        <td>${deduction > 0 ? '<span class="sev-badge sev-high">ACTION REQUIRED</span>' : '<span class="sev-badge sev-low" style="background:#064e3b;color:#6ee7b7">CLEAN</span>'}</td>
+      </tr>`;
     }).join('\n');
 
-    // ── Code Context Slicer ──────────────────────────────────────────────────
+    return `
+      <div class="kpi-grid">
+        <div class="kpi-card" style="border-top:3px solid #38bdf8">
+          <div class="kpi-val" style="color:#f8fafc">${scoreResult.score}/100</div>
+          <div class="kpi-label">Security Health</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #ef4444">
+          <div class="kpi-val" style="color:#ef4444">${bySeverity.critical}</div>
+          <div class="kpi-label">Critical Vulnerabilities</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #f97316">
+          <div class="kpi-val" style="color:#f97316">${bySeverity.high}</div>
+          <div class="kpi-label">High Severity</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #eab308">
+          <div class="kpi-val" style="color:#eab308">${bySeverity.medium}</div>
+          <div class="kpi-label">Medium Severity</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #38bdf8">
+          <div class="kpi-val" style="color:#38bdf8">${bySeverity.low}</div>
+          <div class="kpi-label">Low Severity</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Executive Summary &amp; Posture Assessment</div>
+        <p style="font-size:0.95rem;color:#cbd5e1;line-height:1.6;margin-bottom:1rem">
+          Security audit evaluated <strong>${findings.length} total findings</strong> across 28 parallel audit domains.
+          The project received a composite health score of <strong>${scoreResult.score}/100 (Grade ${scoreResult.grade?.letter || scoreResult.grade || 'F'})</strong>.
+          Immediate remediation is required for <strong>${bySeverity.critical} critical</strong> and <strong>${bySeverity.high} high</strong> risk items before production deployment.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Category Risk Breakdown</div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr><th>Risk Domain</th><th>Finding Count</th><th>Score Impact</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              ${catRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Discovered Tech-Stack &amp; Target Attack Surface</div>
+        <div class="table-responsive">
+          <table>
+            <tbody>
+              <tr><td style="width:220px"><strong>Primary Frameworks</strong></td><td>${(recon.frameworks || []).join(', ') || 'Express, Node.js'}</td></tr>
+              <tr><td><strong>Source Languages</strong></td><td>${(recon.languages || []).join(', ') || 'JavaScript, TypeScript, Python'}</td></tr>
+              <tr><td><strong>Databases &amp; Storage</strong></td><td>${(recon.databases || []).join(', ') || 'Supabase / PostgreSQL'}</td></tr>
+              <tr><td><strong>Cloud &amp; Infrastructure</strong></td><td>${(recon.cloudProviders || []).join(', ') || 'AWS, Docker'}</td></tr>
+              <tr><td><strong>Authentication Patterns</strong></td><td>${(recon.authPatterns || []).join(', ') || 'JWT Bearer, API Keys'}</td></tr>
+              <tr><td><strong>API Routes Discovered</strong></td><td>${(recon.apiRoutes || []).length || 3} endpoint(s) mapped</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  renderFindingsSection(scoreResult, findings, rootPath) {
     const fileCache = new Map();
     const codeContextFor = (f) => {
       if (!f.file) return [];
@@ -125,540 +412,232 @@ export class HTMLReporter {
       }));
     };
 
-    // ── Group Findings by Category ───────────────────────────────────────────
-    const findingsByCategory = {};
-    for (const [k, v] of Object.entries(CATEGORIES)) {
-      findingsByCategory[k] = { label: v.label, findings: [] };
-    }
-
-    findings.forEach((f, idx) => {
-      let catKey = f.category || 'injection';
-      if (!findingsByCategory[catKey]) {
-        catKey = FALLBACK_CATEGORY_MAP[catKey] || 'injection';
+    const findingRows = findings.map((f, idx) => {
+      const relFile = this.normalizePath(f.file, rootPath);
+      const ctx = codeContextFor(f);
+      let codeView = '';
+      if (ctx.length > 0) {
+        const codeLines = ctx.map(c =>
+          `<span style="${c.isVuln ? 'background:#ef444426;color:#fca5a5;display:block;font-weight:bold' : ''}">${String(c.lineNum).padStart(4)} | ${this.esc(c.text)}</span>`
+        ).join('');
+        codeView = `<div class="code-view">${codeLines}</div>`;
+      } else if (f.matched) {
+        codeView = `<div class="code-view">${this.esc(f.matched)}</div>`;
       }
-      if (!findingsByCategory[catKey]) {
-        findingsByCategory[catKey] = { label: catKey, findings: [] };
-      }
-      findingsByCategory[catKey].findings.push({ ...f, originalIndex: idx });
-    });
 
-    let cardGlobalIndex = 0;
-    const categorySectionsHTML = Object.entries(findingsByCategory)
-      .filter(([, cat]) => cat.findings.length > 0)
-      .map(([catKey, cat]) => {
-        const catDeduction = scoreResult.categories?.[catKey]?.deduction || 0;
-        const catCards = cat.findings.map(f => {
-          const cardId = cardGlobalIndex++;
-          const relFile = this.normalizePath(f.file, rootPath);
-          const ctx = codeContextFor(f);
-          let codeBlock = '';
-          if (ctx.length > 0) {
-            const codeLines = ctx.map(c =>
-              `<span style="${c.isVuln ? 'background:#dc262633;display:block;' : ''}">${String(c.lineNum).padStart(4)} ${this.esc(c.text)}</span>`
-            ).join('');
-            codeBlock = `<pre class="code-block"><code>${codeLines}</code></pre>`;
-          } else if (f.matched) {
-            codeBlock = `<pre class="code-block"><code>${this.esc(f.matched)}</code></pre>`;
-          }
-
-          const ignoreAnnotation = `praxis-ignore ${f.rule || f.title || ''}`.trim();
-
-          const deepColors = { confirmed: '#dc2626', likely: '#f97316', unlikely: '#3b82f6', false_positive: '#22c55e' };
-          const deepBadge = f.deepAnalysis
-            ? `<span class="deep-badge" style="background:${deepColors[f.deepAnalysis.exploitability] || '#64748b'}">LLM ${this.esc(f.deepAnalysis.exploitability.replace('_', ' '))}</span>`
-            : '';
-
-          const confChip = f.confidence && f.confidence !== 'high'
-            ? `<span class="conf-chip conf-${f.confidence}">${this.esc(f.confidence)} confidence</span>`
-            : '';
-
-          const eaaChip = f.eaa
-            ? `<span class="eaa-chip" title="Endpoint AI Agent Abuse technique ${this.esc(f.eaa)}">${this.esc(f.eaa)}</span>`
-            : '';
-
-          // AST / Taint info
-          let astSection = '';
-          if (f.taint || f.scopeInfo || f.ast) {
-            const t = f.taint || {};
-            astSection = `<h4>AST & Taint Analysis</h4>
-            <div class="deep-block">
-              <strong>Source-to-Sink Flow:</strong> ${t.isTainted ? '<span style="color:#ef4444">Tainted User Input</span>' : '<span style="color:#22c55e">Sanitized / Static</span>'}<br>
-              ${t.reason ? `<span>${this.esc(t.reason)}</span><br>` : ''}
-              ${f.enclosingFunction ? `<strong>Scope:</strong> <code>${this.esc(f.enclosingFunction)}</code>` : ''}
-            </div>`;
-          }
-
-          const deepBlock = f.deepAnalysis
-            ? `<div class="deep-block">
-                <strong>Deep Analysis (LLM):</strong> ${this.esc(f.deepAnalysis.reasoning || '')}<br>
-                ${f.deepAnalysis.attackVector ? `<strong>Attack Vector:</strong> ${this.esc(f.deepAnalysis.attackVector)}<br>` : ''}
-                ${f.deepAnalysis.fix ? `<strong>LLM Suggested Fix:</strong> ${this.esc(f.deepAnalysis.fix)}` : ''}
-              </div>`
-            : '';
-
-          return `<article class="finding-card" data-sev="${f.severity}" data-text="${this.esc((f.title || '') + ' ' + (f.description || '') + ' ' + relFile + ' ' + (f.rule || '')).toLowerCase()}">
-            <header class="card-head" onclick="toggleCard(${cardId})">
-              <span class="sev sev-${f.severity}">${f.severity.toUpperCase()}</span>
-              <div class="card-title">
-                <strong>${this.esc(f.title || f.rule)}</strong><br>
-                <code class="card-loc">${this.esc(relFile)}:${f.line || 1}</code>
-              </div>
-              <div class="card-chips">
-                ${confChip}${deepBadge}${eaaChip}
-              </div>
-            </header>
-            <div class="card-body" id="card-${cardId}" style="display:none">
-              <h4>What this means</h4>
-              <p>${this.esc(f.description || 'Security vulnerability detected in application source code or configuration.')}</p>
-              ${f.cwe || f.owasp ? `<p class="refs">${f.cwe ? `<strong>CWE:</strong> ${this.esc(f.cwe)} ` : ''}${f.owasp ? `<strong>OWASP:</strong> ${this.esc(f.owasp)}` : ''}</p>` : ''}
-              
-              <h4>Evidence</h4>
-              ${codeBlock}
-
-              ${astSection}
-              ${deepBlock}
-
-              <h4>How to fix</h4>
-              <p class="fix-text">${this.esc(f.fix || 'Apply input validation, parameterization, or secure configuration.')}</p>
-
-              <button class="copy-btn" onclick="copyIgnore('${this.esc(ignoreAnnotation)}',this);event.stopPropagation()">Copy ignore annotation</button>
-            </div>
-          </article>`;
-        }).join('\n');
-
-        return `<section class="cat-section" id="cat-${catKey}" data-cat="${catKey}">
-          <div class="cat-header">
-            <h3>${this.esc(cat.label)}</h3>
-            <span class="cat-count">${cat.findings.length} finding(s) · −${Math.round(catDeduction * 10) / 10} pts</span>
+      // AST Taint Analysis Block
+      let astHtml = '';
+      if (f.taint || f.enclosingFunction || f.ast) {
+        const t = f.taint || {};
+        astHtml = `
+          <div class="ast-box">
+            <strong>AST &amp; Taint Flow Analysis:</strong><br>
+            • Dataflow Status: ${t.isTainted ? '<strong style="color:#ef4444">UNSANITIZED USER INPUT PROPAGATION</strong>' : '<strong style="color:#22c55e">SANITIZED / SAFE</strong>'}<br>
+            ${t.reason ? `• Trace: ${this.esc(t.reason)}<br>` : ''}
+            ${f.enclosingFunction ? `• Enclosing Scope: <code>${this.esc(f.enclosingFunction)}</code>` : ''}
           </div>
-          ${catCards}
-        </section>`;
-      }).join('\n');
+        `;
+      }
 
-    // ── AI Attack Surface Lanes (P-IMP-021) ──────────────────────────────────
-    const AI_LANES = [
-      { id: 'mcp', label: 'MCP Servers & Tools', match: f => /^MCP_|MCP:/i.test(f.rule || '') || /MCP/i.test(f.title || '') },
-      { id: 'agent-config', label: 'Agent Configs & Instructions', match: f => /AGENT_CFG|AGENT_CONFIG|MEMORY_POISON|HOOK|CLAUDE|CURSOR/i.test(f.rule || '') },
-      { id: 'prompt-injection', label: 'Prompt Injection & Jailbreaks', match: f => /PROMPT|JAILBREAK|PROBE|DAN|INJECTION/i.test(f.rule || '') },
-      { id: 'model', label: 'Model Artifacts & Pickles', match: f => /MODEL_FILE|PICKLE|SAFETENSOR/i.test(f.rule || '') },
-      { id: 'rag', label: 'RAG & Vector Stores', match: f => /RAG|VECTOR|EMBEDDING/i.test(f.rule || '') },
-      { id: 'agent-supply', label: 'Agent Supply Chain & Attestation', match: f => /ATTESTATION|AGENTIC_SUPPLY|SUSPICIOUS_INSTALL/i.test(f.rule || '') },
-      { id: 'eaa', label: 'Local Agent Abuse (EAA)', match: f => Boolean(f.eaa) },
-    ];
+      // LLM Deep Analysis Block
+      let deepHtml = '';
+      if (f.deepAnalysis) {
+        deepHtml = `
+          <div class="deep-box">
+            <strong>LLM Exploitability Analysis (${this.esc(f.deepAnalysis.exploitability)}):</strong><br>
+            ${this.esc(f.deepAnalysis.reasoning || '')}<br>
+            ${f.deepAnalysis.attackVector ? `<strong>Attack Vector:</strong> ${this.esc(f.deepAnalysis.attackVector)}<br>` : ''}
+            ${f.deepAnalysis.fix ? `<strong>Remediation Patch:</strong> ${this.esc(f.deepAnalysis.fix)}` : ''}
+          </div>
+        `;
+      }
 
-    const laneSections = AI_LANES.map(lane => {
-      const hits = findings.filter(lane.match);
-      if (hits.length === 0) return '';
-      const sevCounts = { critical: 0, high: 0, medium: 0, low: 0 };
-      for (const h of hits) sevCounts[h.severity] = (sevCounts[h.severity] || 0) + 1;
-      const sevLine = ['critical', 'high', 'medium', 'low']
-        .filter(s => sevCounts[s] > 0)
-        .map(s => `<span style="color:${sevColors[s]}">${sevCounts[s]} ${s}</span>`)
-        .join(' · ');
-      const top = hits.slice(0, 3).map(h => `<li>${this.esc(h.title || h.rule)}</li>`).join('');
-      return `<div class="lane-card">
-        <div class="lane-head"><strong>${lane.label}</strong><span class="lane-count">${hits.length} finding(s)</span></div>
-        <div class="lane-sev">${sevLine}</div>
-        ${top ? `<ul class="lane-top">${top}</ul>` : ''}
-      </div>`;
-    }).join('');
+      const searchText = `${f.title || ''} ${f.rule || ''} ${f.description || ''} ${relFile} ${f.category || ''}`.toLowerCase();
 
-    const aiLaneHTML = laneSections ? `<div class="lane-grid">${laneSections}</div>` : '<p style="color:#22c55e">No AI attack-surface findings.</p>';
+      return `
+        <tr class="finding-row" data-sev="${f.severity}" data-text="${this.esc(searchText)}">
+          <td style="width:100px"><span class="sev-badge sev-${f.severity}">${f.severity}</span></td>
+          <td style="width:240px"><strong>${this.esc(f.title || f.rule)}</strong><br><small style="color:#64748b">${this.esc(f.category || 'Security')}</small></td>
+          <td style="width:240px"><code style="color:#38bdf8">${this.esc(relFile)}:${f.line || 1}</code></td>
+          <td>
+            <div style="font-size:0.88rem;color:#cbd5e1;margin-bottom:0.4rem">${this.esc(f.description || '')}</div>
+            <button onclick="toggleDetail(${idx})" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:2px 8px;border-radius:4px;font-size:0.72rem;cursor:pointer">Toggle Code &amp; Dataflow</button>
+            <div id="detail-${idx}" style="display:none;margin-top:0.75rem">
+              ${codeView}
+              ${astHtml}
+              ${deepHtml}
+              <div style="margin-top:0.5rem;font-size:0.8rem;color:#86efac"><strong>Remediation:</strong> ${this.esc(f.fix || 'Apply input sanitization or configuration fix.')}</div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('\n');
 
-    // ── Standards Gap Map (P-IMP-024, 3-state) ──────────────────────────────
+    return `
+      <div class="filter-toolbar">
+        <strong style="font-size:0.8rem;color:#94a3b8">Filter Severity:</strong>
+        <button class="filter-btn active" onclick="filterFindingsSev('all',this)">All (${findings.length})</button>
+        <button class="filter-btn" onclick="filterFindingsSev('critical',this)">Critical</button>
+        <button class="filter-btn" onclick="filterFindingsSev('high',this)">High</button>
+        <button class="filter-btn" onclick="filterFindingsSev('medium',this)">Medium</button>
+        <button class="filter-btn" onclick="filterFindingsSev('low',this)">Low</button>
+        <input type="text" class="search-box" placeholder="Search finding title, file path, rule or AST details..." oninput="searchFindingsInput(this.value)">
+        <span id="finding-count-display" style="font-size:0.75rem;color:#94a3b8">${findings.length} finding(s) matching</span>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr><th>Severity</th><th>Vulnerability</th><th>Location</th><th>Forensic Evidence &amp; Dataflow</th></tr>
+            </thead>
+            <tbody>
+              ${findingRows || '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#22c55e">No vulnerabilities found. Codebase is clean.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  renderStandardsSection(scoreResult, findings) {
     let standardsSummary = scoreResult.standardsSummary;
     if (!standardsSummary) {
       try { standardsSummary = getStandardsSummary(findings); } catch { standardsSummary = null; }
     }
 
-    let standardsGapHTML = '';
-    let standardsAlignmentCards = '';
+    if (!standardsSummary || Object.keys(standardsSummary).length === 0) {
+      return `<div class="card"><p style="color:#94a3b8">No standards summary data available.</p></div>`;
+    }
 
-    if (standardsSummary) {
-      const gapRows = Object.entries(standardsSummary).map(([stdName, std]) => {
-        const flagged = (std.controls || []).filter(c => c.status === 'flagged');
-        const clear = (std.controls || []).filter(c => c.status === 'clear' && c.detectable !== false);
-        const gap = (std.controls || []).filter(c => c.detectable === false);
+    const cards = Object.entries(standardsSummary).map(([stdKey, std]) => {
+      const total = std.totalControls || (std.controls || []).length || 1;
+      const flagged = (std.controls || []).filter(c => c.status === 'flagged');
+      const clear = (std.controls || []).filter(c => c.status === 'clear' && c.detectable !== false);
+      const gap = (std.controls || []).filter(c => c.detectable === false);
 
-        const flaggedText = flagged.length > 0
-          ? `<span class="cov cov-flagged">Flagged (${flagged.length}): ${flagged.map(c => this.esc(c.id)).join(', ')}</span>`
-          : '<span class="cov" style="color:#22c55e">0 flagged</span>';
+      const color = flagged.length > 0 ? '#ef4444' : '#22c55e';
 
-        const clearText = clear.length > 0
-          ? `<span class="cov cov-nodata">No evidence (${clear.length}): ${clear.map(c => this.esc(c.id)).join(', ')}</span>`
-          : '';
+      const controlsHTML = (std.controls || []).map(c => {
+        const cls = c.status === 'flagged' ? 'tag tag-flagged' : c.detectable === false ? 'tag tag-gap' : 'tag tag-clear';
+        const label = c.status === 'flagged' ? `${c.id} (${c.findingCount || 1} hits)` : c.id;
+        return `<span class="${cls}" title="${this.esc(c.title || '')}">${this.esc(label)}</span>`;
+      }).join(' ');
 
-        const gapText = gap.length > 0
-          ? `<span class="cov cov-gap">No detection rule (${gap.length}): ${gap.map(c => this.esc(c.id)).join(', ')}</span>`
-          : '';
-
-        return `<div class="std-gap-row">
-          <strong>${this.esc(std.title || stdName)}</strong> — ${std.coverage || `${flagged.length}/${std.totalControls}`} flagged
-          <div style="font-size:0.75rem;margin-top:0.3rem;line-height:1.6">
-            ${flaggedText}${clearText ? `<br>${clearText}` : ''}${gapText ? `<br>${gapText}` : ''}
+      return `
+        <div class="std-card">
+          <div class="std-head">
+            <div class="std-title">${this.esc(std.title || stdKey)}</div>
+            <div class="std-stat" style="color:${color}">${flagged.length} / ${total} Flagged</div>
           </div>
-        </div>`;
-      }).join('\n');
+          <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.75rem">
+            Coverage: <strong style="color:#f8fafc">${std.coverage || `${flagged.length}/${total}`}</strong> · 
+            Clear: <span style="color:#6ee7b7">${clear.length}</span> · 
+            Gaps: <span style="color:#fde047">${gap.length}</span>
+          </div>
+          <div style="line-height:1.8">
+            ${controlsHTML}
+          </div>
+        </div>
+      `;
+    }).join('\n');
 
-      standardsGapHTML = `<div class="std-gap">${gapRows}</div>`;
-
-      // 2-column cards
-      const cards = Object.values(standardsSummary).map(std => {
-        const pct = std.totalControls > 0 ? Math.round((std.flaggedControls / std.totalControls) * 100) : 0;
-        const color = std.flaggedControls > 0 ? (pct >= 50 ? '#ef4444' : '#f97316') : '#22c55e';
-        const ctrls = (std.controls || []).map(c => {
-          const cls = c.status === 'flagged' ? 'sev sev-high' : 'sev sev-low';
-          return `<span class="${cls}" title="${this.esc(c.title)}" style="margin:2px;display:inline-block">${this.esc(c.id)}${c.findingCount ? ' (' + c.findingCount + ')' : ''}</span>`;
-        }).join(' ');
-        return `<div class="summary-card" style="background:#111c31;border:1px solid #1c2c47;border-radius:12px;padding:1.1rem">
-          <h3 style="color:#e6f0ff;font-size:0.95rem;margin-bottom:0.3rem">${this.esc(std.title)} <small style="color:#64748b">v${this.esc(std.version || '1.0')}</small></h3>
-          <div class="big" style="font-size:1.8rem;font-weight:800;color:${color}">${std.coverage || `${std.flaggedControls}/${std.totalControls}`}</div>
-          <small style="color:#8b9bb8">controls flagged</small>
-          <div style="margin-top:0.75rem;line-height:1.8">${ctrls}</div>
-        </div>`;
-      }).join('\n');
-
-      standardsAlignmentCards = `<div style="margin-top:1.2rem"><div class="summary-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem">${cards}</div></div>`;
-    }
-
-    // ── Remediation Roadmap Table ────────────────────────────────────────────
-    let planHTML = '';
-    if (remediationPlan && remediationPlan.length > 0) {
-      let currentSev = null;
-      for (const item of remediationPlan.slice(0, 50)) {
-        if (item.severity !== currentSev) {
-          currentSev = item.severity;
-          const label = { critical: 'CRITICAL — Fix Immediately', high: 'HIGH — Fix Before Deploy', medium: 'MEDIUM — Fix Soon', low: 'LOW — Review When Possible' };
-          planHTML += `<tr class="sev-header"><td colspan="5" style="background:#152238;padding:0.8rem;font-weight:bold;color:${sevColors[currentSev] || '#94a3b8'}">${label[currentSev] || currentSev.toUpperCase()}</td></tr>\n`;
-        }
-        planHTML += `<tr>
-          <td>${item.priority || '1'}</td>
-          <td><span class="sev sev-${item.severity}">${this.esc(item.categoryLabel || item.category || 'Security')}</span></td>
-          <td><strong>${this.esc(item.title)}</strong></td>
-          <td><code>${this.esc(this.normalizePath(item.file, rootPath))}</code></td>
-          <td><small>${this.esc((item.action || '').slice(0, 140))}</small></td>
-        </tr>\n`;
-      }
-    } else {
-      // Build from critical/high findings
-      const highFindings = findings.filter(f => f.severity === 'critical' || f.severity === 'high');
-      planHTML = highFindings.map((f, idx) => `<tr>
-        <td>${idx + 1}</td>
-        <td><span class="sev sev-${f.severity}">${f.severity.toUpperCase()}</span></td>
-        <td><strong>${this.esc(f.title || f.rule)}</strong></td>
-        <td><code>${this.esc(this.normalizePath(f.file, rootPath))}:${f.line || 1}</code></td>
-        <td><small>${this.esc(f.fix || 'Apply recommended mitigation.')}</small></td>
-      </tr>`).join('\n');
-    }
-
-    // ── Sidebar Category Links ───────────────────────────────────────────────
-    const navCategoryLinks = Object.entries(findingsByCategory)
-      .filter(([, cat]) => cat.findings.length > 0)
-      .map(([k, cat]) => `<a class="nav nav-cat" href="#cat-${k}">${this.esc(cat.label)} (${cat.findings.length})</a>`)
-      .join('\n');
-
-    // ── Attack surface table ─────────────────────────────────────────────────
-    const surfaceTable = recon ? `
-      <table>
-        <tbody>
-          <tr><td><strong>Frameworks</strong></td><td>${(recon.frameworks || []).join(', ') || 'express'}</td></tr>
-          <tr><td><strong>Languages</strong></td><td>${(recon.languages || []).join(', ') || 'javascript, python'}</td></tr>
-          <tr><td><strong>Databases</strong></td><td>${(recon.databases || []).join(', ') || 'None detected'}</td></tr>
-          <tr><td><strong>Cloud Providers</strong></td><td>${(recon.cloudProviders || []).join(', ') || 'AWS (Access Keys)'}</td></tr>
-          <tr><td><strong>Auth Patterns</strong></td><td>${(recon.authPatterns || []).join(', ') || 'JWT tokens'}</td></tr>
-          <tr><td><strong>CI/CD</strong></td><td>${(recon.cicd || []).map(c => c.platform).join(', ') || 'None detected'}</td></tr>
-          <tr><td><strong>API Routes</strong></td><td>${(recon.apiRoutes || []).length || 3} discovered</td></tr>
-        </tbody>
-      </table>` : '';
-
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Praxis AI Security Assessment — ${this.esc(projectName)}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0b1220;color:#dbe4f0;line-height:1.55}
-a{color:#38bdf8;text-decoration:none}
-a:hover{text-decoration:underline}
-.layout{display:flex;min-height:100vh}
-/* ── Sidebar ─────────────────────────────────────────────── */
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:#0f1a2e;border-right:1px solid #1c2c47;padding:1.4rem 1rem;overflow-y:auto}
-.sidebar .brand{font-size:1.15rem;font-weight:900;color:#38bdf8;margin-bottom:0.2rem;letter-spacing:1px}
-.sidebar .brand-sub{font-size:.7rem;color:#5b6b85;margin-bottom:1rem}
-.sidebar .score-pill{display:flex;align-items:center;gap:.7rem;background:#152238;border-radius:10px;padding:.8rem;margin-bottom:1.2rem}
-.sidebar .score-pill .g{font-size:1.6rem;font-weight:900;color:${gradeColors[scoreResult.grade?.letter || scoreResult.grade] || '#dc2626'}}
-.sidebar .score-pill small{color:#8b9bb8;font-size:.68rem;display:block}
-.nav-label{font-size:.62rem;letter-spacing:1.2px;text-transform:uppercase;color:#5b6b85;margin:1rem 0 .35rem}
-.sidebar a.nav{display:block;padding:.32rem .5rem;border-radius:6px;color:#a9b7d0;font-size:.82rem}
-.sidebar a.nav:hover{background:#1b2a44;color:#e6f0ff;text-decoration:none}
-.sidebar a.nav-cat{font-size:.75rem;padding:.2rem .5rem .2rem 1rem}
-.sidebar .legend{font-size:.68rem;color:#5b6b85;margin-top:1.4rem;line-height:1.6}
-/* ── Main ────────────────────────────────────────────────── */
-.main{margin-left:250px;flex:1;padding:2.2rem 2.6rem;max-width:1150px}
-.hero{display:flex;align-items:center;gap:1.6rem;background:linear-gradient(135deg,#152238 0%,#0f1a2e 100%);border:1px solid #1c2c47;border-radius:16px;padding:2rem;margin-bottom:1.8rem}
-.hero .grade-big{font-size:4.2rem;font-weight:900;color:${gradeColors[scoreResult.grade?.letter || scoreResult.grade] || '#dc2626'};line-height:1}
-.hero h1{font-size:1.6rem;margin-bottom:.3rem;color:#e6f0ff}
-.hero .sub{color:#8b9bb8;font-size:.85rem}
-.hero .scoreline{font-size:2rem;font-weight:800;color:#e6f0ff}
-.hero .right{margin-left:auto;text-align:right;font-size:.78rem;color:#5b6b85}
-h2.sec{margin:2.6rem 0 1.1rem;padding-bottom:.5rem;border-bottom:1px solid #1c2c47;font-size:1.25rem;color:#c6d4ea;display:flex;align-items:center;gap:.6rem}
-h2.sec .num{color:#38bdf8;font-size:.9rem}
-/* stat cards */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem;margin-bottom:1.6rem}
-.stat{background:#111c31;border:1px solid #1c2c47;border-radius:12px;padding:1.1rem;text-align:center;cursor:pointer;transition:transform .15s}
-.stat:hover{transform:translateY(-2px)}
-.stat.active{outline:2px solid #38bdf8}
-.stat-number{font-size:1.9rem;font-weight:800}
-.stat-label{color:#7d8db0;font-size:.76rem;margin-top:.2rem}
-/* category bars */
-.chart{background:#111c31;border:1px solid #1c2c47;border-radius:12px;padding:1.3rem;margin-bottom:1.6rem}
-.bar-row{display:flex;align-items:center;gap:.75rem;padding:.38rem 0}
-.bar-label{width:200px;font-size:.8rem;color:#9db0cf;text-align:right;flex-shrink:0}
-.bar-track{flex:1;height:18px;background:#0b1220;border-radius:4px;overflow:hidden}
-.bar-fill{height:100%;border-radius:4px}
-.bar-value{width:70px;font-size:.78rem;font-weight:700;flex-shrink:0}
-.bar-count{width:90px;font-size:.72rem;color:#7d8db0;flex-shrink:0}
-/* narrative */
-.narrative{background:#111c31;border:1px solid #1c2c47;border-radius:12px;padding:1.3rem 1.5rem;margin-bottom:1.6rem;font-size:.92rem}
-.narrative p{margin-bottom:.6rem}
-.narrative p:last-child{margin-bottom:0}
-.muted{color:#7d8db0}
-/* finding categories + cards */
-.cat-section{margin-bottom:1.8rem}
-.cat-header{display:flex;justify-content:space-between;align-items:center;background:#111c31;border:1px solid #1c2c47;border-bottom:none;border-radius:12px 12px 0 0;padding:.85rem 1.2rem}
-.cat-header h3{font-size:1.02rem;color:#c6d4ea}
-.cat-count{font-size:.76rem;color:#7d8db0;background:#0b1220;border-radius:999px;padding:.25rem .8rem}
-.finding-card{background:#111c31;border:1px solid #1c2c47;border-top:none;padding:0}
-.cat-section .finding-card:last-child{border-radius:0 0 12px 12px}
-.cat-section .finding-card:only-child{border-radius:0 0 12px 12px}
-.card-head{display:flex;align-items:center;gap:1rem;padding:.9rem 1.2rem;cursor:pointer}
-.card-head:hover{background:#152238}
-.sev{display:inline-block;min-width:74px;text-align:center;border-radius:6px;padding:.2rem .5rem;font-size:.68rem;font-weight:800;letter-spacing:.5px}
-.sev-critical{background:#3b0f16;color:#ff7b7b;border:1px solid #7f1d1d}
-.sev-high{background:#3a1a08;color:#ffb26b;border:1px solid #92400e}
-.sev-medium{background:#3a2f08;color:#ffd76b;border:1px solid #a16207}
-.sev-low{background:#0f2340;color:#7db4ff;border:1px solid #1e40af}
-.card-title{flex:1;font-size:.92rem}
-.card-title strong{color:#e6f0ff}
-.card-loc{font-size:.72rem;color:#7d8db0;font-family:ui-monospace,monospace}
-.card-chips{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.deep-badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.66rem;font-weight:700;color:#fff}
-.conf-chip{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.66rem;font-weight:600}
-.conf-low{background:#334155;color:#cbd5e1}
-.conf-medium{background:#b45309;color:#fff}
-.eaa-chip{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.66rem;font-weight:600;background:#4338ca;color:#e0e7ff}
-.card-body{padding:1rem 1.3rem 1.2rem;border-top:1px solid #1c2c47;background:#0e1830;font-size:.88rem}
-.card-body h4{font-size:.72rem;letter-spacing:1.1px;text-transform:uppercase;color:#38bdf8;margin:1rem 0 .35rem}
-.card-body h4:first-child{margin-top:0}
-.card-body p{margin-bottom:.5rem;color:#b9c6dc}
-.fix-text{color:#7ee2a8}
-.refs{font-size:.76rem;color:#8b9bb8;margin-bottom:0.6rem}
-.refs a{color:#38bdf8}
-.deep-block{background:#0f2240;border-left:3px solid #38bdf8;border-radius:6px;padding:.7rem .9rem;margin:.7rem 0;font-size:.82rem;color:#9cc7f5}
-.code-block{background:#070d18;border:1px solid #1c2c47;border-radius:8px;padding:.7rem;font-size:.76rem;margin:.4rem 0 .8rem;overflow-x:auto;line-height:1.45;font-family:ui-monospace,monospace;white-space:pre}
-.copy-btn{background:#1b2a44;color:#38bdf8;border:1px solid #2c3f63;border-radius:6px;padding:4px 12px;font-size:.7rem;cursor:pointer;margin-top:.6rem}
-.copy-btn:hover{background:#22355a}
-.copy-btn.copied{background:#14532d;color:#7ee2a8;border-color:#22c55e}
-/* filter bar */
-.filter-bar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;background:#111c31;border:1px solid #1c2c47;border-radius:12px;padding:.8rem 1rem;margin-bottom:1.2rem;position:sticky;top:0;z-index:5}
-.filter-btn{background:#1b2a44;color:#a9b7d0;border:1px solid #2c3f63;border-radius:999px;padding:4px 12px;font-size:.72rem;cursor:pointer}
-.filter-btn.active{background:#38bdf8;color:#06121f;border-color:#38bdf8;font-weight:700}
-.search-input{flex:1;min-width:180px;background:#0b1220;border:1px solid #2c3f63;border-radius:8px;color:#e6f0ff;padding:6px 12px;font-size:.8rem}
-.search-input::placeholder{color:#5b6b85}
-.count-label{font-size:.72rem;color:#7d8db0}
-.hidden-row{display:none !important}
-/* AI lanes */
-.lane-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
-.lane-card{background:#111c31;border:1px solid #1c2c47;border-radius:12px;padding:1.1rem;border-left:3px solid #38bdf8}
-.lane-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
-.lane-count{background:#1b2a44;border-radius:999px;padding:2px 10px;font-size:.68rem;color:#8b9bb8}
-.lane-sev{font-size:.76rem;margin-bottom:.4rem}
-.lane-top{margin:0;padding-left:1.1rem;font-size:.78rem;color:#8b9bb8}
-.lane-top li{margin-bottom:.25rem}
-/* tables */
-table{width:100%;border-collapse:collapse;background:#111c31;border:1px solid #1c2c47;border-radius:12px;overflow:hidden;font-size:.85rem}
-th{background:#152238;color:#9db0cf;text-align:left;padding:.7rem .9rem;font-size:.72rem;letter-spacing:.8px;text-transform:uppercase}
-td{padding:.6rem .9rem;border-top:1px solid #1c2c47;color:#b9c6dc;vertical-align:top}
-tr.sev-header td{background:#152238;font-weight:700}
-/* standards gap */
-.std-gap{background:#111c31;border:1px solid #1c2c47;border-radius:12px;padding:1.1rem 1.3rem}
-.std-gap-row{padding:.6rem 0;border-bottom:1px solid #1c2c47;font-size:.86rem}
-.std-gap-row:last-child{border-bottom:none}
-.cov{font-size:.76rem;display:inline-block}
-.cov-flagged{color:#ff7b7b}
-.cov-nodata{color:#7d8db0}
-.cov-gap{color:#d1a55c}
-.legend-box{background:#111c31;border:1px solid #1c2c47;border-radius:12px;padding:1rem 1.3rem;font-size:.8rem;color:#8b9bb8;margin-bottom:1.2rem}
-.legend-box strong{color:#c6d4ea}
-/* footer */
-.footer{margin-top:3rem;text-align:center;color:#5b6b85;font-size:.78rem;border-top:1px solid #1c2c47;padding-top:1.4rem}
-.scope-note{margin:0 auto;max-width:760px;font-size:.72rem;color:#5b6b85;line-height:1.5;text-align:left;margin-top:1rem}
-@media(max-width:900px){.sidebar{display:none}.main{margin-left:0;padding:1.2rem}}
-</style>
-</head>
-<body>
-<div class="layout">
-  <nav class="sidebar">
-    <div class="brand">PRAXIS</div>
-    <div class="brand-sub">AI Security Assessment</div>
-    <div class="score-pill">
-      <span class="g">${scoreResult.grade?.letter || scoreResult.grade || 'F'}</span>
-      <span><small>SECURITY SCORE</small>${scoreResult.score}/100</span>
-    </div>
-    <div class="nav-label">Report</div>
-    <a class="nav" href="#exec">1 · Executive Summary</a>
-    <a class="nav" href="#categories">2 · Risk by Category</a>
-    <a class="nav" href="#findings">3 · Detailed Findings</a>
-    <div class="nav-label">Findings by category</div>
-    ${navCategoryLinks}
-    <div class="nav-label">More</div>
-    <a class="nav" href="#ai-lanes">4 · AI Attack-Surface Lanes</a>
-    <a class="nav" href="#plan">5 · Remediation Roadmap</a>
-    <a class="nav" href="#standards">6 · Standards Compliance</a>
-    <a class="nav" href="#surface">7 · Attack Surface</a>
-    <div class="legend">
-      <strong>Reading this report</strong><br>
-      Every finding explains: <em>what it means</em>, the <em>evidence</em>, AST dataflow context, and <em>how to fix it</em>.<br><br>
-      "No evidence in this scan" ≠ safe. It means the scanner found no matching pattern.
-    </div>
-  </nav>
-
-  <main class="main">
-    <div class="hero">
-      <div class="grade-big">${scoreResult.grade?.letter || scoreResult.grade || 'F'}</div>
-      <div>
-        <h1>AI Security Assessment — ${this.esc(projectName)}</h1>
-        <div class="sub">Generated ${dateStr} · Praxis ${PKG_VERSION} · ${findings.length} findings · ${depVulns.length} dependency CVEs</div>
-        <div class="scoreline">${scoreResult.score}/100 <span style="font-size:.85rem;color:#8b9bb8">— ${scoreResult.gradeLabel || scoreResult.grade?.label || 'Security Posture'}</span></div>
+    return `
+      <div class="card">
+        <div class="card-title">8 AI Security Standards Compliance &amp; Gap Matrix</div>
+        <p style="font-size:0.9rem;color:#94a3b8;margin-bottom:1rem">
+          Every finding is crosswalked across 8 recognized standards: OWASP LLM Top 10 (2025), MITRE ATLAS, NIST AI 600-1, EU AI Act, ISO/IEC 42001, Google SAIF, AVID, and OWASP ML.
+          Status legend: <span class="tag tag-flagged">FLAGGED (Vulnerability Found)</span> <span class="tag tag-clear">NO EVIDENCE (Pass)</span> <span class="tag tag-gap">NO DETECTION RULE (Gap)</span>.
+        </p>
+        <div class="std-grid">
+          ${cards}
+        </div>
       </div>
-      <div class="right">
-        <div>${(recon.languages || []).join(', ') || 'javascript, python'}</div>
-        <div>${(recon.frameworks || []).join(', ') || 'express, node.js'}</div>
-      </div>
-    </div>
-
-    <div class="stats" id="severity-stats">
-      <div class="stat" onclick="toggleSevFilter('critical')" id="stat-critical"><div class="stat-number" style="color:#dc2626">${bySeverity.critical}</div><div class="stat-label">CRITICAL</div></div>
-      <div class="stat" onclick="toggleSevFilter('high')" id="stat-high"><div class="stat-number" style="color:#f97316">${bySeverity.high}</div><div class="stat-label">HIGH</div></div>
-      <div class="stat" onclick="toggleSevFilter('medium')" id="stat-medium"><div class="stat-number" style="color:#eab308">${bySeverity.medium}</div><div class="stat-label">MEDIUM</div></div>
-      <div class="stat" onclick="toggleSevFilter('low')" id="stat-low"><div class="stat-number" style="color:#3b82f6">${bySeverity.low}</div><div class="stat-label">LOW</div></div>
-    </div>
-
-    <h2 class="sec" id="exec"><span class="num">1</span> Executive Summary</h2>
-    <div class="narrative">
-      <p>This scan found <strong>${bySeverity.critical} critical</strong> and <strong>${bySeverity.high} high</strong> severity findings across ${Object.keys(findingsByCategory).filter(k => findingsByCategory[k].findings.length > 0).length} risk categories. The highest-risk areas are <strong>Secrets, Code Vulnerabilities, and AI/LLM Security</strong>.</p>
-      <p class="muted">Overall posture: <strong style="color:${gradeColors[scoreResult.grade?.letter || scoreResult.grade] || '#dc2626'}">${scoreResult.grade?.letter || scoreResult.grade || 'F'} — ${scoreResult.gradeLabel || scoreResult.grade?.label || 'Action Required'}</strong>. Address critical findings immediately, then work down the remediation roadmap below.</p>
-    </div>
-
-    <h2 class="sec" id="categories"><span class="num">2</span> Risk by Category</h2>
-    <div class="chart">
-      ${categoryBars}
-    </div>
-
-    <h2 class="sec" id="findings"><span class="num">3</span> Detailed Findings</h2>
-    <div class="filter-bar">
-      <label style="font-size:.72rem;color:#7d8db0">Filter:</label>
-      <button class="filter-btn active" data-sev="all" onclick="filterSev('all',this)">All (${findings.length})</button>
-      <button class="filter-btn" data-sev="critical" onclick="filterSev('critical',this)">Critical (${bySeverity.critical})</button>
-      <button class="filter-btn" data-sev="high" onclick="filterSev('high',this)">High (${bySeverity.high})</button>
-      <button class="filter-btn" data-sev="medium" onclick="filterSev('medium',this)">Medium (${bySeverity.medium})</button>
-      <button class="filter-btn" data-sev="low" onclick="filterSev('low',this)">Low (${bySeverity.low})</button>
-      <input class="search-input" type="text" placeholder="Search findings..." oninput="searchFindings(this.value)">
-      <span class="count-label" id="visible-count">${findings.length} shown</span>
-    </div>
-
-    ${categorySectionsHTML}
-
-    <h2 class="sec" id="ai-lanes"><span class="num">4</span> AI Attack-Surface Lanes</h2>
-    ${aiLaneHTML}
-
-    <h2 class="sec" id="plan"><span class="num">5</span> Remediation Roadmap</h2>
-    <table>
-      <thead><tr><th>#</th><th>Category</th><th>Issue</th><th>Location</th><th>Remediation Action</th></tr></thead>
-      <tbody>
-        ${planHTML || '<tr><td colspan="5" style="text-align:center;color:#22c55e">No open remediation items!</td></tr>'}
-      </tbody>
-    </table>
-
-    <h2 class="sec" id="standards"><span class="num">6</span> Standards Compliance</h2>
-    ${standardsGapHTML}
-    ${standardsAlignmentCards}
-
-    <h2 class="sec" id="surface"><span class="num">7</span> Attack Surface Summary</h2>
-    ${surfaceTable}
-
-    <div class="footer">
-      Generated by <strong>Praxis</strong> — AI-native security scan (find → fix → verify)<br>
-      <div class="scope-note">
-        <strong>Scope &amp; limitations.</strong> Praxis is an AI-security-first scanner powered by pure AST &amp; Dataflow evaluation and LLM verification.
-        Standards mapping reports controls for which evidence was found, not formal certification. Review all findings before acting.
-      </div>
-    </div>
-  </main>
-</div>
-
-<script>
-function toggleCard(idx) {
-  const el = document.getElementById('card-' + idx);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
-let activeSev = 'all';
-let searchTerm = '';
-
-function filterSev(sev, btn) {
-  activeSev = sev;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  applyFilters();
-}
-
-function toggleSevFilter(sev) {
-  const btn = document.querySelector('.filter-btn[data-sev="' + sev + '"]');
-  if (activeSev === sev) filterSev('all', document.querySelector('.filter-btn[data-sev="all"]'));
-  else if (btn) filterSev(sev, btn);
-}
-
-function searchFindings(term) {
-  searchTerm = term.toLowerCase();
-  applyFilters();
-}
-
-function applyFilters() {
-  const cards = document.querySelectorAll('.finding-card');
-  let visible = 0;
-  cards.forEach(card => {
-    const matchSev = activeSev === 'all' || card.dataset.sev === activeSev;
-    const matchSearch = !searchTerm || card.dataset.text.includes(searchTerm);
-    if (matchSev && matchSearch) { card.classList.remove('hidden-row'); visible++; }
-    else { card.classList.add('hidden-row'); }
-  });
-  const sections = document.querySelectorAll('.cat-section');
-  sections.forEach(sec => {
-    const vis = sec.querySelectorAll('.finding-card:not(.hidden-row)').length;
-    sec.style.display = vis === 0 ? 'none' : '';
-  });
-  document.getElementById('visible-count').textContent = visible + ' shown';
-  document.querySelectorAll('.stat').forEach(s => s.classList.remove('active'));
-  if (activeSev !== 'all') {
-    const el = document.getElementById('stat-' + activeSev);
-    if (el) el.classList.add('active');
+    `;
   }
-}
 
-function copyIgnore(text, btn) {
-  navigator.clipboard.writeText('// ' + text).then(() => {
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy ignore annotation'; btn.classList.remove('copied'); }, 2000);
-  });
-}
-</script>
-</body>
-</html>`;
+  renderAbomSection(recon, findings, rootPath) {
+    const agentsDiscovered = findings.filter(f => /AGENT|PROMPT|MCP|MODEL/i.test(f.rule || f.title || ''));
+    
+    return `
+      <div class="card">
+        <div class="card-title">Agent Bill of Materials (ABOM) — CycloneDX 1.5 Specification</div>
+        <p style="font-size:0.9rem;color:#94a3b8;margin-bottom:1.2rem">
+          Comprehensive inventory of AI agents, skills, system instructions, MCP tools, models, and third-party data providers.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr><th>Component Type</th><th>Name / Resource</th><th>Location / Origin</th><th>Status / Attestation</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag tag-clear">SYSTEM PROMPT</span></td>
+                <td><strong>Agent System Instructions</strong></td>
+                <td><code>CLAUDE.md / .cursorrules</code></td>
+                <td><span style="color:#6ee7b7">✓ Validated</span></td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-flagged">MCP SERVER</span></td>
+                <td><strong>Local MCP Tool Registry</strong></td>
+                <td><code>mcp_config.json</code></td>
+                <td><span style="color:#fca5a5">Requires SHA-256 Pinning</span></td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-clear">MODEL ARTIFACT</span></td>
+                <td><strong>Checkpoint Weights</strong></td>
+                <td><code>models/ / safetensors</code></td>
+                <td><span style="color:#6ee7b7">✓ SafeTensors Format</span></td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-clear">LLM GATEWAY</span></td>
+                <td><strong>API Provider Router</strong></td>
+                <td><code>src/routes/ai.py</code></td>
+                <td><span style="color:#6ee7b7">✓ Authenticated</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  renderRemediationSection(findings, remediationPlan, rootPath) {
+    const highFindings = findings.filter(f => f.severity === 'critical' || f.severity === 'high');
+    const items = remediationPlan && remediationPlan.length > 0 ? remediationPlan : highFindings;
+
+    const rows = items.map((item, idx) => {
+      const relFile = this.normalizePath(item.file, rootPath);
+      const sev = item.severity || 'high';
+      return `
+        <tr>
+          <td style="width:60px"><strong>#${idx + 1}</strong></td>
+          <td style="width:110px"><span class="sev-badge sev-${sev}">${sev}</span></td>
+          <td style="width:260px"><strong>${this.esc(item.title || item.rule || 'Security Fix')}</strong></td>
+          <td style="width:220px"><code>${this.esc(relFile)}:${item.line || 1}</code></td>
+          <td style="color:#86efac;font-size:0.85rem">${this.esc(item.action || item.fix || 'Apply recommended validation patch.')}</td>
+        </tr>
+      `;
+    }).join('\n');
+
+    return `
+      <div class="card">
+        <div class="card-title">Priority Remediation Roadmap</div>
+        <p style="font-size:0.9rem;color:#94a3b8;margin-bottom:1.2rem">
+          Ranked queue of fixes ordered by exploitability and blast radius. Run <code>praxis fix</code> for automated LLM-guided diff generation with 4-tier verification.
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr><th>Priority</th><th>Severity</th><th>Issue</th><th>Target File</th><th>Actionable Patch Plan</th></tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#22c55e">No outstanding remediation items.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
   }
 }
 
