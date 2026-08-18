@@ -64,7 +64,7 @@
   <rect width="1600" height="420" fill="url(#topGlow)"/>
 
   <!-- ========================================================================= -->
-  <!-- HEADER & LOGO                                                             -->
+  <!-- HEADER &amp; LOGO                                                             -->
   <!-- ========================================================================= -->
   <g transform="translate(800, 54)">
     <!-- Shield Icon -->
@@ -81,7 +81,7 @@
   </g>
 
   <!-- ========================================================================= -->
-  <!-- TOP ROW: CLIENT INTERFACES & EXECUTION (y=120..185)                       -->
+  <!-- TOP ROW: CLIENT INTERFACES &amp; EXECUTION (y=120..185)                       -->
   <!-- ========================================================================= -->
   <g transform="translate(50, 120)" filter="url(#shadow)">
     <!-- 1. CLI -->
@@ -118,7 +118,7 @@
   <!-- ========================================================================= -->
 
   <!-- ========================================================================= -->
-  <!-- PILLAR 1: FIND (Audit & Threat Intel) (x=50, w=470)                       -->
+  <!-- PILLAR 1: FIND (Audit &amp; Threat Intel) (x=50, w=470)                       -->
   <!-- ========================================================================= -->
   <g transform="translate(50, 210)" filter="url(#shadow)">
     <rect x="0" y="0" width="470" height="590" rx="18" fill="url(#cardDark)" stroke="#4c1d95" stroke-width="2.2"/>
@@ -132,7 +132,7 @@
       <text x="130" y="25" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">Audit &amp; Detection</text>
     </g>
 
-    <!-- Block 1: Recon & Ingestion -->
+    <!-- Block 1: Recon &amp; Ingestion -->
     <g transform="translate(18, 62)">
       <rect x="0" y="0" width="434" height="112" rx="12" fill="#130724" stroke="#3b1d6e" stroke-width="1.4"/>
       <text x="16" y="28" font-family="sans-serif" font-size="17" font-weight="800" fill="#e879f9">Recon &amp; Tech-Stack Profiling</text>
@@ -171,7 +171,7 @@
   <line x1="520" y1="505" x2="555" y2="505" stroke="#c084fc" stroke-width="4" marker-end="url(#arrPurple)"/>
 
   <!-- ========================================================================= -->
-  <!-- PILLAR 2: ANALYZE (AST Core, Standards & Deliverables) (x=565, w=470)     -->
+  <!-- PILLAR 2: ANALYZE (AST Core, Standards &amp; Deliverables) (x=565, w=470)     -->
   <!-- ========================================================================= -->
   <g transform="translate(565, 195)" filter="url(#glowCenter)">
     <rect x="0" y="0" width="470" height="620" rx="20" fill="url(#cardCenter)" stroke="#c084fc" stroke-width="2.6"/>
@@ -196,7 +196,7 @@
       <text x="16" y="150" font-family="sans-serif" font-size="13.5" font-weight="700" fill="#34d399">✓ Active False-Positive Suppression</text>
     </g>
 
-    <!-- Block 2: 0-100 Score & 8 Standards -->
+    <!-- Block 2: 0-100 Score &amp; 8 Standards -->
     <g transform="translate(18, 236)">
       <rect x="0" y="0" width="434" height="170" rx="12" fill="#140626" stroke="#7c3aed" stroke-width="1.6"/>
       <text x="16" y="28" font-family="sans-serif" font-size="17" font-weight="800" fill="#e879f9">0–100 Score &amp; 8 Standards</text>
@@ -223,7 +223,7 @@
   <line x1="1035" y1="505" x2="1070" y2="505" stroke="#34d399" stroke-width="4" marker-end="url(#arrGreen)"/>
 
   <!-- ========================================================================= -->
-  <!-- PILLAR 3: FIX & VERIFY (Closed-Loop Ladder) (x=1080, w=470)               -->
+  <!-- PILLAR 3: FIX &amp; VERIFY (Closed-Loop Ladder) (x=1080, w=470)               -->
   <!-- ========================================================================= -->
   <g transform="translate(1080, 210)" filter="url(#shadow)">
     <rect x="0" y="0" width="470" height="590" rx="18" fill="url(#cardGreen)" stroke="#34d399" stroke-width="2.2"/>
@@ -237,7 +237,7 @@
       <text x="180" y="25" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">Autonomous Fix</text>
     </g>
 
-    <!-- Block 1: LLM Planner & Human Gate -->
+    <!-- Block 1: LLM Planner &amp; Human Gate -->
     <g transform="translate(18, 62)">
       <rect x="0" y="0" width="434" height="152" rx="12" fill="#061b11" stroke="#10b981" stroke-width="1.4"/>
       <text x="16" y="28" font-family="sans-serif" font-size="17" font-weight="800" fill="#6ee7b7">LLM Remediation Planner</text>
@@ -278,7 +278,7 @@
       <text x="16" y="200" font-family="sans-serif" font-size="13" font-weight="700" fill="#6ee7b7">✓ Auto-Revert on Exhaustion</text>
     </g>
 
-    <!-- Block 3: Atomic Apply & Undo -->
+    <!-- Block 3: Atomic Apply &amp; Undo -->
     <g transform="translate(18, 448)">
       <rect x="0" y="0" width="434" height="124" rx="12" fill="#061b11" stroke="#10b981" stroke-width="1.4"/>
       <text x="16" y="28" font-family="sans-serif" font-size="17" font-weight="800" fill="#6ee7b7">Atomic Apply &amp; Undo Log</text>
