@@ -1,0 +1,408 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1240" viewBox="0 0 2000 1240" role="img" aria-label="Praxis AI-Native Security Architecture Diagram">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b1322"/>
+      <stop offset="50%" stop-color="#070c16"/>
+      <stop offset="100%" stop-color="#04070d"/>
+    </linearGradient>
+    
+    <radialGradient id="topglow" cx="50%" cy="0%" r="65%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="subtleglow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#16233b"/>
+      <stop offset="60%" stop-color="#0f192b"/>
+      <stop offset="100%" stop-color="#0a111e"/>
+    </linearGradient>
+
+    <linearGradient id="cardHighlight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="60%" stop-color="#132742"/>
+      <stop offset="100%" stop-color="#0b1728"/>
+    </linearGradient>
+
+    <linearGradient id="cardGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#143b29"/>
+      <stop offset="60%" stop-color="#0d261b"/>
+      <stop offset="100%" stop-color="#071710"/>
+    </linearGradient>
+
+    <linearGradient id="cardAmber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3b2b10"/>
+      <stop offset="60%" stop-color="#261c0a"/>
+      <stop offset="100%" stop-color="#140f05"/>
+    </linearGradient>
+
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#000000" flood-opacity="0.65"/>
+    </filter>
+
+    <filter id="glowCyan" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#38bdf8" flood-opacity="0.85"/>
+    </filter>
+
+    <filter id="glowGreen" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#22c55e" flood-opacity="0.8"/>
+    </filter>
+
+    <!-- Arrow Markers -->
+    <marker id="arrowCyan" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowMuted" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="2000" height="1240" fill="url(#bg)"/>
+  <rect width="2000" height="500" fill="url(#topglow)"/>
+  <rect x="200" y="300" width="1600" height="800" fill="url(#subtleglow)"/>
+
+  <!-- ========================================================================= -->
+  <!-- TITLE HEADER                                                              -->
+  <!-- ========================================================================= -->
+  <g transform="translate(1000, 52)">
+    <text text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="38" font-weight="900" fill="#ffffff" letter-spacing="1.5">
+      PRAXIS: AI-NATIVE SECURITY ENGINE ARCHITECTURE
+    </text>
+    <text y="32" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="500" fill="#93c5fd">
+      Multi-Agent Security Audit · Pure ESM AST &amp; Dataflow Engine · Dynamic AI Red Teaming · Gated Fix Loop &amp; Verification Ladder
+    </text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- LAYER 1: CLIENT SURFACES & EXECUTION MODES (y=115..205)                   -->
+  <!-- ========================================================================= -->
+  <g transform="translate(100, 115)">
+    <!-- 1. CLI Terminal -->
+    <g filter="url(#dropShadow)">
+      <rect x="0" y="0" width="410" height="88" rx="14" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+      <rect x="8" y="6" width="394" height="20" rx="8" fill="url(#sheen)"/>
+      <circle cx="36" cy="44" r="18" fill="#0284c7" fill-opacity="0.25"/>
+      <text x="36" y="50" text-anchor="middle" font-family="ui-monospace, monospace" font-size="18" font-weight="800" fill="#38bdf8">&gt;_</text>
+      <text x="70" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#ffffff">Developer CLI &amp; REPL</text>
+      <text x="70" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b9bb8">praxis scan · fix · redteam · intel · vibe</text>
+    </g>
+
+    <!-- 2. GitHub Actions CI -->
+    <g filter="url(#dropShadow)" transform="translate(460, 0)">
+      <rect x="0" y="0" width="410" height="88" rx="14" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+      <rect x="8" y="6" width="394" height="20" rx="8" fill="url(#sheen)"/>
+      <circle cx="36" cy="44" r="18" fill="#4338ca" fill-opacity="0.25"/>
+      <text x="36" y="50" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#818cf8">⚡</text>
+      <text x="70" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#ffffff">GitHub Action &amp; CI/CD</text>
+      <text x="70" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b9bb8">Net-new PR gate · SARIF upload · PR annotations</text>
+    </g>
+
+    <!-- 3. MCP Server Integration -->
+    <g filter="url(#dropShadow)" transform="translate(920, 0)">
+      <rect x="0" y="0" width="410" height="88" rx="14" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+      <rect x="8" y="6" width="394" height="20" rx="8" fill="url(#sheen)"/>
+      <circle cx="36" cy="44" r="18" fill="#059669" fill-opacity="0.25"/>
+      <text x="36" y="50" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#34d399">🔌</text>
+      <text x="70" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#ffffff">MCP Server &amp; IDE Agents</text>
+      <text x="70" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b9bb8">Claude Desktop · Cursor · Windsurf · VS Code</text>
+    </g>
+
+    <!-- 4. Dynamic DAST Prober -->
+    <g filter="url(#dropShadow)" transform="translate(1380, 0)">
+      <rect x="0" y="0" width="420" height="88" rx="14" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+      <rect x="8" y="6" width="404" height="20" rx="8" fill="url(#sheen)"/>
+      <circle cx="36" cy="44" r="18" fill="#dc2626" fill-opacity="0.25"/>
+      <text x="36" y="50" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#f87171">🎯</text>
+      <text x="70" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#ffffff">Dynamic AI Red Teaming</text>
+      <text x="70" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b9bb8">Live endpoint probing · Jailbreak &amp; prompt fuzzing</text>
+    </g>
+  </g>
+
+  <!-- Connectors from Layer 1 to Main Pipeline -->
+  <path d="M 305 203 L 305 240 L 980 240 L 980 265" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrowCyan)"/>
+  <path d="M 665 203 L 665 240 L 980 240" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6 4"/>
+  <path d="M 1125 203 L 1125 240 L 1020 240 L 1020 265" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrowCyan)"/>
+  <path d="M 1590 203 L 1590 240 L 1020 240" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6 4"/>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN ENGINE PIPELINE CONTAINER (y=270..1180)                              -->
+  <!-- ========================================================================= -->
+  <rect x="70" y="260" width="1860" height="940" rx="24" fill="#08101c" fill-opacity="0.8" stroke="#1d2e4a" stroke-width="2.5"/>
+  <rect x="90" y="275" width="1820" height="34" rx="10" fill="url(#sheen)" opacity="0.3"/>
+  <text x="1000" y="300" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="19" font-weight="800" fill="#38bdf8" letter-spacing="1">
+    PRAXIS CORE AUDIT &amp; REMEDIATION PIPELINE
+  </text>
+
+  <!-- ========================================================================= -->
+  <!-- ROW 1: RECON & 28 PARALLEL AGENTS CLUSTER (y=325..550)                    -->
+  <!-- ========================================================================= -->
+  
+  <!-- STAGE 1: Recon & Context Discovery -->
+  <g transform="translate(100, 335)" filter="url(#dropShadow)">
+    <rect x="0" y="0" width="280" height="205" rx="16" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+    <rect x="8" y="6" width="264" height="20" rx="8" fill="url(#sheen)"/>
+    <circle cx="28" cy="32" r="14" fill="#0284c7"/><text x="28" y="37" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#ffffff">1</text>
+    <text x="52" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="17" font-weight="800" fill="#ffffff">Recon &amp; Discovery</text>
+    <text x="20" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#38bdf8">Tech-Stack Profiling Agent</text>
+    <text x="20" y="95" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b9bb8">• Frameworks &amp; Languages</text>
+    <text x="20" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b9bb8">• API Routes &amp; Endpoints</text>
+    <text x="20" y="141" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b9bb8">• Cloud, Databases &amp; Auth</text>
+    <text x="20" y="164" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b9bb8">• CI/CD &amp; Infrastructure</text>
+    <text x="20" y="187" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#5b6b85">Shared Memory Context Setup</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <line x1="380" y1="437" x2="425" y2="437" stroke="#38bdf8" stroke-width="4" marker-end="url(#arrowCyan)"/>
+
+  <!-- STAGE 2: 28 Parallel Security Agents Cluster -->
+  <g transform="translate(435, 335)" filter="url(#dropShadow)">
+    <rect x="0" y="0" width="840" height="205" rx="16" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+    <rect x="8" y="6" width="824" height="20" rx="8" fill="url(#sheen)"/>
+    <circle cx="28" cy="32" r="14" fill="#0284c7"/><text x="28" y="37" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#ffffff">2</text>
+    <text x="52" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="17" font-weight="800" fill="#ffffff">28 Parallel Security Agents (Concurrent Chunking)</text>
+    
+    <!-- 4 Sub-Columns for Agent Clusters -->
+    <!-- Col A: AI/LLM Security (13) -->
+    <g transform="translate(20, 60)">
+      <rect x="0" y="0" width="190" height="130" rx="10" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="12" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#38bdf8">AI / LLM Threat Surface (13)</text>
+      <text x="12" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Prompt Injection Prober</text>
+      <text x="12" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• MCP Security &amp; Fuzzer</text>
+      <text x="12" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Agent Config &amp; Memory</text>
+      <text x="12" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Model Pickles &amp; RAG</text>
+      <text x="12" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• EAA &amp; AI Infra Inventory</text>
+    </g>
+
+    <!-- Col B: Code & Injection (4) -->
+    <g transform="translate(220, 60)">
+      <rect x="0" y="0" width="190" height="130" rx="10" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="12" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#38bdf8">Code Vulnerabilities (4)</text>
+      <text x="12" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Injection Tester (SQL/Cmd)</text>
+      <text x="12" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• SSRF &amp; XSS Probers</text>
+      <text x="12" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• ReDoS &amp; Exception Handling</text>
+      <text x="12" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Vibe Coding Anti-patterns</text>
+      <text x="12" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#5b6b85">Direct AST Pattern Hooks</text>
+    </g>
+
+    <!-- Col C: Auth & Supply Chain (6) -->
+    <g transform="translate(420, 60)">
+      <rect x="0" y="0" width="190" height="130" rx="10" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="12" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#38bdf8">Auth &amp; Supply Chain (6)</text>
+      <text x="12" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• JWT, CSRF &amp; IDOR/BOLA</text>
+      <text x="12" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Supabase RLS Scanner</text>
+      <text x="12" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Typosquat &amp; Script Audit</text>
+      <text x="12" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Agent Attestation</text>
+      <text x="12" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• MCP Trust Registry</text>
+    </g>
+
+    <!-- Col D: Platform & Config (5) -->
+    <g transform="translate(620, 60)">
+      <rect x="0" y="0" width="200" height="130" rx="10" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="12" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#38bdf8">Config &amp; Governance (5)</text>
+      <text x="12" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Docker, K8s &amp; Terraform</text>
+      <text x="12" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Git History &amp; Secret Scan</text>
+      <text x="12" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• PII &amp; Mobile Audits</text>
+      <text x="12" y="100" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#f59e0b">• No-Human-Oversight (Art 14)</text>
+      <text x="12" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#f59e0b">• No-Observability (Art 12)</text>
+    </g>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <line x1="1275" y1="437" x2="1320" y2="437" stroke="#38bdf8" stroke-width="4" marker-end="url(#arrowCyan)"/>
+
+  <!-- STAGE 3: Pure ESM AST & Dataflow Engine -->
+  <g transform="translate(1330, 335)" filter="url(#glowCyan)">
+    <rect x="0" y="0" width="550" height="205" rx="16" fill="url(#cardHighlight)" stroke="#38bdf8" stroke-width="2.2"/>
+    <rect x="8" y="6" width="534" height="20" rx="8" fill="url(#sheen)"/>
+    <circle cx="28" cy="32" r="14" fill="#0284c7"/><text x="28" y="37" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#ffffff">3</text>
+    <text x="52" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="17" font-weight="800" fill="#ffffff">Pure ESM AST &amp; Dataflow Engine (cli/core/ast/)</text>
+    
+    <g transform="translate(20, 60)">
+      <rect x="0" y="0" width="245" height="130" rx="10" fill="#0a182c" stroke="#254d7d" stroke-width="1.2"/>
+      <text x="12" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#7dd3fc">Syntax &amp; Scope Hierarchy</text>
+      <text x="12" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bae6fd">• Babel Parser: JS, TS, JSX, TSX</text>
+      <text x="12" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bae6fd">• Python CST Tokenizer &amp; Blocks</text>
+      <text x="12" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bae6fd">• ScopeTree: Lexical bindings &amp; refs</text>
+      <text x="12" y="108" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bae6fd">• Enclosing function context mapping</text>
+    </g>
+
+    <g transform="translate(280, 60)">
+      <rect x="0" y="0" width="250" height="130" rx="10" fill="#0a182c" stroke="#254d7d" stroke-width="1.2"/>
+      <text x="12" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#7dd3fc">Source-to-Sink Taint Engine</text>
+      <text x="12" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bae6fd">• TaintTracker: Variable propagation</text>
+      <text x="12" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bae6fd">• Dangerous sinks (eval/exec/SQL/fs)</text>
+      <text x="12" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bae6fd">• GuardrailDetector: NeMo, LlamaGuard</text>
+      <text x="12" y="108" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#22c55e">✓ Zero False-Positive Sanitizer Filter</text>
+    </g>
+  </g>
+
+  <!-- Connective Pipe Down from Row 1 to Row 2 -->
+  <path d="M 1605 540 L 1605 580 L 240 580 L 240 615" fill="none" stroke="#38bdf8" stroke-width="4" marker-end="url(#arrowCyan)"/>
+
+  <!-- ========================================================================= -->
+  <!-- ROW 2: VERIFICATION, SCORING & REPORTING (y=620..830)                      -->
+  <!-- ========================================================================= -->
+
+  <!-- STAGE 4: Dual-Tier Verification & Standards Alignment -->
+  <g transform="translate(100, 620)" filter="url(#dropShadow)">
+    <rect x="0" y="0" width="600" height="195" rx="16" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+    <rect x="8" y="6" width="584" height="20" rx="8" fill="url(#sheen)"/>
+    <circle cx="28" cy="32" r="14" fill="#0284c7"/><text x="28" y="37" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#ffffff">4</text>
+    <text x="52" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="17" font-weight="800" fill="#ffffff">Verification, Scoring &amp; Standards Matrix</text>
+
+    <!-- Sub-Box 1: Verifiers -->
+    <g transform="translate(20, 56)">
+      <rect x="0" y="0" width="265" height="122" rx="10" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="12" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#38bdf8">Dedupe &amp; Verification Ladder</text>
+      <text x="12" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• VerifierAgent: AST suppression</text>
+      <text x="12" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• DeepAnalyzer: LLM exploitability</text>
+      <text x="12" y="84" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Confidence tuning (doc/test de-prioritize)</text>
+      <text x="12" y="104" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#22c55e">✓ Precision-calibrated findings</text>
+    </g>
+
+    <!-- Sub-Box 2: Scoring & Standards -->
+    <g transform="translate(305, 56)">
+      <rect x="0" y="0" width="275" height="122" rx="10" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="12" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#38bdf8">0–100 Score &amp; Standards Crosswalk</text>
+      <text x="12" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• Category risk-weighted deductions</text>
+      <text x="12" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">• 8 Standards: OWASP LLM, ATLAS,</text>
+      <text x="12" y="84" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#8b9bb8">  NIST AI, EU AI Act, ISO 42001, SAIF</text>
+      <text x="12" y="104" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#38bdf8">✓ 3-State Gap Map (Flagged / Clear / Gap)</text>
+    </g>
+  </g>
+
+  <!-- Arrow 4 -> 5 -->
+  <line x1="700" y1="717" x2="745" y2="717" stroke="#38bdf8" stroke-width="4" marker-end="url(#arrowCyan)"/>
+
+  <!-- STAGE 5: Multi-Format Reporting Artifacts -->
+  <g transform="translate(755, 620)" filter="url(#dropShadow)">
+    <rect x="0" y="0" width="520" height="195" rx="16" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+    <rect x="8" y="6" width="504" height="20" rx="8" fill="url(#sheen)"/>
+    <circle cx="28" cy="32" r="14" fill="#0284c7"/><text x="28" y="37" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#ffffff">5</text>
+    <text x="52" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="17" font-weight="800" fill="#ffffff">Multi-Format Reporting &amp; Deliverables</text>
+
+    <!-- Artifacts 4-grid -->
+    <g transform="translate(20, 56)">
+      <!-- A: Interactive HTML -->
+      <rect x="0" y="0" width="225" height="56" rx="8" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="10" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="800" fill="#38bdf8">Interactive Pro HTML Report</text>
+      <text x="10" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#8b9bb8">Cards · Filters · AST Dataflow · Roadmap</text>
+
+      <!-- B: SARIF 2.1.0 -->
+      <rect x="250" y="0" width="225" height="56" rx="8" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="10" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="800" fill="#38bdf8">SARIF v2.1.0 Security Telemetry</text>
+      <text x="10" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#8b9bb8">GitHub Code Scanning &amp; CI Ingestion</text>
+
+      <!-- C: CycloneDX ABOM -->
+      <rect x="0" y="66" width="225" height="56" rx="8" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="10" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="800" fill="#38bdf8">Agent BOM (CycloneDX 1.5)</text>
+      <text x="10" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#8b9bb8">Agent Configs · Skills · MCP · Providers</text>
+
+      <!-- D: Machine JSON & GRC -->
+      <rect x="250" y="66" width="225" height="56" rx="8" fill="#0d182b" stroke="#1e3456" stroke-width="1.2"/>
+      <text x="10" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="800" fill="#38bdf8">Structured JSON &amp; GRC Crosswalk</text>
+      <text x="10" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#8b9bb8">Zero Absolute Path Leakage</text>
+    </g>
+  </g>
+
+  <!-- Arrow 5 -> 6 -->
+  <line x1="1275" y1="717" x2="1320" y2="717" stroke="#22c55e" stroke-width="4" marker-end="url(#arrowGreen)"/>
+
+  <!-- STAGE 6: Autonomous Fix & Tiered Verification Ladder -->
+  <g transform="translate(1330, 620)" filter="url(#glowGreen)">
+    <rect x="0" y="0" width="550" height="195" rx="16" fill="url(#cardGreen)" stroke="#22c55e" stroke-width="2.2"/>
+    <rect x="8" y="6" width="534" height="20" rx="8" fill="url(#sheen)"/>
+    <circle cx="28" cy="32" r="14" fill="#15803d"/><text x="28" y="37" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#ffffff">6</text>
+    <text x="52" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="17" font-weight="800" fill="#dcfce7">Find → Fix → Verify Loop (praxis fix)</text>
+
+    <!-- Sub-Box 1: LLM Planner + Human Gate -->
+    <g transform="translate(20, 56)">
+      <rect x="0" y="0" width="245" height="122" rx="10" fill="#092015" stroke="#166534" stroke-width="1.2"/>
+      <text x="12" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#86efac">LLM Remediation Planner</text>
+      <text x="12" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bbf7d0">• Context-aware diff generation</text>
+      <text x="12" y="64" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bbf7d0">• Sibling call-site regression coverage</text>
+      <text x="12" y="84" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700" fill="#facc15">✋ Operator Human Approval Boundary</text>
+      <text x="12" y="104" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="#bbf7d0">• Interactive review / auto-low policies</text>
+    </g>
+
+    <!-- Sub-Box 2: 4-Tier Verification Ladder -->
+    <g transform="translate(280, 56)">
+      <rect x="0" y="0" width="250" height="122" rx="10" fill="#092015" stroke="#166534" stroke-width="1.2"/>
+      <text x="12" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="800" fill="#86efac">4-Tier Verification Ladder</text>
+      <text x="12" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#dcfce7">1. Tier 0: AST Syntax Integrity Oracle</text>
+      <text x="12" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#dcfce7">2. Tier 1: Project Build / Lint Command</text>
+      <text x="12" y="74" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#dcfce7">3. Tier 2: Unit / Integration Test Suites</text>
+      <text x="12" y="90" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#dcfce7">4. Tier 3: Re-scan Target Validation</text>
+      <text x="12" y="108" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="700" fill="#4ade80">✓ Atomic Apply + Auto-Revert + Undo Log</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM ROW: THREAT INTEL & BENCHMARK ACCURACY LAYER (y=860..1060)         -->
+  <!-- ========================================================================= -->
+  <g transform="translate(100, 850)">
+    <!-- Threat Intel Subsystem -->
+    <g filter="url(#dropShadow)">
+      <rect x="0" y="0" width="870" height="110" rx="16" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+      <rect x="8" y="6" width="854" height="20" rx="8" fill="url(#sheen)"/>
+      <text x="24" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="800" fill="#ffffff">Multi-Source Threat Intelligence Layer (~/.praxis/threat-intel.json)</text>
+      <text x="24" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#38bdf8">6 Core Free Feeds (Local TTL Cache) + 5 Optional Enterprise Feeds</text>
+      
+      <!-- Intel Chips -->
+      <g transform="translate(24, 72)">
+        <rect x="0" y="0" width="115" height="24" rx="6" fill="#1e3456"/><text x="57" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">OSV.dev Index</text>
+        <rect x="125" y="0" width="115" height="24" rx="6" fill="#1e3456"/><text x="182" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">GitHub Advisories</text>
+        <rect x="250" y="0" width="105" height="24" rx="6" fill="#1e3456"/><text x="302" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">CISA KEV Catalog</text>
+        <rect x="365" y="0" width="105" height="24" rx="6" fill="#1e3456"/><text x="417" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">EPSS Probabilities</text>
+        <rect x="480" y="0" width="100" height="24" rx="6" fill="#1e3456"/><text x="530" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">NVD CVE Stream</text>
+        <rect x="590" y="0" width="115" height="24" rx="6" fill="#1e3456"/><text x="647" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">Gitleaks Rules (221)</text>
+        <rect x="715" y="0" width="110" height="24" rx="6" fill="#0f281e" stroke="#22c55e" stroke-width="1"/><text x="770" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#4ade80">Offline by Default</text>
+      </g>
+    </g>
+
+    <!-- Ground Truth Accuracy & Benchmark Harness -->
+    <g filter="url(#dropShadow)" transform="translate(910, 0)">
+      <rect x="0" y="0" width="870" height="110" rx="16" fill="url(#cardBg)" stroke="#223b61" stroke-width="1.8"/>
+      <rect x="8" y="6" width="854" height="20" rx="8" fill="url(#sheen)"/>
+      <text x="24" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="800" fill="#ffffff">Continuous Ground-Truth Benchmark Harness (praxis report benchmark)</text>
+      <text x="24" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#38bdf8">10 Curated Positive &amp; Negative Security Fixtures · Automated Precision, Recall &amp; F1 Evaluation</text>
+
+      <!-- Benchmark Metrics Chips -->
+      <g transform="translate(24, 72)">
+        <rect x="0" y="0" width="135" height="24" rx="6" fill="#1e3456"/><text x="67" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">SQLi &amp; Cmd Injection</text>
+        <rect x="145" y="0" width="135" height="24" rx="6" fill="#1e3456"/><text x="212" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">Hardcoded Secrets</text>
+        <rect x="290" y="0" width="135" height="24" rx="6" fill="#1e3456"/><text x="357" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">Prompt Overrides</text>
+        <rect x="435" y="0" width="145" height="24" rx="6" fill="#1e3456"/><text x="507" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">Sanitized True Negatives</text>
+        <rect x="590" y="0" width="135" height="24" rx="6" fill="#1e3456"/><text x="657" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#93c5fd">Guardrail Sanitizers</text>
+        <rect x="735" y="0" width="115" height="24" rx="6" fill="#0f281e" stroke="#22c55e" stroke-width="1"/><text x="792" y="16" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#4ade80">F1 Score &gt; 0.95</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- FOOTER BADGE BAR (y=1185..1225)                                           -->
+  <!-- ========================================================================= -->
+  <g transform="translate(1000, 1215)">
+    <text text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" fill="#64748b">
+      Single Binary (Node.js ≥ 18) · Pure ESM · Zero Build Step · Local-Only Execution · CADRE Platform Umbrella
+    </text>
+  </g>
+</svg>

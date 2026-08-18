@@ -61,17 +61,9 @@ praxis vibe .            # emoji-graded A–F score
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A["praxis scan ."] --> B["ReconAgent<br/>(tech-stack profiling)"]
-    B --> C["28 agents in parallel<br/>+ AST Taint Tracker"]
-    C --> D["Dedupe → AST / LLM verify → score (A–F)"]
-    D --> E["Standards mapping<br/>(8 frameworks)"]
-    E --> F["Report<br/>(Interactive HTML · SARIF · JSON)"]
-    F -. "praxis fix" .-> G["LLM drafts diff"]
-    G --> H["You approve"]
-    H --> I["Atomic apply → AST & test verify → undo log"]
-```
+<p align="center">
+  <img src="assets/praxis-architecture.svg" alt="Praxis Architecture" width="100%">
+</p>
 
 ## Command groups
 
