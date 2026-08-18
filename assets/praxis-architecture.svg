@@ -123,10 +123,14 @@
   <g transform="translate(50, 210)" filter="url(#shadow)">
     <rect x="0" y="0" width="470" height="590" rx="18" fill="url(#cardDark)" stroke="#4c1d95" stroke-width="2.2"/>
     
-    <!-- Stage Header (Pill + Title) -->
-    <rect x="18" y="16" width="105" height="32" rx="16" fill="#7c3aed"/>
-    <text x="70" y="37" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="900" fill="#ffffff" letter-spacing="1">1 · FIND</text>
-    <text x="135" y="39" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">Audit &amp; Detection</text>
+    <!-- Stage Header: Prominent Number Badge + Pill + Title -->
+    <g transform="translate(18, 14)">
+      <circle cx="18" cy="18" r="18" fill="#7c3aed"/>
+      <text x="18" y="25" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="900" fill="#ffffff">1</text>
+      <rect x="44" y="2" width="75" height="32" rx="8" fill="#24103f" stroke="#7c3aed" stroke-width="1.2"/>
+      <text x="81" y="23" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="800" fill="#c084fc">FIND</text>
+      <text x="130" y="25" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">Audit &amp; Detection</text>
+    </g>
 
     <!-- Block 1: Recon & Ingestion -->
     <g transform="translate(18, 62)">
@@ -172,10 +176,14 @@
   <g transform="translate(565, 195)" filter="url(#glowCenter)">
     <rect x="0" y="0" width="470" height="620" rx="20" fill="url(#cardCenter)" stroke="#c084fc" stroke-width="2.6"/>
     
-    <!-- Stage Header (Pill + Title) -->
-    <rect x="18" y="16" width="130" height="32" rx="16" fill="url(#purpleGrad)"/>
-    <text x="83" y="37" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="900" fill="#ffffff" letter-spacing="1">2 · ANALYZE</text>
-    <text x="160" y="39" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">AST Core &amp; Standards</text>
+    <!-- Stage Header: Prominent Number Badge + Pill + Title -->
+    <g transform="translate(18, 14)">
+      <circle cx="18" cy="18" r="18" fill="url(#purpleGrad)"/>
+      <text x="18" y="25" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="900" fill="#ffffff">2</text>
+      <rect x="44" y="2" width="95" height="32" rx="8" fill="#24103f" stroke="#c084fc" stroke-width="1.2"/>
+      <text x="91" y="23" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="800" fill="#e879f9">ANALYZE</text>
+      <text x="150" y="25" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">AST Core &amp; Standards</text>
+    </g>
 
     <!-- Block 1: Pure ESM AST / CST Engine -->
     <g transform="translate(18, 62)">
@@ -220,10 +228,14 @@
   <g transform="translate(1080, 210)" filter="url(#shadow)">
     <rect x="0" y="0" width="470" height="590" rx="18" fill="url(#cardGreen)" stroke="#34d399" stroke-width="2.2"/>
     
-    <!-- Stage Header (Pill + Title) -->
-    <rect x="18" y="16" width="150" height="32" rx="16" fill="url(#emeraldGrad)"/>
-    <text x="93" y="37" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="900" fill="#042316" letter-spacing="1">3 · FIX &amp; VERIFY</text>
-    <text x="180" y="39" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">Autonomous Fix</text>
+    <!-- Stage Header: Prominent Number Badge + Pill + Title (LARGE 3) -->
+    <g transform="translate(18, 14)">
+      <circle cx="18" cy="18" r="18" fill="url(#emeraldGrad)"/>
+      <text x="18" y="25" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="900" fill="#042316">3</text>
+      <rect x="44" y="2" width="125" height="32" rx="8" fill="#0c2b1e" stroke="#34d399" stroke-width="1.2"/>
+      <text x="106" y="23" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="800" fill="#34d399">FIX &amp; VERIFY</text>
+      <text x="180" y="25" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">Autonomous Fix</text>
+    </g>
 
     <!-- Block 1: LLM Planner & Human Gate -->
     <g transform="translate(18, 62)">
@@ -279,7 +291,12 @@
   <!-- ========================================================================= -->
   <!-- CLOSED LOOP RETURN CONDUIT (Stage 3 back to Stage 1)                      -->
   <!-- ========================================================================= -->
-  <path d="M 1315 800 C 1315 875 285 875 285 800" fill="none" stroke="#7c3aed" stroke-width="4" stroke-dasharray="10 6" marker-end="url(#arrPurple)"/>
+  <!-- Smooth Curved Dotted Path -->
+  <path d="M 1315 800 C 1315 875 285 875 285 818" fill="none" stroke="#7c3aed" stroke-width="4" stroke-dasharray="10 6"/>
+  <!-- Seamless Dedicated Arrowhead Tip pointing cleanly up into Stage 1 -->
+  <polygon points="285,800 275,820 295,820" fill="#c084fc"/>
+
+  <!-- Center Watch Banner -->
   <rect x="620" y="842" width="360" height="34" rx="17" fill="#180e2b" stroke="#7c3aed" stroke-width="1.6"/>
   <text x="800" y="865" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="800" fill="#c084fc">↻ Continuous Watch &amp; Guard Loop</text>
 
