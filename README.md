@@ -18,7 +18,7 @@ attack surface (LLM calls, MCP servers, RAG pipelines, model files, agent config
 agent telemetry) — then an LLM drafts fixes you approve, applies, verifies, and can
 undo. Offline by default. No registration, no data leaves your machine.
 
-Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — fully standalone.
+Part of the [CADRE](https://github.com/Ganron007/CADRE) ecosystem — aligned with the [DarkAI](https://github.com/Ganron007/DarkAI) AI red-team lab extension while running fully standalone.
 
 > [!IMPORTANT]
 > **Local & gated by design.** Core scans run entirely offline. LLM remediation is
