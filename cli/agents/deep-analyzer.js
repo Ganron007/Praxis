@@ -37,6 +37,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createProvider, autoDetectProvider } from '../providers/llm-provider.js';
+import { ASTParser, ScopeTree, TaintTracker, GuardrailDetector } from '../core/ast/index.js';
 
 // Lazy-import ScanPlaybook to avoid circular dep; only used when rootPath is known
 let _ScanPlaybook = null;
@@ -618,7 +619,7 @@ export class DeepAnalyzer {
   }
 
   /**
-   * Get file content around the finding for LLM context.
+   * Get file content around the finding for LLM context, enriched with AST scope context.
    * @param {object} finding
    * @param {number} windowLines — Lines before/after (default: 20 = 40 line window)
    */
@@ -629,6 +630,32 @@ export class DeepAnalyzer {
       const content = fs.readFileSync(finding.file, 'utf-8');
       const lines = content.split('\n');
       const lineNum = finding.line || 1;
+
+      // Extract AST & Scope structural context
+      let astHeader = '';
+      try {
+        const parsed = ASTParser.parse(content, finding.file);
+        const scopeTree = ScopeTree.build(parsed.ast, content);
+        const encFn = scopeTree.getEnclosingFunction(lineNum);
+        const taint = TaintTracker.evaluateFinding({
+          file: finding.file,
+          line: lineNum,
+          matched: finding.matched || '',
+          code: content,
+          scopeTree,
+        });
+        const guard = GuardrailDetector.checkProtection(finding, content);
+
+        const details = [];
+        if (encFn) details.push(`Enclosing Function: ${encFn.name}(${encFn.params ? encFn.params.join(', ') : ''}) [lines ${encFn.range.startLine}-${encFn.range.endLine}]`);
+        if (taint.sanitizer) details.push(`Detected Sanitizer: ${taint.sanitizer}`);
+        if (taint.isStatic) details.push(`Static Evaluation: Value is a hardcoded constant`);
+        if (guard.isProtected) details.push(`AI Defense Guardrail: ${guard.guardrail}`);
+
+        if (details.length > 0) {
+          astHeader = `[AST Structural Context]\n${details.map(d => `* ${d}`).join('\n')}\n\n`;
+        }
+      } catch { /* AST fallback */ }
 
       let context;
       if (this.largeContext) {
@@ -641,11 +668,12 @@ export class DeepAnalyzer {
           .join('\n');
       }
 
-      if (context.length > this.maxFileChars) {
-        context = context.slice(0, this.maxFileChars) + '\n... (truncated)';
+      const fullContext = astHeader + context;
+      if (fullContext.length > this.maxFileChars) {
+        return fullContext.slice(0, this.maxFileChars) + '\n... (truncated)';
       }
 
-      return context;
+      return fullContext;
     } catch {
       return '';
     }

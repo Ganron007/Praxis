@@ -17,6 +17,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { ASTParser, ScopeTree, TaintTracker, GuardrailDetector } from '../core/ast/index.js';
 
 // =============================================================================
 // HEURISTIC PATTERNS
@@ -133,6 +134,7 @@ export class VerifierAgent {
    */
   verify(findings, options = {}) {
     const fileCache = new Map();
+    const astCache = new Map();
 
     for (const finding of findings) {
       // Only verify critical and high severity findings
@@ -141,7 +143,7 @@ export class VerifierAgent {
         continue;
       }
 
-      const result = this._verifyFinding(finding, fileCache);
+      const result = this._verifyFinding(finding, fileCache, astCache);
       finding.verified = result.verified;
       finding.verifierNote = result.note;
 
@@ -156,58 +158,78 @@ export class VerifierAgent {
   }
 
   /**
-   * Verify a single finding by reading surrounding code.
+   * Verify a single finding by reading surrounding code and running AST taint analysis.
    */
-  _verifyFinding(finding, fileCache) {
+  _verifyFinding(finding, fileCache, astCache = new Map()) {
     const { file, line, matched } = finding;
     if (!file || !line) {
       return { verified: null, note: 'Missing file or line info' };
     }
 
     // Read the file (cached)
+    let content;
     let lines;
+    let scopeTree;
     if (fileCache.has(file)) {
-      lines = fileCache.get(file);
+      content = fileCache.get(file);
+      lines = content.split('\n');
+      scopeTree = astCache.get(file);
     } else {
       try {
-        const content = fs.readFileSync(file, 'utf-8');
+        content = fs.readFileSync(file, 'utf-8');
         lines = content.split('\n');
-        fileCache.set(file, lines);
+        fileCache.set(file, content);
+
+        const parsed = ASTParser.parse(content, file);
+        scopeTree = ScopeTree.build(parsed.ast, content);
+        astCache.set(file, scopeTree);
       } catch {
         return { verified: null, note: 'Could not read file' };
       }
     }
 
-    // Get a 30-line window around the finding (15 before, 15 after)
-    const windowStart = Math.max(0, line - 16);
-    const windowEnd = Math.min(lines.length, line + 15);
-    const window = lines.slice(windowStart, windowEnd);
-    const windowText = window.join('\n');
+    // ── AST Step 1: AI Guardrail / Defense framework check ──────────────────
+    const protection = GuardrailDetector.checkProtection(finding, content);
+    if (protection.isProtected) {
+      return {
+        verified: false,
+        note: `Mitigated: ${protection.reason}`,
+      };
+    }
 
-    // Get lines BEFORE the finding (for upstream checks)
-    const beforeStart = Math.max(0, line - 16);
-    const beforeEnd = Math.max(0, line - 1);
-    const beforeText = lines.slice(beforeStart, beforeEnd).join('\n');
+    // ── AST Step 2: Dataflow & Taint Tracker Evaluation ──────────────────────
+    const taintEval = TaintTracker.evaluateFinding({
+      file,
+      line,
+      matched,
+      code: content,
+      scopeTree,
+    });
 
-    // Get the finding line itself
+    if (taintEval.isSanitized) {
+      return {
+        verified: false,
+        note: taintEval.reason || 'Sanitization detected in AST scope',
+      };
+    }
+
+    if (taintEval.isStatic) {
+      return {
+        verified: false,
+        note: taintEval.reason || 'Value appears to be static constant',
+      };
+    }
+
+    // Get scope boundaries
+    const scope = scopeTree ? scopeTree.getScopeAt(line) : null;
+    const startLine = scope ? Math.max(0, scope.range.startLine - 1) : Math.max(0, line - 16);
+    const endLine = scope ? Math.min(lines.length, scope.range.endLine) : Math.min(lines.length, line + 15);
+    const windowText = lines.slice(startLine, endLine).join('\n');
+    const beforeText = lines.slice(startLine, Math.max(startLine, line - 1)).join('\n');
     const findingLine = lines[line - 1] || '';
 
-    // ── Check 1: Is user input involved? ──────────────────────────
-    const hasUserInput = USER_INPUT_SOURCES.some(p => p.test(windowText));
-
-    // ── Check 2: Is there sanitization/validation upstream? ───────
-    const hasSanitization = SANITIZATION_PATTERNS.some(p => p.test(beforeText));
-
-    // ── Check 3: Is the value static/hardcoded? ───────────────────
-    const isStatic = this._isStaticValue(findingLine, matched);
-
-    // ── Check 4: Is it inside error handling? ─────────────────────
-    const inErrorHandler = ERROR_HANDLING_PATTERNS.some(p => p.test(beforeText));
-
-    // ── Check 5: Is it in dead/unreachable code? ──────────────────
+    // ── Check 3: Is dead code? ──────────────────────────────────────────────
     const isDeadCode = this._isDeadCode(lines, line);
-
-    // ── Decision logic ────────────────────────────────────────────
     if (isDeadCode) {
       return {
         verified: false,
@@ -215,31 +237,20 @@ export class VerifierAgent {
       };
     }
 
-    if (isStatic && !hasUserInput) {
-      return {
-        verified: false,
-        note: 'Value appears to be static/hardcoded, not user-controlled',
-      };
-    }
-
-    if (hasSanitization) {
-      return {
-        verified: false,
-        note: 'Sanitization or validation detected upstream of finding',
-      };
-    }
-
-    if (hasUserInput && !hasSanitization) {
-      return {
-        verified: true,
-        note: 'User input flows to this sink without visible sanitization',
-      };
-    }
-
+    // ── Check 4: Error handling wrapper ─────────────────────────────────────
+    const inErrorHandler = ERROR_HANDLING_PATTERNS.some(p => p.test(beforeText));
     if (inErrorHandler) {
       return {
         verified: false,
         note: 'Finding is inside error handling context, reducing exploitability',
+      };
+    }
+
+    // ── Check 5: Confirmed user input ───────────────────────────────────────
+    if (taintEval.isTainted || USER_INPUT_SOURCES.some(p => p.test(windowText))) {
+      return {
+        verified: true,
+        note: 'User input flows to this sink within enclosing scope',
       };
     }
 

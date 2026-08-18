@@ -74,6 +74,7 @@ import { runLiveAdvisories } from '../commands/live-advisories.js';
 import { envAuditCommand } from '../commands/env-audit.js';
 import { autofixCommand } from '../commands/autofix.js';
 import { teamReportCommand } from '../commands/team-report.js';
+import { redteamCommand } from '../commands/redteam.js';
 import { memoryCommand } from '../utils/security-memory.js';
 import { playbookCommand } from '../utils/scan-playbook.js';
 import { listPluginFiles, scaffoldPlugin } from '../utils/plugin-loader.js';
@@ -314,6 +315,7 @@ agents
 agents
   .command('mcp [target]')
   .description("Vet an MCP server's tool manifest before connecting")
+  .option('--test-live', 'Perform runtime JSON-RPC handshakes and tool fuzzing')
   .option('--json', 'Output results as JSON')
   .action(scanMcpCommand);
 
@@ -328,6 +330,14 @@ agents
   .command('serve')
   .description('Start praxis as an MCP server (Claude Desktop, Cursor, Windsurf)')
   .action(mcpCommand);
+
+program
+  .command('redteam [endpoint]')
+  .description('Dynamic AI red teaming & behavioral prober for live LLM endpoints (DAST)')
+  .option('--header <header>', 'Custom HTTP header (can specify multiple)')
+  .option('--timeout <ms>', 'Timeout in ms (default: 10000)')
+  .option('--json', 'Output results as JSON')
+  .action(redteamCommand);
 
 // =============================================================================
 // intel — threat-intelligence operations

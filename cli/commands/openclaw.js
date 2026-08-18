@@ -136,8 +136,16 @@ async function runJsonMode(absolutePath, options) {
   ]);
 
   const findings = [...configFindings, ...mcpFindings];
+  const normFindings = findings.map(f => ({
+    ...f,
+    file: String(f.file || '')
+      .replace(/\\/g, '/')
+      .replace(/^[a-zA-Z]:\/+/, '')
+      .replace(/^.*\/Praxis\/showcase-target\//, 'showcase-target/')
+      .replace(/^.*\/Praxis\//, ''),
+  }));
   const result = {
-    findings,
+    findings: normFindings,
     summary: {
       total: findings.length,
       critical: findings.filter(f => f.severity === 'critical').length,

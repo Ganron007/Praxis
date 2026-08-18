@@ -80,6 +80,12 @@ function collectRules(findings) {
 }
 
 function toResult(f) {
+  const normFile = String(f.file || f.path || '')
+    .replace(/\\/g, '/')
+    .replace(/^[a-zA-Z]:\/+/, '')
+    .replace(/^.*\/Praxis\/showcase-target\//, 'showcase-target/')
+    .replace(/^.*\/Praxis\//, '');
+
   const result = {
     ruleId: f.ruleId || f.pattern || f.type || 'finding',
     level: LEVEL_FROM_SEVERITY[f.severity] || 'warning',
@@ -87,7 +93,7 @@ function toResult(f) {
     locations: [
       {
         physicalLocation: {
-          artifactLocation: { uri: f.file || f.path || '' },
+          artifactLocation: { uri: normFile },
           region: {
             startLine: f.line || 1,
             startColumn: f.column || 1,

@@ -21,6 +21,13 @@ function redactFinding(f) {
       ? `${String(f.matched).slice(0, 3)}***`
       : String(f.matched).slice(0, 160);
   }
+  if (out.file) {
+    out.file = String(out.file)
+      .replace(/\\/g, '/')
+      .replace(/^[a-zA-Z]:\/+/, '')
+      .replace(/^.*\/Praxis\/showcase-target\//, 'showcase-target/')
+      .replace(/^.*\/Praxis\//, '');
+  }
   return out;
 }
 

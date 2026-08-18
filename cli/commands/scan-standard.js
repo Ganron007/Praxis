@@ -100,7 +100,14 @@ export async function scanStandardCommand(name, targetPath = '.', options = {}) 
     flaggedControls: standardSummary.flaggedControls,
     totalControls: standardSummary.totalControls,
     controls: standardSummary.controls,
-    findings: filtered,
+    findings: filtered.map(f => ({
+      ...f,
+      file: String(f.file || '')
+        .replace(/\\/g, '/')
+        .replace(/^[a-zA-Z]:\/+/, '')
+        .replace(/^.*\/Praxis\/showcase-target\//, 'showcase-target/')
+        .replace(/^.*\/Praxis\//, ''),
+    })),
     score: scoreResult.score,
     grade: scoreResult.grade?.letter || 'A',
     scannedAt: new Date().toISOString(),

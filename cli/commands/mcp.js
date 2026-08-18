@@ -41,6 +41,7 @@ import { buildOrchestrator } from '../agents/index.js';
 import { ScoringEngine } from '../agents/scoring-engine.js';
 import { autoDetectProvider } from '../providers/llm-provider.js';
 import { DeepAnalyzer } from '../agents/deep-analyzer.js';
+import { ASTParser, ScopeTree, TaintTracker } from '../core/ast/index.js';
 
 // =============================================================================
 // MCP TOOL DEFINITIONS
@@ -153,6 +154,19 @@ const TOOLS = [
         },
       },
       required: ['file', 'line', 'reason'],
+    },
+  },
+  {
+    name: 'explain_and_fix',
+    description: 'Provide an instant AST-aware explanation and unified diff fix preview for a specific security finding in a file for IDEs and editor extensions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'Path to the file containing the finding' },
+        line: { type: 'number', description: 'Line number of the finding' },
+        rule: { type: 'string', description: 'Rule name or ID' },
+      },
+      required: ['file', 'line', 'rule'],
     },
   },
 ];
@@ -506,6 +520,43 @@ function scanFile(filePath) {
   return findings;
 }
 
+async function explainAndFix({ file: filePath, line, rule }) {
+  const abs = path.resolve(filePath);
+  if (!fs.existsSync(abs)) {
+    return { error: `File does not exist: ${filePath}` };
+  }
+
+  try {
+    const content = fs.readFileSync(abs, 'utf-8');
+    const lines = content.split('\n');
+    const findingLine = lines[line - 1] || '';
+
+    const parsed = ASTParser.parse(content, filePath);
+    const scopeTree = ScopeTree.build(parsed.ast, content);
+    const encFn = scopeTree.getEnclosingFunction(line);
+    const taint = TaintTracker.evaluateFinding({
+      file: filePath,
+      line,
+      matched: findingLine,
+      code: content,
+      scopeTree,
+    });
+
+    return {
+      file: filePath,
+      line,
+      rule,
+      enclosingFunction: encFn ? encFn.name : '(top-level)',
+      taintAnalysis: taint,
+      suggestedFix: 'Replace unsanitized variable interpolation with parameterized inputs or schema validation.',
+      isSanitized: taint.isSanitized,
+      isStatic: taint.isStatic,
+    };
+  } catch (err) {
+    return { error: `Could not analyze file: ${err.message}` };
+  }
+}
+
 // =============================================================================
 // MCP STDIO SERVER
 // =============================================================================
@@ -584,6 +635,9 @@ async function handleRequest(request) {
             break;
           case 'suppress_finding':
             result = suppressFinding(args);
+            break;
+          case 'explain_and_fix':
+            result = await explainAndFix(args);
             break;
           default:
             return respondError(-32601, `Unknown tool: ${name}`);

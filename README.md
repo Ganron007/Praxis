@@ -32,24 +32,29 @@ Part of the [CADRE](https://github.com/Ganron007/CADRE) platform — fully stand
 | Capability | In one line |
 | --- | --- |
 | **AI/agent surface audit** | 28 concurrent agents: prompt injection, MCP tool abuse, agent-memory poisoning, pickle-based model files, RAG, agent session telemetry, local agent-abuse (EAA), and AI infrastructure inventory (gateways, runtimes, API endpoints) |
-| **Find → fix → verify** | LLM drafts a diff → you approve → atomic apply → tiered verification ladder (build → tests → re-scan) with auto-revert of failed fixes → undo log |
+| **AST & Taint Dataflow** | Pure ESM AST & CST parsing (JS/TS & Python) with lexical scope trees, intra-file taint tracking, source-to-sink data flow, and guardrail detection |
+| **Dynamic AI Red Teaming** | DAST fuzzing engine for live LLM endpoints and agent runtimes (`praxis redteam`) with customizable attack probes and evasion benchmarks |
+| **Find → fix → verify** | LLM drafts a diff → you approve → atomic apply → tiered verification ladder (AST syntax → build → tests → re-scan) with auto-revert of failed fixes → undo log |
 | **Governance audits** | Detects *missing* controls: no human-oversight gates, no observability wiring — EU AI Act Art. 14 / 12 evidence |
-| **MCP trust registry** | Known MCP servers with trust scores (SHA-256 integrity-checked); unverified sources and typosquats flagged |
+| **MCP trust registry & live probing** | Known MCP servers with trust scores (SHA-256 integrity-checked) + live runtime JSON-RPC handshakes and tool fuzzing (`--test-live`) |
 | **Threat intel** | 6 free feeds cached locally (OSV, GHSA, KEV, EPSS, NVD, Gitleaks) + 5 optional paid; findings enriched with exploit likelihood |
 | **Compliance mapping** | Findings tagged against 8 frameworks — OWASP LLM/ML/Agentic, MITRE ATLAS (+ mitigations & case studies), NIST AI 600-1, AVID, EU AI Act, ISO 42001, Google SAIF |
-| **Professional report** | Navigable HTML: executive summary, per-finding *what/evidence/fix*, remediation roadmap, 3-state compliance map, score trend |
-| **CI-native** | `scan ci` gates, SARIF for Code Scanning, net-new PR gating (fails only on *introduced* findings), `--always-fail-on` floor |
+| **Executive Pro Report** | Interactive dark-mode HTML: sidebar navigation, real-time search & severity filters, code line highlighting, AST taint blocks, AI lanes, and remediation roadmap |
+| **CI-native** | `scan ci` gates, SARIF for Code Scanning, net-new PR gating (fails only on *introduced* findings), GitHub Action inline PR annotations |
 
 ## Quick start
 
 ```bash
 npm install && npm link
 
-praxis scan .        # full 28-agent audit
-praxis fix .         # interactive LLM-guided fixes
-praxis agents audit .# audit the AI/agent surface
-praxis intel update  # refresh local threat feeds
-praxis vibe .        # emoji-graded A–F score
+praxis scan .            # full 28-agent audit + AST taint evaluation
+praxis fix .             # interactive LLM-guided fixes
+praxis redteam .         # dynamic AI red team & DAST prober
+praxis agents audit .    # audit the AI/agent surface
+praxis agents mcp --test-live  # live MCP JSON-RPC probe
+praxis report benchmark  # run ground-truth accuracy benchmark
+praxis intel update      # refresh local threat feeds
+praxis vibe .            # emoji-graded A–F score
 ```
 
 `praxis --help` lists everything. Run `praxis` with no args for the interactive REPL.
@@ -59,13 +64,13 @@ praxis vibe .        # emoji-graded A–F score
 ```mermaid
 flowchart LR
     A["praxis scan ."] --> B["ReconAgent<br/>(tech-stack profiling)"]
-    B --> C["28 agents in parallel"]
-    C --> D["Dedupe → verify → score (A–F)"]
+    B --> C["28 agents in parallel<br/>+ AST Taint Tracker"]
+    C --> D["Dedupe → AST / LLM verify → score (A–F)"]
     D --> E["Standards mapping<br/>(8 frameworks)"]
-    E --> F["Report<br/>(HTML · SARIF · JSON)"]
+    E --> F["Report<br/>(Interactive HTML · SARIF · JSON)"]
     F -. "praxis fix" .-> G["LLM drafts diff"]
     G --> H["You approve"]
-    H --> I["Atomic apply → verify → undo log"]
+    H --> I["Atomic apply → AST & test verify → undo log"]
 ```
 
 ## Command groups
@@ -93,7 +98,7 @@ Full agent list and rule IDs: **[docs/USAGE.md](docs/USAGE.md)**.
 
 ## LLM configuration
 
-Optional, for `--deep` analysis and `fix interactive`. Put a `.env` in your working
+Optional, for `--deep` analysis, `redteam`, and `fix interactive`. Put a `.env` in your working
 directory — any OpenAI-compatible gateway works:
 
 ```bash
@@ -129,10 +134,7 @@ Template: [`.env.example`](.env.example) · Verify with `praxis project doctor`.
 
 ## Scope & limitations
 
-Praxis is an **AI-security-first** scanner — it complements, not replaces,
-Semgrep/CodeQL-class SAST. Detection is regex + LLM-assisted (no AST/dataflow); a
-clean scan is not proof of absence. Standards mapping reports controls with evidence,
-not compliance certification. Review fixes before applying them to production.
+Praxis is an **AI-security-first** scanner combining pattern recognition, pure ESM AST & CST parsing, intra-file taint analysis, dynamic endpoint probing, and LLM verification. While significantly minimizing false positives and mapping dataflow from user input to hazardous sinks, standards mapping reports controls with evidence rather than formal compliance certification. Review fixes before applying them to production.
 
 ## License
 

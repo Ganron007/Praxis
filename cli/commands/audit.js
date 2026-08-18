@@ -836,20 +836,27 @@ function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remedi
         counts: v.counts,
       }])
     ),
-    findings: findings.map(f => ({
-      file: f.file, line: f.line, severity: f.severity, category: f.category,
-      rule: f.rule, title: f.title, description: f.description, fix: f.fix,
-      cwe: f.cwe, owasp: f.owasp,
-      ...(f.eaa ? { eaa: f.eaa } : {}),
-      ...(f.confidence ? { confidence: f.confidence } : {}),
-      ...(f.standards ? { standards: f.standards } : {}),
-      ...(f.deepAnalysis ? { deepAnalysis: f.deepAnalysis } : {}),
-      ...(f.aiClassification ? {
-        aiClassification: f.aiClassification,
-        ...(f.aiReason ? { aiReason: f.aiReason } : {}),
-        ...(f.aiFix ? { aiFix: f.aiFix } : {}),
-      } : {}),
-    })),
+    findings: findings.map(f => {
+      const normFile = String(f.file || '')
+        .replace(/\\/g, '/')
+        .replace(/^[a-zA-Z]:\/+/, '')
+        .replace(/^.*\/Praxis\/showcase-target\//, 'showcase-target/')
+        .replace(/^.*\/Praxis\//, '');
+      return {
+        file: normFile, line: f.line, severity: f.severity, category: f.category,
+        rule: f.rule, title: f.title, description: f.description, fix: f.fix,
+        cwe: f.cwe, owasp: f.owasp,
+        ...(f.eaa ? { eaa: f.eaa } : {}),
+        ...(f.confidence ? { confidence: f.confidence } : {}),
+        ...(f.standards ? { standards: f.standards } : {}),
+        ...(f.deepAnalysis ? { deepAnalysis: f.deepAnalysis } : {}),
+        ...(f.aiClassification ? {
+          aiClassification: f.aiClassification,
+          ...(f.aiReason ? { aiReason: f.aiReason } : {}),
+          ...(f.aiFix ? { aiFix: f.aiFix } : {}),
+        } : {}),
+      };
+    }),
     depVulns: depVulns.map(d => ({
       severity: d.severity, package: d.package || d.id, description: d.description,
     })),

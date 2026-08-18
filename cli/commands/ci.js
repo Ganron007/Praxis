@@ -192,6 +192,9 @@ export async function ciCommand(targetPath = '.', options = {}) {
     }
   }
 
+  // ── GitHub PR Inline Annotations (P-IMP-044) ───────────────────────────
+  emitGitHubAnnotations(allFindings, absolutePath);
+
   // ── GitHub PR Comment ──────────────────────────────────────────────────
   if (options.githubPr) {
     try {
@@ -244,6 +247,19 @@ function determinePass(scoreResult, findings, threshold, failOn, alwaysFailOn, p
     if (floorSet.some(f => floorSevs.includes(f.severity))) return false;
   }
   return scoreResult.score >= threshold;
+}
+
+function emitGitHubAnnotations(findings, rootPath) {
+  if (process.env.GITHUB_ACTIONS !== 'true') return;
+  for (const f of findings) {
+    if (!f.file || !f.line) continue;
+    const rel = path.relative(rootPath, f.file).replace(/\\/g, '/');
+    const level = ['critical', 'high'].includes(f.severity) ? 'error' : 'warning';
+    const col = f.column || 1;
+    const title = (f.title || f.rule || 'Security Finding').replace(/\r?\n/g, ' ');
+    const msg = (f.description || f.matched || '').replace(/\r?\n/g, ' ').slice(0, 300);
+    console.log(`::${level} file=${rel},line=${f.line},col=${col},title=${title}::${msg}`);
+  }
 }
 
 function buildSARIF(findings, rootPath) {

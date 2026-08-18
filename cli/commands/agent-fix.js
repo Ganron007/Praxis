@@ -41,6 +41,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { autoDetectProvider } from '../providers/llm-provider.js';
 import { auditCommand } from './audit.js';
+import { ASTParser } from '../core/ast/index.js';
 import * as output from '../utils/output.js';
 
 const SEV_RANK   = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
@@ -893,6 +894,32 @@ export async function verifyFile(root, filePath, originalFindings, options = {})
   const tiers = [];
 
   try {
+    // Tier 0 — AST syntax verification (P-IMP-010)
+    const ext = path.extname(filePath).toLowerCase();
+    if (['.js', '.ts', '.jsx', '.tsx', '.mjs', '.cjs', '.py'].includes(ext)) {
+      try {
+        const fileContent = fs.readFileSync(path.resolve(root, filePath), 'utf8');
+        const parsed = ASTParser.parse(fileContent, filePath);
+        const hasValidAST = parsed && parsed.ast && Array.isArray(parsed.ast.body);
+        tiers.push({ tier: 'ast_syntax', ok: hasValidAST });
+        if (!hasValidAST) {
+          return {
+            allResolved: false, someResolved: false, resolvedCount: 0,
+            verification: 'failed', failedTier: 'ast_syntax',
+            evidence: `AST syntax verification failed on fixed file: ${filePath}`,
+            tiers,
+          };
+        }
+      } catch (err) {
+        return {
+          allResolved: false, someResolved: false, resolvedCount: 0,
+          verification: 'failed', failedTier: 'ast_syntax',
+          evidence: `AST syntax verification failed: ${err.message}`,
+          tiers,
+        };
+      }
+    }
+
     // Tier 1 — build/lint
     const build = detectBuildCommand(root);
     if (build) {

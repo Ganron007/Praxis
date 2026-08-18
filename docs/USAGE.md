@@ -146,20 +146,23 @@ Credential health check: `.env` coverage, source cross-ref, git history.
 | --- | --- |
 | `--json` | JSON output |
 
-### `scan redteam [path]`
+### `scan redteam [path]` / `praxis redteam [target]`
 
-28 agents in parallel — 80+ attack classes.
+Dynamic AI Red Teaming & DAST Prober: executes 80+ attack classes statically and probes live LLM endpoints / agent runtimes with jailbreak, prompt injection, and goal-hijacking payloads.
 
 | Flag | Description |
 | --- | --- |
-| `--agents <list>` | Comma-separated list of agents |
+| `--endpoint <url>` | Target live LLM API endpoint for dynamic DAST probing |
+| `--model <model>` | Target model identifier |
+| `--probes <tags>` | Comma-separated probe categories (`jailbreak`, `injection`, `override`, `exfil`) |
+| `--agents <list>` | Comma-separated list of static agents to run |
 | `--json` | JSON output |
 | `--sarif` | SARIF output |
-| `--html [file]` | Generate HTML security report |
-| `--sbom [file]` | Generate CycloneDX SBOM |
+| `--html [file]` | Generate interactive Pro HTML security report |
+| `--sbom [file]` | Generate CycloneDX SBOM / ABOM |
 | `--no-deps` | Skip dependency audit |
 | `--no-ai` | Skip AI classification |
-| `--deep` | LLM-powered taint analysis |
+| `--deep` | LLM-powered taint analysis with AST scope evaluation |
 | `--swarm` | AI swarm mode — 23 parallel agents via DeepSeek/Kimi |
 | `--think`, `--local`, `--model`, `--provider`, `--base-url`, `--budget` | LLM controls (same as `scan full`) |
 | `-v, --verbose` | Verbose output |
@@ -304,10 +307,11 @@ Vet an AI agent skill (URL or path) before installing it.
 
 ### `agents mcp [target]`
 
-Vet an MCP server's tool manifest before connecting.
+Vet an MCP server's tool manifest before connecting, and optionally perform live protocol probing.
 
 | Flag | Description |
 | --- | --- |
+| `--test-live` | Perform runtime JSON-RPC handshakes, tool enumeration, schema validation, and tool fuzzing |
 | `--json` | JSON output |
 
 ### `agents bom [path]`
@@ -417,11 +421,12 @@ Generate Software Bill of Materials (CycloneDX SBOM).
 
 ### `report benchmark [path]`
 
-Compare your security score against industry averages.
+Run the ground-truth benchmark harness to evaluate Praxis accuracy, false-positive resistance, precision, recall, and F1 score against curated positive and negative security fixtures.
 
 | Flag | Description |
 | --- | --- |
 | `--json` | JSON output |
+| `--verbose` | Show per-fixture detection details |
 
 ---
 
@@ -586,6 +591,19 @@ In the JSON / SARIF / HTML reports:
 `ALL_STANDARDS` in `cli/utils/standards/index.js`. No other changes needed.
 Mark controls with `detectable: false` when no `mapFinding` path can ever
 produce them, so reports can distinguish tool gaps from absent evidence.
+
+---
+
+## AST & CST Dataflow Analysis Engine
+
+Praxis incorporates a pure ESM, zero-native-dependency AST & CST analysis engine (`cli/core/ast/`):
+
+- **JS/TS Parsing**: Babel parser based AST engine providing complete syntax trees for modern JavaScript, TypeScript, JSX, and TSX.
+- **Python Parsing**: CST tokenizer and indentation block tree parser providing function scope and statement hierarchy without requiring Python runtime dependencies.
+- **Lexical Scope Resolution (`scope-tree.js`)**: Tracks variable declarations, parameter bindings, enclosing function contexts, and variable shadowing.
+- **Intra-File Source-to-Sink Taint Tracking (`taint-tracker.js`)**: Tracks untrusted user inputs (`req.body`, `req.query`, `process.env`, `input()`, `request.args`) as they propagate across variable assignments, template strings, and function calls into dangerous sinks (`eval`, `exec`, `spawn`, `child_process`, SQL queries, filesystem writes).
+- **AI Guardrail Detection (`guardrail-detector.js`)**: Identifies input/output defense wrappers (NeMo Guardrails, Llama Guard, Guardrails AI, LangKit, custom validator functions) and suppresses false positives when inputs are provably sanitized.
+- **Tier 0 Syntax Verification**: Integrates with the LLM remediation ladder to immediately reject syntactically broken patches before running heavier test suites.
 
 ---
 

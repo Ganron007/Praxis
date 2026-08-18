@@ -8,7 +8,7 @@
   },
   "type": "module",
   "scripts": {
-    "test": "node --test cli/__tests__/intel.test.js cli/__tests__/agents.test.js cli/__tests__/core.test.js cli/__tests__/standards.test.js cli/__tests__/model-file-scanner.test.js cli/__tests__/prompt-injection-prober.test.js",
+    "test": "node --test cli/__tests__/intel.test.js cli/__tests__/agents.test.js cli/__tests__/core.test.js cli/__tests__/standards.test.js cli/__tests__/model-file-scanner.test.js cli/__tests__/prompt-injection-prober.test.js cli/__tests__/ast-engine.test.js cli/__tests__/benchmark.test.js cli/__tests__/redteam.test.js",
     "lint": "eslint cli/",
     "praxis": "node cli/bin/praxis.js"
   },
