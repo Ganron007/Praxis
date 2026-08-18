@@ -1,476 +1,414 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1100" viewBox="0 0 2000 1100" role="img" aria-label="Praxis Autonomous AI-Security Audit &amp; Remediation Architecture">
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="920" viewBox="0 0 1800 920" role="img" aria-label="Praxis Security Architecture Diagram">
   <defs>
-    <!-- Background Gradients -->
-    <linearGradient id="bgCanvas" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0e071c"/>
-      <stop offset="45%" stop-color="#080412"/>
-      <stop offset="100%" stop-color="#040209"/>
+    <!-- Background Gradient -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0d071a"/>
+      <stop offset="50%" stop-color="#080410"/>
+      <stop offset="100%" stop-color="#040208"/>
     </linearGradient>
 
-    <!-- Top & Radial Ambient Glows (Praxis Purple/Fuchsia) -->
-    <radialGradient id="ambientPurple" cx="50%" cy="0%" r="65%">
-      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.4"/>
-      <stop offset="60%" stop-color="#7c3aed" stop-opacity="0.05"/>
+    <!-- Top & Radial Glows -->
+    <radialGradient id="topGlow" cx="50%" cy="0%" r="60%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.38"/>
       <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
     </radialGradient>
-
-    <radialGradient id="centerCoreGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.35"/>
-      <stop offset="50%" stop-color="#9333ea" stop-opacity="0.15"/>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#9333ea" stop-opacity="0.22"/>
       <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
-    </radialGradient>
-
-    <radialGradient id="leftGlow" cx="20%" cy="50%" r="40%">
-      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#c084fc" stop-opacity="0"/>
-    </radialGradient>
-
-    <radialGradient id="rightGlow" cx="80%" cy="50%" r="40%">
-      <stop offset="0%" stop-color="#34d399" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
     </radialGradient>
 
     <!-- Card Backgrounds -->
     <linearGradient id="cardDark" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#190e2e"/>
-      <stop offset="50%" stop-color="#130a24"/>
-      <stop offset="100%" stop-color="#0c0517"/>
+      <stop offset="0%" stop-color="#180e2b"/>
+      <stop offset="100%" stop-color="#0e061a"/>
     </linearGradient>
-
     <linearGradient id="cardCore" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#281347"/>
-      <stop offset="60%" stop-color="#1c0c33"/>
-      <stop offset="100%" stop-color="#110621"/>
+      <stop offset="0%" stop-color="#24113f"/>
+      <stop offset="100%" stop-color="#130824"/>
     </linearGradient>
-
     <linearGradient id="cardGreen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0e2a1e"/>
-      <stop offset="60%" stop-color="#091c14"/>
-      <stop offset="100%" stop-color="#05100b"/>
+      <stop offset="0%" stop-color="#0e261c"/>
+      <stop offset="100%" stop-color="#06140e"/>
     </linearGradient>
 
-    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-
-    <!-- Praxis Purple & Wordmark Gradient -->
+    <!-- Brand Gradients -->
     <linearGradient id="purpleGrad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#e879f9"/>
       <stop offset="50%" stop-color="#c084fc"/>
       <stop offset="100%" stop-color="#7c3aed"/>
     </linearGradient>
-
     <linearGradient id="emeraldGrad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#6ee7b7"/>
-      <stop offset="50%" stop-color="#34d399"/>
       <stop offset="100%" stop-color="#059669"/>
     </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
 
-    <!-- Drop Shadows & Glow Filters -->
+    <!-- Shadows -->
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000000" flood-opacity="0.75"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000000" flood-opacity="0.7"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#c084fc" flood-opacity="0.75"/>
+    </filter>
+    <filter id="glowEmerald" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#34d399" flood-opacity="0.7"/>
     </filter>
 
-    <filter id="glowPurple" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#c084fc" flood-opacity="0.9"/>
-    </filter>
-
-    <filter id="glowFuchsia" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#f472b6" flood-opacity="0.85"/>
-    </filter>
-
-    <filter id="glowEmerald" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#34d399" flood-opacity="0.85"/>
-    </filter>
-
-    <!-- Arrow Markers -->
-    <marker id="arrowPurple" markerWidth="11" markerHeight="11" refX="8" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#c084fc"/>
+    <!-- Markers -->
+    <marker id="arrPurple" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#c084fc"/>
     </marker>
-    <marker id="arrowFuchsia" markerWidth="11" markerHeight="11" refX="8" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#e879f9"/>
-    </marker>
-    <marker id="arrowGreen" markerWidth="11" markerHeight="11" refX="8" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#34d399"/>
-    </marker>
-    <marker id="arrowCyan" markerWidth="11" markerHeight="11" refX="8" refY="4" orient="auto">
-      <polygon points="0 0, 10 4, 0 8" fill="#38bdf8"/>
+    <marker id="arrGreen" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34d399"/>
     </marker>
   </defs>
 
-  <!-- Canvas Background -->
-  <rect width="2000" height="1100" fill="url(#bgCanvas)"/>
-  <rect width="2000" height="480" fill="url(#ambientPurple)"/>
-  <rect x="0" y="250" width="700" height="700" fill="url(#leftGlow)"/>
-  <rect x="650" y="200" width="700" height="700" fill="url(#centerCoreGlow)"/>
-  <rect x="1300" y="250" width="700" height="700" fill="url(#rightGlow)"/>
+  <!-- Canvas -->
+  <rect width="1800" height="920" fill="url(#bg)"/>
+  <rect width="1800" height="420" fill="url(#topGlow)"/>
+  <rect x="500" y="150" width="800" height="650" fill="url(#coreGlow)"/>
 
   <!-- ========================================================================= -->
-  <!-- TOP HEADER & BRANDING                                                     -->
+  <!-- HEADER & LOGO                                                             -->
   <!-- ========================================================================= -->
-  <g transform="translate(1000, 52)">
-    <!-- Small Praxis Shield -->
-    <g transform="translate(-320, -22) scale(0.32)">
+  <g transform="translate(900, 48)">
+    <g transform="translate(-255, -20) scale(0.28)">
       <path d="M55 0 L110 18 V62 C110 100 86 128 55 145 C24 128 0 100 0 62 V18 Z" fill="url(#purpleGrad)" stroke="#3b0764" stroke-width="3"/>
       <path d="M55 35 A35 35 0 1 1 20 70 H32 A23 23 0 1 0 55 47 V60 L75 41 L55 22 V35 Z" fill="#ffffff" opacity="0.95"/>
       <path d="M55 52 Q55 70 73 70 Q55 70 55 88 Q55 70 37 70 Q55 70 55 52 Z" fill="#ffffff" opacity="0.95"/>
     </g>
-    <text x="-265" y="10" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif" font-size="34" font-weight="900" fill="url(#purpleGrad)" letter-spacing="0.5">PRAXIS</text>
-    <text x="-135" y="10" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif" font-size="34" font-weight="800" fill="#ffffff" letter-spacing="1.2">AUTONOMOUS SECURITY ARCHITECTURE</text>
-    <text x="0" y="38" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif" font-size="15" font-weight="500" fill="#c084fc">
+    <text x="-210" y="6" font-family="'Segoe UI', -apple-system, sans-serif" font-size="28" font-weight="900" fill="url(#purpleGrad)" letter-spacing="0.5">PRAXIS</text>
+    <text x="-95" y="6" font-family="'Segoe UI', -apple-system, sans-serif" font-size="28" font-weight="800" fill="#ffffff" letter-spacing="1">SECURITY ENGINE ARCHITECTURE</text>
+    <text x="0" y="30" text-anchor="middle" font-family="'Segoe UI', -apple-system, sans-serif" font-size="13" font-weight="500" fill="#c084fc">
       Closed-Loop Multi-Agent Engine · Pure ESM AST &amp; Taint Core · Dynamic AI Red Teaming · 4-Tier Verification Ladder
     </text>
   </g>
 
   <!-- ========================================================================= -->
-  <!-- TOP INTERFACES BAR (y=115..185)                                           -->
+  <!-- TOP INTERFACE CHIPS (y=100..154)                                          -->
   <!-- ========================================================================= -->
-  <g transform="translate(100, 110)">
-    <!-- Interface 1: Developer CLI -->
-    <g filter="url(#shadow)">
-      <rect x="0" y="0" width="410" height="74" rx="14" fill="url(#cardDark)" stroke="#3b1d6e" stroke-width="1.6"/>
-      <rect x="6" y="5" width="398" height="18" rx="8" fill="url(#sheen)"/>
-      <circle cx="34" cy="37" r="16" fill="#7c3aed" fill-opacity="0.3"/>
-      <text x="34" y="42" text-anchor="middle" font-family="ui-monospace, monospace" font-size="15" font-weight="800" fill="#c084fc">&gt;_</text>
-      <text x="64" y="32" font-family="sans-serif" font-size="16" font-weight="800" fill="#ffffff">Developer CLI &amp; REPL</text>
-      <text x="64" y="52" font-family="sans-serif" font-size="11.5" fill="#a855f7">`praxis scan` · `fix` · `redteam` · `vibe`</text>
+  <g transform="translate(80, 100)" filter="url(#shadow)">
+    <!-- 1. CLI & REPL -->
+    <g>
+      <rect x="0" y="0" width="380" height="54" rx="10" fill="url(#cardDark)" stroke="#3b1d6e" stroke-width="1.4"/>
+      <circle cx="28" cy="27" r="13" fill="#7c3aed" fill-opacity="0.3"/>
+      <text x="28" y="32" text-anchor="middle" font-family="monospace" font-size="13" font-weight="800" fill="#c084fc">&gt;_</text>
+      <text x="50" y="24" font-family="sans-serif" font-size="14" font-weight="800" fill="#ffffff">Developer CLI &amp; REPL</text>
+      <text x="50" y="42" font-family="sans-serif" font-size="11" fill="#a855f7">`praxis scan` · `fix` · `redteam` · `vibe`</text>
     </g>
 
-    <!-- Interface 2: CI/CD -->
-    <g filter="url(#shadow)" transform="translate(460, 0)">
-      <rect x="0" y="0" width="410" height="74" rx="14" fill="url(#cardDark)" stroke="#3b1d6e" stroke-width="1.6"/>
-      <rect x="6" y="5" width="398" height="18" rx="8" fill="url(#sheen)"/>
-      <circle cx="34" cy="37" r="16" fill="#c084fc" fill-opacity="0.25"/>
-      <text x="34" y="43" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="800" fill="#e879f9">⚡</text>
-      <text x="64" y="32" font-family="sans-serif" font-size="16" font-weight="800" fill="#ffffff">GitHub Action &amp; PR Gate</text>
-      <text x="64" y="52" font-family="sans-serif" font-size="11.5" fill="#a855f7">Net-new PR diff · SARIF · Annotations</text>
+    <!-- 2. CI/CD PR Gate -->
+    <g transform="translate(420, 0)">
+      <rect x="0" y="0" width="380" height="54" rx="10" fill="url(#cardDark)" stroke="#3b1d6e" stroke-width="1.4"/>
+      <circle cx="28" cy="27" r="13" fill="#c084fc" fill-opacity="0.25"/>
+      <text x="28" y="32" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="800" fill="#e879f9">⚡</text>
+      <text x="50" y="24" font-family="sans-serif" font-size="14" font-weight="800" fill="#ffffff">GitHub Action &amp; CI/CD</text>
+      <text x="50" y="42" font-family="sans-serif" font-size="11" fill="#a855f7">Net-new PR diff · SARIF · Annotations</text>
     </g>
 
-    <!-- Interface 3: MCP Server -->
-    <g filter="url(#shadow)" transform="translate(920, 0)">
-      <rect x="0" y="0" width="410" height="74" rx="14" fill="url(#cardDark)" stroke="#3b1d6e" stroke-width="1.6"/>
-      <rect x="6" y="5" width="398" height="18" rx="8" fill="url(#sheen)"/>
-      <circle cx="34" cy="37" r="16" fill="#059669" fill-opacity="0.25"/>
-      <text x="34" y="43" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="800" fill="#34d399">🔌</text>
-      <text x="64" y="32" font-family="sans-serif" font-size="16" font-weight="800" fill="#ffffff">MCP Server &amp; IDE Agents</text>
-      <text x="64" y="52" font-family="sans-serif" font-size="11.5" fill="#a855f7">Claude Desktop · Cursor · Windsurf · Tools</text>
+    <!-- 3. MCP Server & Tools -->
+    <g transform="translate(840, 0)">
+      <rect x="0" y="0" width="380" height="54" rx="10" fill="url(#cardDark)" stroke="#3b1d6e" stroke-width="1.4"/>
+      <circle cx="28" cy="27" r="13" fill="#059669" fill-opacity="0.25"/>
+      <text x="28" y="32" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="800" fill="#34d399">🔌</text>
+      <text x="50" y="24" font-family="sans-serif" font-size="14" font-weight="800" fill="#ffffff">MCP Server &amp; IDE Agents</text>
+      <text x="50" y="42" font-family="sans-serif" font-size="11" fill="#a855f7">Claude Desktop · Cursor · Windsurf</text>
     </g>
 
-    <!-- Interface 4: Live Prober -->
-    <g filter="url(#shadow)" transform="translate(1380, 0)">
-      <rect x="0" y="0" width="420" height="74" rx="14" fill="url(#cardDark)" stroke="#3b1d6e" stroke-width="1.6"/>
-      <rect x="6" y="5" width="408" height="18" rx="8" fill="url(#sheen)"/>
-      <circle cx="34" cy="37" r="16" fill="#ec4899" fill-opacity="0.25"/>
-      <text x="34" y="43" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="800" fill="#f472b6">🎯</text>
-      <text x="64" y="32" font-family="sans-serif" font-size="16" font-weight="800" fill="#ffffff">Dynamic AI Red Teaming</text>
-      <text x="64" y="52" font-family="sans-serif" font-size="11.5" fill="#a855f7">Live API endpoint &amp; MCP runtime DAST</text>
+    <!-- 4. Dynamic Red Team Prober -->
+    <g transform="translate(1260, 0)">
+      <rect x="0" y="0" width="380" height="54" rx="10" fill="url(#cardDark)" stroke="#3b1d6e" stroke-width="1.4"/>
+      <circle cx="28" cy="27" r="13" fill="#ec4899" fill-opacity="0.25"/>
+      <text x="28" y="32" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="800" fill="#f472b6">🎯</text>
+      <text x="50" y="24" font-family="sans-serif" font-size="14" font-weight="800" fill="#ffffff">Dynamic AI Red Teaming</text>
+      <text x="50" y="42" font-family="sans-serif" font-size="11" fill="#a855f7">Live API endpoint &amp; MCP runtime DAST</text>
     </g>
   </g>
 
   <!-- ========================================================================= -->
-  <!-- THREE-PILLAR TRI-HUB ARCHITECTURE                                         -->
+  <!-- 3 DISTINCT ARCHITECTURAL PILLARS (y=180..800)                             -->
   <!-- ========================================================================= -->
 
   <!-- ========================================================================= -->
-  <!-- PILLAR 1: LEFT HUB — FIND (Detection & Audit Surface) (x=70, w=540)       -->
+  <!-- PILLAR 1: FIND (Audit & Threat Surface) (x=80, w=490)                     -->
   <!-- ========================================================================= -->
-  <g transform="translate(70, 220)" filter="url(#shadow)">
-    <!-- Container -->
-    <rect x="0" y="0" width="550" height="730" rx="22" fill="url(#cardDark)" stroke="#4c1d95" stroke-width="2"/>
-    <rect x="10" y="8" width="530" height="26" rx="10" fill="url(#sheen)"/>
+  <g transform="translate(80, 180)" filter="url(#shadow)">
+    <rect x="0" y="0" width="500" height="610" rx="18" fill="url(#cardDark)" stroke="#4c1d95" stroke-width="1.8"/>
+    <rect x="8" y="6" width="484" height="22" rx="8" fill="url(#sheen)"/>
     
-    <!-- Header Pill -->
-    <rect x="24" y="24" width="130" height="34" rx="17" fill="#7c3aed"/>
-    <text x="89" y="46" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#ffffff" letter-spacing="1">1 · FIND</text>
-    <text x="168" y="48" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">Audit &amp; Detection Surface</text>
+    <!-- Stage Header -->
+    <rect x="20" y="18" width="105" height="28" rx="14" fill="#7c3aed"/>
+    <text x="72" y="37" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="900" fill="#ffffff" letter-spacing="1">1 · FIND</text>
+    <text x="140" y="39" font-family="sans-serif" font-size="18" font-weight="800" fill="#ffffff">Audit &amp; Detection Surface</text>
 
-    <!-- Block 1A: Target Recon & Ingestion -->
-    <g transform="translate(24, 76)">
-      <rect x="0" y="0" width="502" height="110" rx="14" fill="#130826" stroke="#3b1d6e" stroke-width="1.4"/>
-      <text x="16" y="28" font-family="sans-serif" font-size="15" font-weight="800" fill="#e879f9">Target Ingestion &amp; ReconAgent</text>
-      <text x="16" y="52" font-family="sans-serif" font-size="12" fill="#c084fc">• Frameworks: Express, FastAPI, Django, Next.js, Flask</text>
-      <text x="16" y="72" font-family="sans-serif" font-size="12" fill="#c084fc">• Discovered API Routes, Database connections &amp; Auth patterns</text>
-      <text x="16" y="92" font-family="sans-serif" font-size="12" fill="#c084fc">• Cloud Providers, IaC (Terraform, K8s, Docker) &amp; CI/CD</text>
+    <!-- Subcard 1: Recon & Ingestion -->
+    <g transform="translate(20, 60)">
+      <rect x="0" y="0" width="460" height="82" rx="10" fill="#120722" stroke="#3b1d6e" stroke-width="1.2"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="13" font-weight="800" fill="#e879f9">Target Recon &amp; Ingestion</text>
+      <text x="14" y="42" font-family="sans-serif" font-size="11" fill="#c084fc">• Tech-Stack: Frameworks, APIs, DBs, Auth, IaC</text>
+      <text x="14" y="62" font-family="sans-serif" font-size="11" fill="#c084fc">• Shared Memory &amp; Context Discovery</text>
     </g>
 
-    <!-- Block 1B: 28 Parallel Agents Matrix -->
-    <g transform="translate(24, 200)">
-      <rect x="0" y="0" width="502" height="360" rx="14" fill="#130826" stroke="#3b1d6e" stroke-width="1.4"/>
-      <text x="16" y="28" font-family="sans-serif" font-size="15" font-weight="800" fill="#e879f9">28 Parallel Security Agents (Concurrent)</text>
+    <!-- Subcard 2: 28 Parallel Agents (Clustered) -->
+    <g transform="translate(20, 154)">
+      <rect x="0" y="0" width="460" height="310" rx="10" fill="#120722" stroke="#3b1d6e" stroke-width="1.2"/>
+      <text x="14" y="24" font-family="sans-serif" font-size="13" font-weight="800" fill="#e879f9">28 Parallel Security Agents</text>
       
-      <!-- Grid of 4 Clusters -->
-      <!-- Cluster 1: AI / LLM (13) -->
-      <g transform="translate(16, 42)">
-        <rect x="0" y="0" width="225" height="140" rx="10" fill="#1b0c36" stroke="#4c1d95" stroke-width="1.2"/>
-        <text x="10" y="22" font-family="sans-serif" font-size="12" font-weight="800" fill="#f472b6">AI &amp; LLM Threat Cluster (13)</text>
-        <text x="10" y="42" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Prompt Injection Prober (23 probes)</text>
-        <text x="10" y="60" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• MCP Server Security &amp; Fuzzer</text>
-        <text x="10" y="78" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Agent Config &amp; Memory Poisoning</text>
-        <text x="10" y="96" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Model Files (Pickle/Safetensors)</text>
-        <text x="10" y="114" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• RAG &amp; Vector Embeddings</text>
-        <text x="10" y="132" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• EAA (Local Agent Abuse Catalog)</text>
-      </g>
+      <!-- 4 Compact Crisp Agent Clusters -->
+      <g transform="translate(14, 36)">
+        <!-- Cluster A: AI / LLM (13) -->
+        <rect x="0" y="0" width="208" height="120" rx="8" fill="#1a0b33" stroke="#4c1d95" stroke-width="1"/>
+        <text x="10" y="18" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#f472b6">AI / LLM Security (13)</text>
+        <text x="10" y="36" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Prompt Injection (23 probes)</text>
+        <text x="10" y="52" font-family="sans-serif" font-size="10" fill="#d8b4fe">• MCP Abuse &amp; Fuzzing</text>
+        <text x="10" y="68" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Agent Config &amp; Memory</text>
+        <text x="10" y="84" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Model Pickles &amp; RAG</text>
+        <text x="10" y="100" font-family="sans-serif" font-size="10" fill="#d8b4fe">• EAA (Agent Abuse Catalog)</text>
 
-      <!-- Cluster 2: Code Sinks (4) -->
-      <g transform="translate(255, 42)">
-        <rect x="0" y="0" width="230" height="140" rx="10" fill="#1b0c36" stroke="#4c1d95" stroke-width="1.2"/>
-        <text x="10" y="22" font-family="sans-serif" font-size="12" font-weight="800" fill="#f472b6">Code &amp; Injection Cluster (4)</text>
-        <text x="10" y="42" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• InjectionTester (SQL/Cmd/Eval)</text>
-        <text x="10" y="60" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• SSRF &amp; XSS Probers</text>
-        <text x="10" y="78" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• ReDoS &amp; Exception Handling</text>
-        <text x="10" y="96" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Vibe Coding Anti-patterns</text>
-        <text x="10" y="118" font-family="sans-serif" font-size="10.5" fill="#a855f7">Integrated with AST Taint</text>
-      </g>
+        <!-- Cluster B: Code Sinks (4) -->
+        <g transform="translate(224, 0)">
+          <rect x="0" y="0" width="208" height="120" rx="8" fill="#1a0b33" stroke="#4c1d95" stroke-width="1"/>
+          <text x="10" y="18" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#f472b6">Code &amp; Sinks (4)</text>
+          <text x="10" y="36" font-family="sans-serif" font-size="10" fill="#d8b4fe">• SQL &amp; Command Injection</text>
+          <text x="10" y="52" font-family="sans-serif" font-size="10" fill="#d8b4fe">• SSRF &amp; XSS Probers</text>
+          <text x="10" y="68" font-family="sans-serif" font-size="10" fill="#d8b4fe">• ReDoS &amp; Exception Flaws</text>
+          <text x="10" y="84" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Vibe-Coding Anti-patterns</text>
+          <text x="10" y="102" font-family="sans-serif" font-size="9.5" fill="#a855f7">AST Pattern Hooks</text>
+        </g>
 
-      <!-- Cluster 3: Auth & Supply Chain (6) -->
-      <g transform="translate(16, 194)">
-        <rect x="0" y="0" width="225" height="150" rx="10" fill="#1b0c36" stroke="#4c1d95" stroke-width="1.2"/>
-        <text x="10" y="22" font-family="sans-serif" font-size="12" font-weight="800" fill="#f472b6">Auth &amp; Supply Chain (6)</text>
-        <text x="10" y="42" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• JWT, CSRF &amp; IDOR/BOLA</text>
-        <text x="10" y="60" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Supabase RLS Scanner</text>
-        <text x="10" y="78" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• SupplyChainAudit (Typosquats)</text>
-        <text x="10" y="96" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Agent Attestation Verifier</text>
-        <text x="10" y="114" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• MCP Trust Registry (SHA-256)</text>
-        <text x="10" y="132" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Suspicious install scripts</text>
-      </g>
+        <!-- Cluster C: Auth & Supply Chain (6) -->
+        <g transform="translate(0, 130)">
+          <rect x="0" y="0" width="208" height="126" rx="8" fill="#1a0b33" stroke="#4c1d95" stroke-width="1"/>
+          <text x="10" y="18" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#f472b6">Auth &amp; Supply Chain (6)</text>
+          <text x="10" y="36" font-family="sans-serif" font-size="10" fill="#d8b4fe">• JWT, CSRF, IDOR/BOLA</text>
+          <text x="10" y="52" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Supabase RLS Scanner</text>
+          <text x="10" y="68" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Package Typosquatting</text>
+          <text x="10" y="84" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Agent Attestation</text>
+          <text x="10" y="100" font-family="sans-serif" font-size="10" fill="#d8b4fe">• MCP Trust Registry</text>
+          <text x="10" y="116" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Malicious install scripts</text>
+        </g>
 
-      <!-- Cluster 4: Config & Governance (5) -->
-      <g transform="translate(255, 194)">
-        <rect x="0" y="0" width="230" height="150" rx="10" fill="#1b0c36" stroke="#4c1d95" stroke-width="1.2"/>
-        <text x="10" y="22" font-family="sans-serif" font-size="12" font-weight="800" fill="#f472b6">Config &amp; Governance (5)</text>
-        <text x="10" y="42" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Docker, K8s &amp; Terraform</text>
-        <text x="10" y="60" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• Git History Secret Hunter</text>
-        <text x="10" y="78" font-family="sans-serif" font-size="10.5" fill="#d8b4fe">• PII &amp; Mobile Scanner</text>
-        <text x="10" y="96" font-family="sans-serif" font-size="10.5" fill="#facc15">• No-Human-Oversight (Art 14)</text>
-        <text x="10" y="114" font-family="sans-serif" font-size="10.5" fill="#facc15">• No-Observability (Art 12)</text>
-        <text x="10" y="132" font-family="sans-serif" font-size="10.5" fill="#a855f7">Absence-audit detectors</text>
+        <!-- Cluster D: Config & Governance (5) -->
+        <g transform="translate(224, 130)">
+          <rect x="0" y="0" width="208" height="126" rx="8" fill="#1a0b33" stroke="#4c1d95" stroke-width="1"/>
+          <text x="10" y="18" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#f472b6">Config &amp; Governance (5)</text>
+          <text x="10" y="36" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Docker, K8s, Terraform</text>
+          <text x="10" y="52" font-family="sans-serif" font-size="10" fill="#d8b4fe">• Git History Secrets</text>
+          <text x="10" y="68" font-family="sans-serif" font-size="10" fill="#d8b4fe">• PII &amp; Mobile Audits</text>
+          <text x="10" y="86" font-family="sans-serif" font-size="10" font-weight="700" fill="#facc15">• No-Oversight (Art 14)</text>
+          <text x="10" y="102" font-family="sans-serif" font-size="10" font-weight="700" fill="#facc15">• No-Observability (Art 12)</text>
+          <text x="10" y="116" font-family="sans-serif" font-size="9.5" fill="#a855f7">Absence Audits</text>
+        </g>
       </g>
     </g>
 
-    <!-- Block 1C: Threat Intel Stream -->
-    <g transform="translate(24, 574)">
-      <rect x="0" y="0" width="502" height="135" rx="14" fill="#130826" stroke="#3b1d6e" stroke-width="1.4"/>
-      <text x="16" y="26" font-family="sans-serif" font-size="14" font-weight="800" fill="#e879f9">Multi-Source Threat Intelligence Layer</text>
-      <text x="16" y="48" font-family="sans-serif" font-size="11" fill="#c084fc">Offline-first local cache (~/.praxis/threat-intel.json) with TTL resets</text>
+    <!-- Subcard 3: Threat Intelligence Layer -->
+    <g transform="translate(20, 476)">
+      <rect x="0" y="0" width="460" height="114" rx="10" fill="#120722" stroke="#3b1d6e" stroke-width="1.2"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="13" font-weight="800" fill="#e879f9">Multi-Source Threat Intelligence</text>
+      <text x="14" y="40" font-family="sans-serif" font-size="11" fill="#c084fc">Offline TTL Cache (~/.praxis/threat-intel.json)</text>
       
-      <!-- Mini Intel Chips -->
-      <g transform="translate(16, 62)">
-        <rect x="0" y="0" width="95" height="26" rx="6" fill="#281347"/><text x="47" y="17" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#e9d5ff">OSV.dev</text>
-        <rect x="102" y="0" width="105" height="26" rx="6" fill="#281347"/><text x="154" y="17" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#e9d5ff">GHSA Feeds</text>
-        <rect x="214" y="0" width="85" height="26" rx="6" fill="#281347"/><text x="256" y="17" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#e9d5ff">CISA KEV</text>
-        <rect x="306" y="0" width="85" height="26" rx="6" fill="#281347"/><text x="348" y="17" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#e9d5ff">EPSS Score</text>
-        <rect x="398" y="0" width="75" height="26" rx="6" fill="#281347"/><text x="435" y="17" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#e9d5ff">NVD Feed</text>
+      <!-- Chips -->
+      <g transform="translate(14, 52)">
+        <rect x="0" y="0" width="78" height="22" rx="5" fill="#24103f"/><text x="39" y="15" text-anchor="middle" font-family="monospace" font-size="9.5" font-weight="700" fill="#e9d5ff">OSV.dev</text>
+        <rect x="85" y="0" width="85" height="22" rx="5" fill="#24103f"/><text x="127" y="15" text-anchor="middle" font-family="monospace" font-size="9.5" font-weight="700" fill="#e9d5ff">GHSA Feeds</text>
+        <rect x="177" y="0" width="75" height="22" rx="5" fill="#24103f"/><text x="214" y="15" text-anchor="middle" font-family="monospace" font-size="9.5" font-weight="700" fill="#e9d5ff">CISA KEV</text>
+        <rect x="259" y="0" width="75" height="22" rx="5" fill="#24103f"/><text x="296" y="15" text-anchor="middle" font-family="monospace" font-size="9.5" font-weight="700" fill="#e9d5ff">EPSS Score</text>
+        <rect x="341" y="0" width="88" height="22" rx="5" fill="#24103f"/><text x="385" y="15" text-anchor="middle" font-family="monospace" font-size="9.5" font-weight="700" fill="#e9d5ff">221 Gitleaks</text>
       </g>
-      <text x="16" y="116" font-family="sans-serif" font-size="11" fill="#a855f7">+ 221 Gitleaks Secret Rules · Optional Snyk / Socket / GitGuardian</text>
+      <text x="14" y="98" font-family="sans-serif" font-size="10.5" fill="#a855f7">NVD CVE Enrichment · Optional Snyk / Socket / GitGuardian</text>
     </g>
   </g>
 
-  <!-- Connective Conduit: Pillar 1 -> Pillar 2 (Purple Glowing Beam) -->
-  <path d="M 620 580 L 685 580" fill="none" stroke="#c084fc" stroke-width="5" marker-end="url(#arrowPurple)"/>
-  <path d="M 620 400 L 655 400 L 655 550 L 685 550" fill="none" stroke="#e879f9" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowFuchsia)"/>
-  <path d="M 620 760 L 655 760 L 655 610 L 685 610" fill="none" stroke="#e879f9" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowFuchsia)"/>
+  <!-- Conduit 1 -> 2 -->
+  <line x1="580" y1="485" x2="640" y2="485" stroke="#c084fc" stroke-width="4" marker-end="url(#arrPurple)"/>
 
   <!-- ========================================================================= -->
-  <!-- PILLAR 2: CENTER HUB — ANALYZE (AST Core, Intelligence & Standards)       -->
+  <!-- PILLAR 2: ANALYZE (AST & Intelligence Core) (x=650, w=500)                -->
   <!-- ========================================================================= -->
-  <g transform="translate(695, 205)" filter="url(#glowPurple)">
-    <!-- Main Center Core Box -->
-    <rect x="0" y="0" width="610" height="760" rx="26" fill="url(#cardCore)" stroke="#c084fc" stroke-width="2.5"/>
-    <rect x="12" y="8" width="586" height="30" rx="12" fill="url(#sheen)"/>
+  <g transform="translate(650, 168)" filter="url(#glowPurple)">
+    <rect x="0" y="0" width="500" height="635" rx="20" fill="url(#cardCore)" stroke="#c084fc" stroke-width="2.2"/>
+    <rect x="8" y="6" width="484" height="24" rx="8" fill="url(#sheen)"/>
+    
+    <!-- Stage Header -->
+    <rect x="20" y="20" width="130" height="30" rx="15" fill="url(#purpleGrad)"/>
+    <text x="85" y="40" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="900" fill="#ffffff" letter-spacing="1">2 · ANALYZE</text>
+    <text x="165" y="42" font-family="sans-serif" font-size="19" font-weight="800" fill="#ffffff">AST &amp; Intelligence Core</text>
 
-    <!-- Central Core Badge & Sparkle Shield -->
-    <rect x="30" y="26" width="160" height="36" rx="18" fill="url(#purpleGrad)"/>
-    <text x="110" y="50" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#ffffff" letter-spacing="1">2 · ANALYZE</text>
-    <text x="204" y="52" font-family="sans-serif" font-size="21" font-weight="800" fill="#ffffff">AST &amp; Intelligence Core</text>
-
-    <!-- Core Block 2A: Pure ESM AST & CST Engine (cli/core/ast/) -->
-    <g transform="translate(26, 78)">
-      <rect x="0" y="0" width="558" height="230" rx="16" fill="#130726" stroke="#7c3aed" stroke-width="1.6"/>
-      <text x="18" y="28" font-family="sans-serif" font-size="15" font-weight="800" fill="#e879f9">Pure ESM AST / CST &amp; Taint Engine (cli/core/ast/)</text>
+    <!-- Subcard 2A: Pure ESM AST & CST Engine -->
+    <g transform="translate(20, 64)">
+      <rect x="0" y="0" width="460" height="190" rx="12" fill="#120624" stroke="#7c3aed" stroke-width="1.4"/>
+      <text x="14" y="24" font-family="sans-serif" font-size="13.5" font-weight="800" fill="#e879f9">Pure ESM AST / CST &amp; Taint Engine</text>
       
-      <!-- Sub-blocks for AST -->
-      <g transform="translate(16, 42)">
-        <rect x="0" y="0" width="250" height="170" rx="10" fill="#1f0a3d" stroke="#5b21b6" stroke-width="1.2"/>
-        <text x="12" y="22" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">Syntax Tree &amp; Scope Hierarchy</text>
-        <text x="12" y="44" font-family="sans-serif" font-size="11" fill="#e9d5ff">• Babel Parser: JS, TS, JSX, TSX</text>
-        <text x="12" y="64" font-family="sans-serif" font-size="11" fill="#e9d5ff">• Python CST Tokenizer &amp; Blocks</text>
-        <text x="12" y="84" font-family="sans-serif" font-size="11" fill="#e9d5ff">• ScopeTree: Variable declarations,</text>
-        <text x="12" y="102" font-family="sans-serif" font-size="11" fill="#e9d5ff">  parameters, shadowing &amp; refs</text>
-        <text x="12" y="122" font-family="sans-serif" font-size="11" fill="#e9d5ff">• Enclosing function scope capture</text>
-        <text x="12" y="148" font-family="sans-serif" font-size="10.5" font-weight="700" fill="#34d399">✓ Zero Native Deps (Pure JS)</text>
-      </g>
+      <!-- 2 Boxes -->
+      <g transform="translate(14, 36)">
+        <rect x="0" y="0" width="208" height="138" rx="8" fill="#1c0936" stroke="#5b21b6" stroke-width="1"/>
+        <text x="10" y="20" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#c084fc">Syntax &amp; Scope</text>
+        <text x="10" y="40" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• Babel JS, TS, JSX, TSX</text>
+        <text x="10" y="58" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• Python CST Tokenizer</text>
+        <text x="10" y="76" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• Lexical Scope Hierarchy</text>
+        <text x="10" y="94" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• Variable Bindings &amp; Refs</text>
+        <text x="10" y="122" font-family="sans-serif" font-size="10" font-weight="700" fill="#34d399">✓ Zero Native Deps</text>
 
-      <g transform="translate(280, 42)">
-        <rect x="0" y="0" width="260" height="170" rx="10" fill="#1f0a3d" stroke="#5b21b6" stroke-width="1.2"/>
-        <text x="12" y="22" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">Source-to-Sink Taint &amp; Defenses</text>
-        <text x="12" y="44" font-family="sans-serif" font-size="11" fill="#e9d5ff">• TaintTracker: Variable propagation</text>
-        <text x="12" y="64" font-family="sans-serif" font-size="11" fill="#e9d5ff">• Dangerous execution sinks</text>
-        <text x="12" y="84" font-family="sans-serif" font-size="11" fill="#e9d5ff">• GuardrailDetector: NeMo,</text>
-        <text x="12" y="102" font-family="sans-serif" font-size="11" fill="#e9d5ff">  LlamaGuard, Guardrails AI, LangKit</text>
-        <text x="12" y="122" font-family="sans-serif" font-size="11" fill="#e9d5ff">• Structured output schema verification</text>
-        <text x="12" y="148" font-family="sans-serif" font-size="10.5" font-weight="700" fill="#34d399">✓ Active False-Positive Suppression</text>
+        <g transform="translate(224, 0)">
+          <rect x="0" y="0" width="208" height="138" rx="8" fill="#1c0936" stroke="#5b21b6" stroke-width="1"/>
+          <text x="10" y="20" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#c084fc">Source-to-Sink Taint</text>
+          <text x="10" y="40" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• Taint Propagation</text>
+          <text x="10" y="58" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• Execution Sink Match</text>
+          <text x="10" y="76" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• Guardrail Detectors:</text>
+          <text x="18" y="92" font-family="sans-serif" font-size="9.5" fill="#d8b4fe">NeMo, LlamaGuard, Zod</text>
+          <text x="10" y="122" font-family="sans-serif" font-size="10" font-weight="700" fill="#34d399">✓ False-Positive Filter</text>
+        </g>
       </g>
     </g>
 
-    <!-- Core Block 2B: Verification & Scoring Intelligence -->
-    <g transform="translate(26, 322)">
-      <rect x="0" y="0" width="558" height="235" rx="16" fill="#130726" stroke="#7c3aed" stroke-width="1.6"/>
-      <text x="18" y="28" font-family="sans-serif" font-size="15" font-weight="800" fill="#e879f9">Intelligent Verification &amp; Standards Crosswalk</text>
+    <!-- Subcard 2B: Verification & 8 Standards Matrix -->
+    <g transform="translate(20, 268)">
+      <rect x="0" y="0" width="460" height="196" rx="12" fill="#120624" stroke="#7c3aed" stroke-width="1.4"/>
+      <text x="14" y="24" font-family="sans-serif" font-size="13.5" font-weight="800" fill="#e879f9">Verification &amp; 8 Standards Matrix</text>
 
-      <g transform="translate(16, 42)">
-        <!-- Left: Verifier & LLM Deep Analysis -->
-        <rect x="0" y="0" width="250" height="175" rx="10" fill="#1f0a3d" stroke="#5b21b6" stroke-width="1.2"/>
-        <text x="12" y="22" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">Dual-Tier Verification</text>
-        <text x="12" y="44" font-family="sans-serif" font-size="11" fill="#e9d5ff">• VerifierAgent: AST context windows</text>
-        <text x="12" y="64" font-family="sans-serif" font-size="11" fill="#e9d5ff">• DeepAnalyzer: LLM taint reasoning</text>
-        <text x="12" y="84" font-family="sans-serif" font-size="11" fill="#e9d5ff">• Exploitability verdicts &amp; attack vectors</text>
-        <text x="12" y="104" font-family="sans-serif" font-size="11" fill="#e9d5ff">• Confidence calibrator (test/doc down)</text>
-        <text x="12" y="128" font-family="sans-serif" font-size="12" font-weight="800" fill="#f472b6">0–100 Health Score (A–F)</text>
-        <text x="12" y="150" font-family="sans-serif" font-size="10.5" fill="#a855f7">Weighted Category Risk Deductions</text>
-      </g>
+      <g transform="translate(14, 36)">
+        <rect x="0" y="0" width="208" height="144" rx="8" fill="#1c0936" stroke="#5b21b6" stroke-width="1"/>
+        <text x="10" y="20" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#c084fc">Dual-Tier Verifiers</text>
+        <text x="10" y="38" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• AST Detection Windows</text>
+        <text x="10" y="56" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• LLM Exploitability Verdicts</text>
+        <text x="10" y="74" font-family="sans-serif" font-size="10.5" fill="#e9d5ff">• Confidence Calibration</text>
+        <text x="10" y="100" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#f472b6">0–100 Health Score</text>
+        <text x="10" y="120" font-family="sans-serif" font-size="10.5" fill="#a855f7">Weighted Risk Deductions</text>
 
-      <g transform="translate(280, 42)">
-        <!-- Right: 8 Standards Alignment -->
-        <rect x="0" y="0" width="260" height="175" rx="10" fill="#1f0a3d" stroke="#5b21b6" stroke-width="1.2"/>
-        <text x="12" y="22" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">8 AI Security Standards Matrix</text>
-        <text x="12" y="44" font-family="sans-serif" font-size="11" fill="#e9d5ff">• OWASP LLM Top 10 (2025)</text>
-        <text x="12" y="62" font-family="sans-serif" font-size="11" fill="#e9d5ff">• MITRE ATLAS (2026-04 Knowledge)</text>
-        <text x="12" y="80" font-family="sans-serif" font-size="11" fill="#e9d5ff">• NIST AI 600-1 Generative Profile</text>
-        <text x="12" y="98" font-family="sans-serif" font-size="11" fill="#e9d5ff">• EU AI Act (18 Article Controls)</text>
-        <text x="12" y="116" font-family="sans-serif" font-size="11" fill="#e9d5ff">• ISO/IEC 42001 (21 Annex Controls)</text>
-        <text x="12" y="134" font-family="sans-serif" font-size="11" fill="#e9d5ff">• Google SAIF, AVID, OWASP ML</text>
-        <text x="12" y="156" font-family="sans-serif" font-size="10.5" font-weight="700" fill="#38bdf8">✓ 3-State Gap Map (Flagged/NoEv/Gap)</text>
+        <g transform="translate(224, 0)">
+          <rect x="0" y="0" width="208" height="144" rx="8" fill="#1c0936" stroke="#5b21b6" stroke-width="1"/>
+          <text x="10" y="20" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#c084fc">8 Standards Crosswalk</text>
+          <text x="10" y="38" font-family="sans-serif" font-size="10" fill="#e9d5ff">• OWASP LLM &amp; ML Top 10</text>
+          <text x="10" y="54" font-family="sans-serif" font-size="10" fill="#e9d5ff">• MITRE ATLAS (2026-04)</text>
+          <text x="10" y="70" font-family="sans-serif" font-size="10" fill="#e9d5ff">• NIST AI 600-1 Profile</text>
+          <text x="10" y="86" font-family="sans-serif" font-size="10" fill="#e9d5ff">• EU AI Act (18 Articles)</text>
+          <text x="10" y="102" font-family="sans-serif" font-size="10" fill="#e9d5ff">• ISO/IEC 42001 (21 Annex)</text>
+          <text x="10" y="128" font-family="sans-serif" font-size="9.5" font-weight="700" fill="#38bdf8">3-State Gap Map (Flagged/Gap)</text>
+        </g>
       </g>
     </g>
 
-    <!-- Core Block 2C: Multi-Format Deliverables -->
-    <g transform="translate(26, 572)">
-      <rect x="0" y="0" width="558" height="165" rx="16" fill="#130726" stroke="#7c3aed" stroke-width="1.6"/>
-      <text x="18" y="26" font-family="sans-serif" font-size="14" font-weight="800" fill="#e879f9">Multi-Format Deliverables (Zero Absolute Path Leaks)</text>
+    <!-- Subcard 2C: Multi-Format Deliverables -->
+    <g transform="translate(20, 478)">
+      <rect x="0" y="0" width="460" height="138" rx="12" fill="#120624" stroke="#7c3aed" stroke-width="1.4"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="13.5" font-weight="800" fill="#e879f9">Multi-Format Deliverables (Zero Path Leaks)</text>
       
-      <g transform="translate(16, 38)">
-        <!-- HTML -->
-        <rect x="0" y="0" width="250" height="52" rx="8" fill="#1f0a3d" stroke="#5b21b6" stroke-width="1"/>
-        <text x="12" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">Interactive Pro HTML Report</text>
-        <text x="12" y="38" font-family="sans-serif" font-size="10.5" fill="#a855f7">Cards · Code Highlights · AST Taint Dataflow</text>
+      <g transform="translate(14, 34)">
+        <rect x="0" y="0" width="208" height="42" rx="6" fill="#1c0936" stroke="#5b21b6" stroke-width="1"/>
+        <text x="8" y="18" font-family="sans-serif" font-size="11" font-weight="800" fill="#c084fc">Interactive Pro HTML</text>
+        <text x="8" y="32" font-family="sans-serif" font-size="9.5" fill="#a855f7">Cards · Line Highlights · AST Taint</text>
 
-        <!-- SARIF -->
-        <rect x="270" y="0" width="255" height="52" rx="8" fill="#1f0a3d" stroke="#5b21b6" stroke-width="1"/>
-        <text x="12" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">SARIF v2.1.0 Telemetry</text>
-        <text x="12" y="38" font-family="sans-serif" font-size="10.5" fill="#a855f7">GitHub Code Scanning &amp; Standards Tags</text>
+        <rect x="224" y="0" width="208" height="42" rx="6" fill="#1c0936" stroke="#5b21b6" stroke-width="1"/>
+        <text x="8" y="18" font-family="sans-serif" font-size="11" font-weight="800" fill="#c084fc">SARIF v2.1.0 Telemetry</text>
+        <text x="8" y="32" font-family="sans-serif" font-size="9.5" fill="#a855f7">GitHub Code Scanning Integration</text>
 
-        <!-- ABOM -->
-        <rect x="0" y="62" width="250" height="52" rx="8" fill="#1f0a3d" stroke="#5b21b6" stroke-width="1"/>
-        <text x="12" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">Agent BOM (CycloneDX 1.5)</text>
-        <text x="12" y="38" font-family="sans-serif" font-size="10.5" fill="#a855f7">Agent Configs, Skills, MCP &amp; Providers</text>
+        <rect x="0" y="50" width="208" height="42" rx="6" fill="#1c0936" stroke="#5b21b6" stroke-width="1"/>
+        <text x="8" y="18" font-family="sans-serif" font-size="11" font-weight="800" fill="#c084fc">Agent BOM (CycloneDX 1.5)</text>
+        <text x="8" y="32" font-family="sans-serif" font-size="9.5" fill="#a855f7">Configs · Skills · MCP · Providers</text>
 
-        <!-- GRC JSON -->
-        <rect x="270" y="62" width="255" height="52" rx="8" fill="#1f0a3d" stroke="#5b21b6" stroke-width="1"/>
-        <text x="12" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">Structured JSON &amp; GRC Exports</text>
-        <text x="12" y="38" font-family="sans-serif" font-size="10.5" fill="#a855f7">Audit-Ready Compliance Crosswalks</text>
+        <rect x="224" y="50" width="208" height="42" rx="6" fill="#1c0936" stroke="#5b21b6" stroke-width="1"/>
+        <text x="8" y="18" font-family="sans-serif" font-size="11" font-weight="800" fill="#c084fc">Structured JSON &amp; GRC</text>
+        <text x="8" y="32" font-family="sans-serif" font-size="9.5" fill="#a855f7">Audit-Ready Compliance Mappings</text>
       </g>
     </g>
   </g>
 
-  <!-- Connective Conduit: Pillar 2 -> Pillar 3 (Green Glowing Beam) -->
-  <path d="M 1305 580 L 1370 580" fill="none" stroke="#34d399" stroke-width="5" marker-end="url(#arrowGreen)"/>
-  <path d="M 1305 400 L 1340 400 L 1340 550 L 1370 550" fill="none" stroke="#6ee7b7" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowGreen)"/>
+  <!-- Conduit 2 -> 3 -->
+  <line x1="1150" y1="485" x2="1210" y2="485" stroke="#34d399" stroke-width="4" marker-end="url(#arrGreen)"/>
 
   <!-- ========================================================================= -->
-  <!-- PILLAR 3: RIGHT HUB — FIX & VERIFY (Closed-Loop Remediation Ladder)       -->
+  <!-- PILLAR 3: FIX & VERIFY (Closed-Loop Ladder) (x=1220, w=500)               -->
   <!-- ========================================================================= -->
-  <g transform="translate(1380, 220)" filter="url(#glowEmerald)">
-    <!-- Container -->
-    <rect x="0" y="0" width="550" height="730" rx="22" fill="url(#cardGreen)" stroke="#34d399" stroke-width="2.2"/>
-    <rect x="10" y="8" width="530" height="26" rx="10" fill="url(#sheen)"/>
+  <g transform="translate(1220, 180)" filter="url(#glowEmerald)">
+    <rect x="0" y="0" width="500" height="610" rx="18" fill="url(#cardGreen)" stroke="#34d399" stroke-width="1.8"/>
+    <rect x="8" y="6" width="484" height="22" rx="8" fill="url(#sheen)"/>
 
-    <!-- Header Pill -->
-    <rect x="24" y="24" width="160" height="34" rx="17" fill="url(#emeraldGrad)"/>
-    <text x="104" y="46" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="900" fill="#062e1e" letter-spacing="1">3 · FIX &amp; VERIFY</text>
-    <text x="198" y="48" font-family="sans-serif" font-size="20" font-weight="800" fill="#ffffff">Autonomous Fix Loop</text>
+    <!-- Stage Header -->
+    <rect x="20" y="18" width="150" height="28" rx="14" fill="url(#emeraldGrad)"/>
+    <text x="95" y="37" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="900" fill="#042316" letter-spacing="1">3 · FIX &amp; VERIFY</text>
+    <text x="185" y="39" font-family="sans-serif" font-size="18" font-weight="800" fill="#ffffff">Closed-Loop Fix Ladder</text>
 
-    <!-- Block 3A: LLM Remediation Planner -->
-    <g transform="translate(24, 76)">
-      <rect x="0" y="0" width="502" height="150" rx="14" fill="#071b12" stroke="#10b981" stroke-width="1.4"/>
-      <text x="16" y="28" font-family="sans-serif" font-size="15" font-weight="800" fill="#6ee7b7">LLM Remediation Planner (praxis fix)</text>
-      <text x="16" y="52" font-family="sans-serif" font-size="12" fill="#a7f3d0">• Context-Aware Multi-File Diff Generation</text>
-      <text x="16" y="72" font-family="sans-serif" font-size="12" fill="#a7f3d0">• Sibling call-site regression coverage &amp; test synthesis</text>
-      
+    <!-- Subcard 3A: LLM Remediation Planner -->
+    <g transform="translate(20, 60)">
+      <rect x="0" y="0" width="460" height="124" rx="10" fill="#071a11" stroke="#10b981" stroke-width="1.2"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="13.5" font-weight="800" fill="#6ee7b7">LLM Remediation Planner (praxis fix)</text>
+      <text x="14" y="42" font-family="sans-serif" font-size="11" fill="#a7f3d0">• Context-Aware Multi-File Diff Synthesis</text>
+      <text x="14" y="60" font-family="sans-serif" font-size="11" fill="#a7f3d0">• Sibling Call-Site Regression Tests Generation</text>
+
       <!-- Human Boundary Box -->
-      <rect x="14" y="84" width="474" height="52" rx="8" fill="#1f1807" stroke="#f59e0b" stroke-width="1.4"/>
-      <text x="26" y="106" font-family="sans-serif" font-size="12.5" font-weight="800" fill="#fde047">✋ Human-in-the-Loop Approval Boundary</text>
-      <text x="26" y="125" font-family="sans-serif" font-size="11" fill="#fef08a">Interactive Diff Review · `--auto-low` Policy · Branch &amp; PR Workflow</text>
+      <rect x="12" y="70" width="436" height="42" rx="6" fill="#1c1606" stroke="#f59e0b" stroke-width="1.2"/>
+      <text x="22" y="88" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#fde047">✋ Human-in-the-Loop Approval Boundary</text>
+      <text x="22" y="102" font-family="sans-serif" font-size="10" fill="#fef08a">Interactive Diff Review · `--auto-low` Policy · Branch &amp; PR Workflow</text>
     </g>
 
-    <!-- Block 3B: 4-Tier Verification Ladder -->
-    <g transform="translate(24, 242)">
-      <rect x="0" y="0" width="502" height="295" rx="14" fill="#071b12" stroke="#10b981" stroke-width="1.4"/>
-      <text x="16" y="28" font-family="sans-serif" font-size="15" font-weight="800" fill="#6ee7b7">4-Tier Verification Ladder (Executable Oracles)</text>
-      <text x="16" y="48" font-family="sans-serif" font-size="11.5" fill="#a7f3d0">Every proposed fix must survive 4 rigorous gate oracles sequentially:</text>
-
+    <!-- Subcard 3B: 4-Tier Verification Ladder -->
+    <g transform="translate(20, 196)">
+      <rect x="0" y="0" width="460" height="268" rx="10" fill="#071a11" stroke="#10b981" stroke-width="1.2"/>
+      <text x="14" y="24" font-family="sans-serif" font-size="13.5" font-weight="800" fill="#6ee7b7">4-Tier Verification Ladder (Executable Oracles)</text>
+      
       <!-- Tier 0 -->
-      <g transform="translate(16, 60)">
-        <rect x="0" y="0" width="470" height="46" rx="8" fill="#0d281c" stroke="#059669" stroke-width="1.2"/>
-        <circle cx="24" cy="23" r="12" fill="#059669"/><text x="24" y="28" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="900" fill="#ffffff">T0</text>
-        <text x="46" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#6ee7b7">Tier 0: AST Syntax Integrity Oracle</text>
-        <text x="46" y="36" font-family="sans-serif" font-size="10.5" fill="#a7f3d0">Instant pure-ESM AST parse verification; blocks malformed syntax</text>
+      <g transform="translate(14, 38)">
+        <rect x="0" y="0" width="432" height="44" rx="7" fill="#0d261b" stroke="#059669" stroke-width="1"/>
+        <circle cx="20" cy="22" r="11" fill="#059669"/><text x="20" y="27" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="900" fill="#ffffff">T0</text>
+        <text x="38" y="18" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#6ee7b7">Tier 0: AST Syntax Integrity Oracle</text>
+        <text x="38" y="34" font-family="sans-serif" font-size="10" fill="#a7f3d0">Instant pure-ESM syntax check; rejects malformed ASTs</text>
       </g>
 
       <!-- Tier 1 -->
-      <g transform="translate(16, 114)">
-        <rect x="0" y="0" width="470" height="46" rx="8" fill="#0d281c" stroke="#059669" stroke-width="1.2"/>
-        <circle cx="24" cy="23" r="12" fill="#059669"/><text x="24" y="28" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="900" fill="#ffffff">T1</text>
-        <text x="46" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#6ee7b7">Tier 1: Project Build &amp; Lint Gate</text>
-        <text x="46" y="36" font-family="sans-serif" font-size="10.5" fill="#a7f3d0">Executes project's native build command (`npm run build` / `cargo check`)</text>
+      <g transform="translate(14, 90)">
+        <rect x="0" y="0" width="432" height="44" rx="7" fill="#0d261b" stroke="#059669" stroke-width="1"/>
+        <circle cx="20" cy="22" r="11" fill="#059669"/><text x="20" y="27" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="900" fill="#ffffff">T1</text>
+        <text x="38" y="18" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#6ee7b7">Tier 1: Native Build &amp; Lint Gate</text>
+        <text x="38" y="34" font-family="sans-serif" font-size="10" fill="#a7f3d0">Executes project's build command (`npm run build` / `cargo check`)</text>
       </g>
 
       <!-- Tier 2 -->
-      <g transform="translate(16, 168)">
-        <rect x="0" y="0" width="470" height="46" rx="8" fill="#0d281c" stroke="#059669" stroke-width="1.2"/>
-        <circle cx="24" cy="23" r="12" fill="#059669"/><text x="24" y="28" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="900" fill="#ffffff">T2</text>
-        <text x="46" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#6ee7b7">Tier 2: Unit &amp; Integration Test Suites</text>
-        <text x="46" y="36" font-family="sans-serif" font-size="10.5" fill="#a7f3d0">Executes automated test runner (`npm test` / `pytest`); rejects regressions</text>
+      <g transform="translate(14, 142)">
+        <rect x="0" y="0" width="432" height="44" rx="7" fill="#0d261b" stroke="#059669" stroke-width="1"/>
+        <circle cx="20" cy="22" r="11" fill="#059669"/><text x="20" y="27" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="900" fill="#ffffff">T2</text>
+        <text x="38" y="18" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#6ee7b7">Tier 2: Unit &amp; Integration Test Suites</text>
+        <text x="38" y="34" font-family="sans-serif" font-size="10" fill="#a7f3d0">Executes automated test runner (`npm test` / `pytest`)</text>
       </g>
 
       <!-- Tier 3 -->
-      <g transform="translate(16, 222)">
-        <rect x="0" y="0" width="470" height="46" rx="8" fill="#0d281c" stroke="#059669" stroke-width="1.2"/>
-        <circle cx="24" cy="23" r="12" fill="#059669"/><text x="24" y="28" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="900" fill="#ffffff">T3</text>
-        <text x="46" y="20" font-family="sans-serif" font-size="12" font-weight="800" fill="#6ee7b7">Tier 3: Target Re-scan &amp; Oracle Verification</text>
-        <text x="46" y="36" font-family="sans-serif" font-size="10.5" fill="#a7f3d0">Re-scans modified file; proves the original finding is completely resolved</text>
+      <g transform="translate(14, 194)">
+        <rect x="0" y="0" width="432" height="44" rx="7" fill="#0d261b" stroke="#059669" stroke-width="1"/>
+        <circle cx="20" cy="22" r="11" fill="#059669"/><text x="20" y="27" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="900" fill="#ffffff">T3</text>
+        <text x="38" y="18" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#6ee7b7">Tier 3: Target Re-scan &amp; Oracle Check</text>
+        <text x="38" y="34" font-family="sans-serif" font-size="10" fill="#a7f3d0">Re-scans modified file; validates zero remnant vulnerabilities</text>
       </g>
 
-      <text x="16" y="282" font-family="sans-serif" font-size="11" font-weight="700" fill="#34d399">✓ On Failure: Retry with Failure Evidence → Auto-Revert on Exhaustion</text>
+      <text x="14" y="255" font-family="sans-serif" font-size="10.5" font-weight="700" fill="#34d399">✓ On Failure: Retry with Error Evidence → Auto-Revert on Exhaustion</text>
     </g>
 
-    <!-- Block 3C: Atomic Apply & Undo Log -->
-    <g transform="translate(24, 552)">
-      <rect x="0" y="0" width="502" height="155" rx="14" fill="#071b12" stroke="#10b981" stroke-width="1.4"/>
-      <text x="16" y="26" font-family="sans-serif" font-size="14" font-weight="800" fill="#6ee7b7">Atomic Apply &amp; Reversible Undo Log</text>
-      <text x="16" y="48" font-family="sans-serif" font-size="11.5" fill="#a7f3d0">• Tempfile write + atomic `os.replace` (Zero partial corruption)</text>
-      <text x="16" y="68" font-family="sans-serif" font-size="11.5" fill="#a7f3d0">• `.praxis/fixes.jsonl` audit trail with verification classes</text>
-      <text x="16" y="88" font-family="sans-serif" font-size="11.5" fill="#a7f3d0">• Instant rollback: `praxis fix undo --all`</text>
-      
-      <!-- Feedback Arrow to Guard Loop -->
-      <rect x="14" y="102" width="474" height="42" rx="8" fill="#143b29" stroke="#34d399" stroke-width="1"/>
-      <text x="250" y="127" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="800" fill="#34d399">↻ Continuous Closed-Loop: `praxis project watch &amp; guard`</text>
+    <!-- Subcard 3C: Atomic Apply & Undo Log -->
+    <g transform="translate(20, 476)">
+      <rect x="0" y="0" width="460" height="114" rx="10" fill="#071a11" stroke="#10b981" stroke-width="1.2"/>
+      <text x="14" y="22" font-family="sans-serif" font-size="13.5" font-weight="800" fill="#6ee7b7">Atomic Apply &amp; Reversible Undo Log</text>
+      <text x="14" y="42" font-family="sans-serif" font-size="11" fill="#a7f3d0">• Tempfile write + atomic replacement (zero corruption)</text>
+      <text x="14" y="60" font-family="sans-serif" font-size="11" fill="#a7f3d0">• `.praxis/fixes.jsonl` audit trail with verification classes</text>
+      <text x="14" y="78" font-family="sans-serif" font-size="11" fill="#a7f3d0">• Instant rollback: `praxis fix undo --all`</text>
+      <text x="14" y="100" font-family="sans-serif" font-size="11" font-weight="700" fill="#34d399">↻ Continuous Closed-Loop: `praxis project watch &amp; guard`</text>
     </g>
   </g>
 
   <!-- ========================================================================= -->
-  <!-- CLOSED LOOP RETURN CONDUIT (From Right Hub Back to Left Hub via Top/Bottom)-->
+  <!-- CLOSED LOOP RETURN CONDUIT (From Right Hub back to Left Hub)              -->
   <!-- ========================================================================= -->
-  <path d="M 1655 950 C 1655 1030 345 1030 345 950" fill="none" stroke="#7c3aed" stroke-width="4" stroke-dasharray="10 6" marker-end="url(#arrowPurple)"/>
-  <rect x="850" y="995" width="300" height="30" rx="15" fill="#190e2e" stroke="#7c3aed" stroke-width="1.4"/>
-  <text x="1000" y="1015" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="800" fill="#c084fc">↻ Automated Rescan &amp; Real-Time Watch Loop</text>
+  <path d="M 1470 790 C 1470 860 330 860 330 790" fill="none" stroke="#7c3aed" stroke-width="3.5" stroke-dasharray="8 6" marker-end="url(#arrPurple)"/>
+  <rect x="760" y="828" width="280" height="26" rx="13" fill="#180e2b" stroke="#7c3aed" stroke-width="1.2"/>
+  <text x="900" y="845" text-anchor="middle" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#c084fc">↻ Automated Rescan &amp; Real-Time Watch Loop</text>
 
   <!-- ========================================================================= -->
-  <!-- BOTTOM BADGE BAR (y=1060)                                                 -->
+  <!-- FOOTER                                                                    -->
   <!-- ========================================================================= -->
-  <g transform="translate(1000, 1075)">
-    <text text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="13" fill="#8b5cf6">
-      Single Binary (Node.js ≥ 18) · Pure ESM · Zero Build Step · Local-Only by Design · CADRE Platform Ecosystem
+  <g transform="translate(900, 895)">
+    <text text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="12" fill="#7c3aed">
+      Single Binary (Node.js ≥ 18) · Pure ESM · Zero Build Step · Local-Only by Design · CADRE Platform
     </text>
   </g>
 </svg>
