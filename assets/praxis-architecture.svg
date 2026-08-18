@@ -95,8 +95,15 @@
   <!-- HEADER &amp; LOGO                                                             -->
   <!-- ========================================================================= -->
   <g transform="translate(480, 48)">
-    <text x="-120" y="8" font-family="'Segoe UI', -apple-system, sans-serif" font-size="32" font-weight="900" fill="url(#praxisGrad)" letter-spacing="1">PRAXIS</text>
-    <text x="5" y="8" font-family="'Segoe UI', -apple-system, sans-serif" font-size="32" font-weight="800" fill="#ffffff" letter-spacing="0.8">| ARCHITECTURE FLOW</text>
+    <!-- Shield Logo Icon -->
+    <g transform="translate(-265, -26) scale(0.38)">
+      <path d="M55 0 L110 18 V62 C110 100 86 128 55 145 C24 128 0 100 0 62 V18 Z" fill="url(#praxisGrad)" stroke="#4c1d95" stroke-width="3"/>
+      <path d="M55 24 L82 40 V66 C82 92 68 110 55 120 C42 110 28 92 28 66 V40 Z" fill="#ffffff" opacity="0.95"/>
+    </g>
+    <text x="20" y="8" text-anchor="middle" font-family="'Segoe UI', -apple-system, sans-serif" font-size="32" font-weight="900" letter-spacing="0.5">
+      <tspan fill="url(#praxisGrad)">PRAXIS</tspan>
+      <tspan fill="#ffffff" font-weight="800"> | ARCHITECTURE FLOW</tspan>
+    </text>
     <text x="0" y="38" text-anchor="middle" font-family="'Segoe UI', -apple-system, sans-serif" font-size="15" font-weight="600" fill="#e9d5ff">
       28-Agent Parallel Audit · AST Taint Dataflow · Executable Verification Ladder · Autonomous Fix
     </text>
