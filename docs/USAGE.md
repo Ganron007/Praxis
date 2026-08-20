@@ -770,6 +770,29 @@ raw matched value in any report output — `matched` is redacted centrally
 
 ---
 
+## Threat packs (AI attack-vector signatures)
+
+New AI attack-vector signatures arrive as **data**, not code. `intel update`
+fetches a versioned threat pack (`cli/data/threatpacks/latest.json` is the
+bundled seed; `PRAXIS_THREATPACK_URL` overrides the remote source):
+
+```bash
+# Fetch/refresh the AI threat pack (probe signatures + registry updates)
+praxis intel update --only threatpack
+
+# Pack version + probe count visible in the feed
+# ~/.praxis/threat-intel.json → threatPack
+```
+
+When a pack contains new prompt-injection probe signatures, the
+PromptInjectionProber overlays them onto its bundled corpus automatically
+(bundled + pack = total active probes; the ReDoS guard still applies at
+compile). This is the mechanism that keeps Praxis current on new attack
+families (jailbreak variants, obfuscation tricks, dataset/eval vectors)
+between releases.
+
+---
+
 ## CI/CD integration
 
 ### GitHub Action (composite)

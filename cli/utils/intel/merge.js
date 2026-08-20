@@ -53,6 +53,7 @@ export function mergeIntel(seedData, results) {
       case 'epss': mergeEpss(merged, r.payload); break;
       case 'nvd': mergeNvd(merged, r.payload); break;
       case 'gitleaks': mergeGitleaks(merged, r.payload); break;
+      case 'threatpack': mergeThreatpack(merged, r.payload); break;
       case 'snyk': mergeSnyk(merged, r.payload); break;
       case 'socket': mergeSocket(merged, r.payload); break;
       case 'gitguardian': mergeGitguardian(merged, r.payload); break;
@@ -144,6 +145,19 @@ function mergeGitleaks(merged, payload) {
       severity: 'high',
     });
   }
+}
+
+function mergeThreatpack(merged, payload) {
+  // Threat-pack overlay: probe signatures + EAA additions + gateway allowlists.
+  // The corpus loader and agents read this section when it exists.
+  merged.threatPack = {
+    version: payload.version || '0.0.0',
+    fetchedRemote: Boolean(payload.fetchedRemote),
+    sourceUrl: payload.sourceUrl || null,
+    probes: payload.probes || [],
+    eaa: payload.eaa || [],
+    gateways: payload.gateways || [],
+  };
 }
 
 function mergeSnyk(merged, payload) {

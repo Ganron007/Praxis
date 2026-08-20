@@ -16,6 +16,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { BaseAgent, createFinding } from './base-agent.js';
 
@@ -44,6 +45,20 @@ function loadCorpus() {
       }
       return { ...p, patternSource: p.regex, regex, categoryTitle: cat.title || p.category, tags: cat.tags || [] };
     });
+
+    // Overlay threat-pack probes from the merged intel feed (fetched via
+    // `praxis intel update`). New attack-vector signatures arrive as data.
+    try {
+      const feed = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.praxis', 'threat-intel.json'), 'utf-8'));
+      const packProbes = feed?.threatPack?.probes || [];
+      for (const p of packProbes) {
+        const cat = categoryById[p.category] || {};
+        let regex;
+        try { regex = compileProbeRegex(p.regex); } catch { regex = null; }
+        probes.push({ ...p, patternSource: p.regex, regex, categoryTitle: cat.title || p.category, tags: cat.tags || [] });
+      }
+    } catch { /* no feed yet — bundled corpus only */ }
+
     _cachedCorpus = { version: data.version, probes };
     return _cachedCorpus;
   } catch {

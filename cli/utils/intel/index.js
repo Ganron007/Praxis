@@ -32,6 +32,7 @@ import * as socket from './sources/socket.js';
 import * as gitguardian from './sources/gitguardian.js';
 import * as sonatype from './sources/sonatype.js';
 import * as phylum from './sources/phylum.js';
+import * as threatpack from './sources/threatpack.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,8 +43,8 @@ const mergedPath = () => path.join(os.homedir(), '.praxis', 'threat-intel.json')
 const metaPath = () => path.join(os.homedir(), '.praxis', 'intel-meta.json');
 
 const ALL_SOURCES = [
-  osv, ghsa, kev, epss, nvd, gitleaks,           // free / core
-  snyk, socket, gitguardian, sonatype, phylum,   // optional / paid
+  osv, ghsa, kev, epss, nvd, gitleaks, threatpack,  // free / core
+  snyk, socket, gitguardian, sonatype, phylum,       // optional / paid
 ];
 
 export function listSources() {

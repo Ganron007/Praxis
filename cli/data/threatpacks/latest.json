@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "_refresh_policy": {
+    "cadence": "Incident-driven + weekly review",
+    "process": "1. Track OWASP LLM/Agentic releases and reported AI attack incidents. 2. Add signatures in own phrasing (never copy AGPL/copyrighted text verbatim). 3. Bump version. 4. Run npm test (prober tests enforce compilation + ReDoS guard).",
+    "owner": "Praxis contributors",
+    "lastReviewed": "2026-08-20"
+  },
+  "probes": [
+    {
+      "id": "TP-001",
+      "category": "obfuscated-injection",
+      "title": "Encoded-payload decode instruction (base64/hex/ROT)",
+      "regex": "(?i)(?:decode|base64|rot1[0-9]|deobfuscate)[\\s\\S]{0,80}(?:then\\s+(?:respond|answer|execute|run)|before\\s+you\\s+(?:respond|answer))",
+      "severity": "high",
+      "description": "Source contains a decode-then-execute instruction that tells a model to decode an encoded payload before acting — the obfuscated-injection family used to smuggle instructions past content filters.",
+      "fix": "Reject decode-first instructions from untrusted content. Never execute content decoded from user-controlled strings."
+    },
+    {
+      "id": "TP-002",
+      "category": "jailbreak-frame",
+      "title": "System-prompt redefinition instruction",
+      "regex": "(?i)(?:redefine|replace|rewrite)\\s+(?:your|the)\\s+(?:system|base)\\s+(?:prompt|instructions|rules)[\\s\\S]{0,120}(?:with|to)\\s+",
+      "severity": "high",
+      "description": "Source contains an instruction that asks the model to replace its own system prompt — a jailbreak frame that erases the developer's guardrails.",
+      "fix": "Strip prompt-redefinition frames. Treat any instruction that modifies the system prompt as untrusted input."
+    },
+    {
+      "id": "TP-003",
+      "category": "indirect-injection",
+      "title": "Document-payload split injection (multi-file chaining)",
+      "regex": "(?i)(?:part\\s*\\d+\\s*of\\s*\\d+|continue\\s+(?:reading|with|in)\\s+(?:the\\s+)?(?:next|following|part|message)|when\\s+combined\\s+with)",
+      "severity": "medium",
+      "description": "Source contains split-payload markers that chain instructions across documents/messages — the payload-splitting technique that defeats per-input content filters.",
+      "fix": "Evaluate documents independently; do not concatenate instruction-like text across untrusted sources."
+    }
+  ],
+  "eaa": [],
+  "gateways": []
+}
