@@ -376,7 +376,7 @@ export const sqlInjectionPrevention = `
 // SQL Injection Prevention
 
 // BAD: String concatenation (SQL injection vulnerable)
-const query = \`SELECT * FROM users WHERE id = '\${userId}'\`;
+const query = \`SELECT * FROM users WHERE id = '\${userId}'\`; // praxis-ignore SQL_INJECTION_TEMPLATE_LITERAL — intentional bad-pattern teaching example
 
 // GOOD: Parameterized queries
 
@@ -422,8 +422,8 @@ export const validationPatterns = {
   // IP address (v4)
   ipv4: /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
 
-  // Semantic version
-  semver: /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/,
+  // Semantic version (bounded — avoids nested +/* quantifiers, ReDoS-safe)
+  semver: /^(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})(?:-[0-9a-zA-Z-]{1,20}(?:\.[0-9a-zA-Z-]{1,20}){0,10})?(?:\+[0-9a-zA-Z-]{1,20}(?:\.[0-9a-zA-Z-]{1,20}){0,10})?$/,
 
   // JWT (basic structure check)
   jwt: /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/,

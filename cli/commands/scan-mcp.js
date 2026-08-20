@@ -308,11 +308,11 @@ async function fetchMcpManifest(baseUrl) {
 // =============================================================================
 
 function extractTools(manifest) {
-  // MCP tools/list result: { tools: [...] }
+  // MCP tools/list result: { tools: [...] } // praxis-ignore AGENT_UNRESTRICTED_TOOLS — manifest parsing, not a tool grant
   if (Array.isArray(manifest?.tools)) return manifest.tools;
   // Direct array
   if (Array.isArray(manifest)) return manifest;
-  // { result: { tools: [...] } }
+  // { result: { tools: [...] } } // praxis-ignore AGENT_UNRESTRICTED_TOOLS — manifest parsing, not a tool grant
   if (Array.isArray(manifest?.result?.tools)) return manifest.result.tools;
   return [];
 }

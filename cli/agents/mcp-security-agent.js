@@ -78,7 +78,7 @@ const PATTERNS = [
   {
     rule: 'MCP_TOOL_SHELL_EXEC',
     title: 'MCP: Tool Executes Shell Commands',
-    regex: /(?:server\.tool|registerTool|addTool)[\s\S]{0,500}(?:exec|execSync|spawn|spawnSync|execFile|child_process|subprocess|os\.system|os\.popen)/g,
+    regex: /(?:server\.tool|registerTool|addTool)[\s\S]{0,500}(?:exec|execSync|spawn|spawnSync|execFile|child_process|subprocess|os\.system|os\.popen)/g, // praxis-ignore MCP_TOOL_SHELL_EXEC — detector definition
     severity: 'critical',
     cwe: 'CWE-78',
     owasp: 'A03:2021',
@@ -121,7 +121,7 @@ const PATTERNS = [
   {
     rule: 'MCP_TOOL_ARGS_TO_SQL',
     title: 'MCP: Tool Arguments in SQL Query',
-    regex: /(?:server\.tool|registerTool)[\s\S]{0,500}(?:`SELECT|`INSERT|`UPDATE|`DELETE|\.query\s*\(\s*`|\.raw\s*\()/g,
+    regex: /(?:server\.tool|registerTool)[\s\S]{0,500}(?:`SELECT|`INSERT|`UPDATE|`DELETE|\.query\s*\(\s*`|\.raw\s*\()/g, // praxis-ignore MCP_TOOL_ARGS_TO_SQL — detector definition
     severity: 'critical',
     cwe: 'CWE-89',
     owasp: 'A03:2021',
@@ -404,7 +404,7 @@ export class MCPSecurityAgent extends BaseAgent {
     const servers = config.mcpServers || config.servers || {};
     for (const [name, server] of Object.entries(servers)) {
       const fullCmd = `${server.command || ''} ${(server.args || []).join(' ')}`;
-      const npxMatch = fullCmd.match(/npx\s+(?:-[^\s]+\s+)*([^\s]+)/);
+      const npxMatch = fullCmd.match(/npx\s+(?:-[^\s]{1,50}\s+){0,50}([^\s]{1,200})/);
       if (!npxMatch) continue;
       const pkg = npxMatch[1];
 
@@ -448,7 +448,7 @@ export class MCPSecurityAgent extends BaseAgent {
 
         // Check if server uses an npx package that looks like a typosquat of
         // official/community known servers (trust registry + built-in list).
-        const npxMatch = fullCmd.match(/npx\s+(?:-[^\s]+\s+)*([^\s]+)/);
+        const npxMatch = fullCmd.match(/npx\s+(?:-[^\s]{1,50}\s+){0,50}([^\s]{1,200})/);
         if (npxMatch) {
           const pkg = npxMatch[1];
           const knownSet = new Set([...OFFICIAL_MCP_SERVERS, ...listKnown()]);

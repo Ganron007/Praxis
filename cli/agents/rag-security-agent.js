@@ -36,7 +36,7 @@ const PATTERNS = [
   {
     rule: 'RAG_USER_UPLOAD_TO_VECTORDB',
     title: 'RAG: User Upload Directly to Vector Store',
-    regex: /(?:upload|multer|formidable|busboy|req\.file|req\.files)[\s\S]{0,500}(?:addDocuments|add_documents|upsert|vectorStore|index\.add|embed|from_documents)/g,
+    regex: /(?:upload|multer|formidable|busboy|req\.file|req\.files)[\s\S]{0,500}(?:addDocuments|add_documents|upsert|vectorStore|index\.add|embed|from_documents)/g, // praxis-ignore RAG_USER_UPLOAD_TO_VECTORDB — detector definition
     severity: 'critical',
     cwe: 'CWE-434',
     owasp: 'A03:2021',

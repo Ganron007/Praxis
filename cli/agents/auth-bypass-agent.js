@@ -300,7 +300,7 @@ const PATTERNS = [
     cwe: 'CWE-295',
     owasp: 'A02:2021',
     description: 'Disabling TLS verification exposes app to MITM attacks.',
-    fix: 'Remove NODE_TLS_REJECT_UNAUTHORIZED=0. Use proper CA certificates.',
+    fix: 'Remove NODE_TLS_REJECT_UNAUTHORIZED=0. Use proper CA certificates.', // praxis-ignore TLS_REJECT_UNAUTHORIZED — detector fix-text
   },
   {
     rule: 'TLS_REJECT_UNAUTH_FALSE',

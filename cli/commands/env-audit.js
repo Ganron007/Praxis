@@ -100,7 +100,7 @@ export async function envAuditCommand(targetPath = '.', options) {
                 severity: 'critical',
                 file: relSrc,
                 message: `${key} value from ${path.basename(envFile)} is hardcoded in ${relSrc}`,
-                fix: `Replace the hardcoded value with process.env.${key} or equivalent`,
+                fix: `Replace the hardcoded value with process.env.${key} or equivalent`, // praxis-ignore SQL_INJECTION_TEMPLATE_LITERAL — env-var name interpolation, not SQL
               });
             }
           } catch {

@@ -26,6 +26,19 @@ class BaseLLMProvider {
     this.name = name;
     this.apiKey = apiKey;
     this.model = options.model || null;
+    // Scanner hardening: operator-supplied --base-url must be http(s).
+    // Rejects file:// or other schemes that could exfiltrate credentials.
+    if (options.baseUrl) {
+      let parsed;
+      try {
+        parsed = new URL(options.baseUrl);
+      } catch {
+        parsed = null;
+      }
+      if (!parsed || (parsed.protocol !== 'https:' && parsed.protocol !== 'http:')) {
+        throw new Error(`Invalid LLM base URL scheme (http/https only): ${String(options.baseUrl).slice(0, 80)}`);
+      }
+    }
     this.baseUrl = options.baseUrl || null;
     this.think = options.think || false;
     this.thinkLevel = options.thinkLevel || 'high';
@@ -299,7 +312,7 @@ class GoogleProvider extends BaseLLMProvider {
   async complete(systemPrompt, userPrompt, options = {}) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`;
 
-    const response = await fetch(url, {
+    const response = await fetch(url, { // praxis-ignore SSRF_USER_URL_FETCH - operator-set base URL, scheme-validated in constructor
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

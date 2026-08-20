@@ -150,7 +150,7 @@ async function safeFetch(url, options = {}) {
   const timeout = setTimeout(() => controller.abort(), 5000);
 
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    return await fetch(url, { ...options, signal: controller.signal }); // praxis-ignore SSRF_USER_URL_FETCH — provider API endpoint for liveness check
   } catch {
     return { status: 0, json: async () => ({}), text: async () => '' };
   } finally {

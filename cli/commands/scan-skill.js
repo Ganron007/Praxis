@@ -309,8 +309,10 @@ function parseFrontmatter(content) {
     }
   }
 
-  // Collect multi-line list values (indented - items)
-  const listRe = /^(\w[\w-]*):\s*\n((?:\s+-\s+.+\n?)+)/gm;
+  // Collect multi-line list values (indented - items).
+  // Bounded: inner .+ capped to 200 chars and the group to 200 lines to
+  // prevent catastrophic backtracking on adversarial YAML (self-scan finding).
+  const listRe = /^(\w[\w-]*):\s*\n((?:\s+-\s+.{0,200}\n?){0,200})/gm;
   let m;
   while ((m = listRe.exec(yamlBlock)) !== null) {
     const [, key, block] = m;
@@ -521,7 +523,7 @@ async function scanAllSkills(rootPath) {
       if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
         console.log(chalk.cyan(`  Scanning skill: ${name}`));
         try {
-          const response = await fetch(url);
+          const response = await fetch(url); // praxis-ignore SSRF_USER_URL_FETCH — operator-supplied skill URL, scheme-guarded above
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const content = await response.text();
           const findings = await analyzeSkill(content, name, url);

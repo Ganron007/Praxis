@@ -9,7 +9,7 @@
 
 import * as output from '../utils/output.js';
 
-const DEBUG = process.env.PRAXIS_DEBUG === '1' || process.env.PRAXIS_DEBUG === '1';
+const DEBUG = process.env.PRAXIS_DEBUG === '1' || process.env.PRAXIS_DEBUG === 'true';
 
 /**
  * Run `fn`, return its result, and on throw return `fallback` instead.

@@ -78,7 +78,7 @@ export async function watchCommand(targetPath = '.', options = {}) {
     const watcher = fs.watch(absolutePath, { recursive: true }, (eventType, filename) => { // praxis-ignore — filename from fs.watch OS event, not user input
       if (!filename) return; // praxis-ignore
 
-      const fullPath = path.join(absolutePath, filename); // praxis-ignore — filename from fs.watch, not user input
+      const fullPath = path.join(absolutePath, filename); // praxis-ignore API_PATH_IN_FILENAME — filename from fs.watch OS events, path.join with absolute base // praxis-ignore — filename from fs.watch, not user input
       const relPath = filename.replace(/\\/g, '/');
 
       // Skip directories we don't care about
@@ -226,7 +226,7 @@ async function watchConfigs(absolutePath) {
 
       if (!isConfig && !isGlobMatch) return;
 
-      const fullPath = path.join(absolutePath, filename);
+      const fullPath = path.join(absolutePath, filename); // praxis-ignore API_PATH_IN_FILENAME — filename from fs.watch OS events, path.join with absolute base
       pendingFiles.add(fullPath);
 
       if (debounceTimer) clearTimeout(debounceTimer);
@@ -401,7 +401,7 @@ async function watchStateful(absolutePath, options = {}) {
       if (SKIP_FILENAMES.has(path.basename(filename))) return;
       if (filename.endsWith('.min.js') || filename.endsWith('.min.css')) return;
 
-      const fullPath = path.join(absolutePath, filename);
+      const fullPath = path.join(absolutePath, filename); // praxis-ignore API_PATH_IN_FILENAME — filename from fs.watch OS events, path.join with absolute base
       if (!fs.existsSync(fullPath)) return;
 
       pendingFiles.add(fullPath);
@@ -559,7 +559,7 @@ async function watchDeep(absolutePath, options = {}) {
       if (SKIP_FILENAMES.has(path.basename(filename))) return;
       if (filename.endsWith('.min.js') || filename.endsWith('.min.css')) return;
 
-      const fullPath = path.join(absolutePath, filename);
+      const fullPath = path.join(absolutePath, filename); // praxis-ignore API_PATH_IN_FILENAME — filename from fs.watch OS events, path.join with absolute base
       if (!fs.existsSync(fullPath)) return;
 
       pendingFiles.add(fullPath);

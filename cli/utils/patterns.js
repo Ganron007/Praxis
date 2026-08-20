@@ -1044,11 +1044,11 @@ export const SECURITY_PATTERNS = [
   // TLS / SSL Bypass
   // =========================================================================
   {
-    name: 'TLS Bypass: NODE_TLS_REJECT_UNAUTHORIZED=0',
+    name: 'TLS Bypass: NODE_TLS_REJECT_UNAUTHORIZED=0', // praxis-ignore TLS_REJECT_UNAUTHORIZED — detector definition, not real TLS bypass
     pattern: /NODE_TLS_REJECT_UNAUTHORIZED\s*[=:]\s*['"]?0['"]?/g,
     severity: 'critical',
     category: 'vulnerability',
-    description: 'Setting NODE_TLS_REJECT_UNAUTHORIZED=0 disables TLS certificate validation and exposes your app to MITM attacks. Never use in production.'
+    description: 'Setting NODE_TLS_REJECT_UNAUTHORIZED=0 disables TLS certificate validation and exposes your app to MITM attacks. Never use in production.' // praxis-ignore TLS_REJECT_UNAUTHORIZED — detector text
   },
   {
     name: 'TLS Bypass: rejectUnauthorized false',
@@ -1073,7 +1073,7 @@ export const SECURITY_PATTERNS = [
     pattern: /\bpickle\.loads?\s*\(/g,
     severity: 'high',
     category: 'vulnerability',
-    description: 'pickle.loads() on untrusted data can execute arbitrary Python code (RCE). Use JSON or another safe format for data from untrusted sources.'
+    description: 'pickle.loads() on untrusted data can execute arbitrary Python code (RCE). Use JSON or another safe format for data from untrusted sources.' // praxis-ignore UNSAFE_DESERIALIZE_PICKLE — detector text
   },
   {
     name: 'Unsafe Deserialization: yaml.load',

@@ -350,7 +350,7 @@ function checkToolContextForwarding(content, filePath, agent) {
       confidence: 'high',
       cwe: 'CWE-250',
       owasp: 'ASI02',
-      fix: 'Create a scoped tool registry for each sub-agent containing only the tools it needs: spawnAgent({ tools: [allowedTool1, allowedTool2] }).',
+      fix: 'Create a scoped tool registry for each sub-agent containing only the tools it needs: spawnAgent({ tools: [allowedTool1, allowedTool2] }).', // praxis-ignore AGENT_TOOL_SHELL_ACCESS — fix-text example
     }));
   }
 
@@ -523,7 +523,7 @@ export class HermesSecurityAgent extends BaseAgent {
       if (/\.(js|ts|mjs|cjs|py)$/.test(rel)) {
         const content = this.readFile(file);
         if (!content) continue;
-        if (/(?:hermes[-_]agent|@nousresearch\/hermes|hermes\.config|toolRegistry|registerTool|callTool|spawnAgent|createSubAgent|memory\.store|episodicMemory|semanticMemory|loadManifest)/i.test(content)) {
+        if (/(?:hermes[-_]agent|@nousresearch\/hermes|hermes\.config|toolRegistry|registerTool|callTool|spawnAgent|createSubAgent|memory\.store|episodicMemory|semanticMemory|loadManifest)/i.test(content)) { // praxis-ignore MCP_TOOL_SHELL_EXEC — detection regex
           hermesFiles.add(file);
         }
       }

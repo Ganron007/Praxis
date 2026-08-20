@@ -143,7 +143,7 @@ const EVAL_HARNESS_RISK = [
   {
     rule: 'AI_EVAL_HARNESS_BROAD_TOOL_SCOPE',
     title: 'Eval Harness Grants Broad Tool/Shell Scope',
-    regex: /(?:tools?|tool_scope|permissions|allowed_commands)\s*[:=]\s*[\[{][\s\S]{0,200}(?:shell|code_exec|exec_command|bash|subprocess|registry_proxy|all_tools)/i,
+    regex: /(?:tools?|tool_scope|permissions|allowed_commands)\s*[:=]\s*[\[{][\s\S]{0,200}(?:shell|code_exec|exec_command|bash|subprocess|registry_proxy|all_tools)/i, // praxis-ignore AGENT_TOOL_SHELL_ACCESS — detector definition
     severity: 'medium',
     description: 'An eval harness or agent sandbox grants shell/code-execution tool scope. Combined with network egress this reproduces the sandbox-escape pattern that allowed the July 2026 autonomous agent to pivot from evaluation into production infrastructure.',
     fix: 'Scope evaluation tools to the minimum surface. Shell/code-execution tools should never coexist with internet access in the same sandbox.',

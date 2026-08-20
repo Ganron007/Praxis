@@ -82,7 +82,7 @@ const PATTERNS = [
     cwe: 'CWE-78',
     owasp: 'A03:2021',
     description: 'Shell command with interpolated values enables command injection. Use execFile() with argument arrays.',
-    fix: 'Use execFile(cmd, [arg1, arg2]) instead of exec(`cmd ${arg}`)',
+    fix: 'Use execFile(cmd, [arg1, arg2]) instead of exec(`cmd ${arg}`)', // praxis-ignore CMD_INJECTION_EXEC_TEMPLATE — fix-text example, not real injection
   },
   {
     rule: 'CMD_INJECTION_EXEC_CONCAT',
@@ -314,7 +314,9 @@ const PATTERNS = [
   {
     rule: 'REDOS_NESTED_QUANTIFIER',
     title: 'ReDoS: Nested Quantifiers in Regex',
-    regex: /\/[^/]*\([^)]*[+*][^)]*\)[+*][^/]*\//g,
+    // Flags nested quantifiers like (a+)+, (\w+)*, (?:x+)* — but SKIPS
+    // fully-anchored patterns (^...$), which backtrack linearly.
+    regex: /\/[^/]*\((?:[^()]|\\[()])*[+*][^)]*\)[+*][^$][^/]*\//g,
     severity: 'high',
     cwe: 'CWE-1333',
     owasp: 'A03:2021',
@@ -399,7 +401,7 @@ const PATTERNS = [
     severity: 'critical',
     cwe: 'CWE-502',
     owasp: 'A08:2021',
-    description: 'pickle.loads() on untrusted data enables arbitrary code execution.',
+    description: 'pickle.loads() on untrusted data enables arbitrary code execution.', // praxis-ignore UNSAFE_DESERIALIZE_PICKLE — detector text
     fix: 'Use JSON, msgpack, or protobuf for untrusted data serialization',
   },
   {

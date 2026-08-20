@@ -69,7 +69,7 @@ const PATTERNS = [
   {
     rule: 'AGENT_TOOL_SHELL_ACCESS',
     title: 'Agent: Tool With Shell/Command Execution',
-    regex: /(?:tools|functions)[\s\S]{0,500}(?:exec\s*\(|execSync|spawn|child_process|subprocess|os\.system|shell\s*[:=]\s*true)/g,
+    regex: /(?:tools|functions)[\s\S]{0,500}(?:exec\s*\(|execSync|spawn|child_process|subprocess|os\.system|shell\s*[:=]\s*true)/g, // praxis-ignore AGENT_TOOL_SHELL_ACCESS — detector definition
     severity: 'critical',
     cwe: 'CWE-78',
     owasp: 'A03:2021',
@@ -79,7 +79,7 @@ const PATTERNS = [
   {
     rule: 'AGENT_UNVALIDATED_TOOL_OUTPUT',
     title: 'Agent: Tool Output Used Without Validation',
-    regex: /(?:tool_result|toolResult|function_result|tool_output)[\s\S]{0,200}(?:eval\s*\(|exec\s*\(|innerHTML|dangerouslySetInnerHTML|\.query\s*\(|\.execute\s*\()/g,
+    regex: /(?:tool_result|toolResult|function_result|tool_output)[\s\S]{0,200}(?:eval\s*\(|exec\s*\(|innerHTML|dangerouslySetInnerHTML|\.query\s*\(|\.execute\s*\()/g, // praxis-ignore AGENT_UNVALIDATED_TOOL_OUTPUT — detector definition
     severity: 'critical',
     cwe: 'CWE-94',
     owasp: 'A03:2021',

@@ -1,0 +1,8 @@
+# Praxis dogfood suppression — intentional findings in Praxis's own code.
+# Keeps the self-scan honest: only NEW/unexplained findings fail CI.
+#
+# Test suites intentionally contain vulnerable snippets to verify detection.
+cli/__tests__/
+cli/data/probes/
+cli/data/threatpacks/
+cli/data/eaa-catalog.json

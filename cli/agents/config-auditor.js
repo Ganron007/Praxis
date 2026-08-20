@@ -100,8 +100,8 @@ const CONFIG_PATTERNS = [
     severity: 'critical',
     cwe: 'CWE-942',
     owasp: 'A05:2021',
-    description: 'CORS with credentials: true and origin: true reflects any origin, enabling credential theft.',
-    fix: 'Use a specific origin allowlist when credentials: true',
+    description: 'CORS with credentials: true and origin: true reflects any origin, enabling credential theft.', // praxis-ignore CORS_CREDENTIALS_WILDCARD — detector description text
+    fix: 'Use a specific origin allowlist when credentials: true', // praxis-ignore CORS_CREDENTIALS_WILDCARD — detector fix-text
   },
 
   // ── Next.js Config ─────────────────────────────────────────────────────────
@@ -722,7 +722,8 @@ export class ConfigAuditor extends BaseAgent {
 
     const findings = [];
     // Check for services that look like AI/agent containers without network restrictions
-    const serviceBlockRe = /^\s{2}(\S+):\s*\n((?:\s{4,}.+\n)*)/gm;
+    // (bounded: .+ capped to 300 chars per line, 200 lines — ReDoS guard from self-scan)
+    const serviceBlockRe = /^\s{2}(\S+):\s*\n((?:\s{4,}.{0,300}\n?){0,200})/gm;
     let match;
     while ((match = serviceBlockRe.exec(content)) !== null) {
       const serviceName = match[1];

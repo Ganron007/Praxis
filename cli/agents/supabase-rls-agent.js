@@ -142,8 +142,8 @@ export class SupabaseRLSAgent extends BaseAgent {
         rule: 'SUPABASE_NO_RLS_POLICY',
         title: `Supabase: Table "${table}" Missing RLS`,
         description: `Table "${table}" is created without enabling Row Level Security. Any user with the anon key can read/write all rows.`,
-        matched: `CREATE TABLE ${table}`,
-        fix: `Add: ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;\nThen create appropriate policies with CREATE POLICY.`,
+        matched: `CREATE TABLE ${table}`, // praxis-ignore SQL_INJECTION_TEMPLATE_LITERAL — detector matched-string construction
+        fix: `Add: ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;\nThen create appropriate policies with CREATE POLICY.`, // praxis-ignore SQL_INJECTION_TEMPLATE_LITERAL — dynamic detector text, not a real query
       }));
     }
 

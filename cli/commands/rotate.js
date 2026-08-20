@@ -497,8 +497,8 @@ function promptHidden(question) {
 async function updateVercelEnvVar(token, projectId, envId, envType, newValue, teamId) {
   const params = new URLSearchParams();
   if (teamId) params.set('teamId', teamId);
-  const url = `https://api.vercel.com/v9/projects/${projectId}/env/${envId}?${params}`;
-  const r = await fetch(url, {
+  const url = `https://api.vercel.com/v9/projects/${projectId}/env/${envId}?${params}`; // praxis-ignore SSRF_USER_URL_FETCH — hardcoded vendor API endpoint
+  const r = await fetch(url, { // praxis-ignore SSRF_USER_URL_FETCH — hardcoded vendor API endpoint
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ value: newValue, type: envType || 'encrypted' }),
