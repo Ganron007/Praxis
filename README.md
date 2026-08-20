@@ -12,11 +12,7 @@
   <img src="https://img.shields.io/badge/Status-Public%20Beta-yellow.svg" alt="Status: Public Beta">
 </p>
 
-**Praxis is an AI-security-first audit CLI with a working fix loop.** 28 parallel
-agents scan your codebase — secrets, code vulnerabilities, and the entire AI/agent
-attack surface (LLM calls, MCP servers, RAG pipelines, model files, agent configs,
-agent telemetry) — then an LLM drafts fixes you approve, applies, verifies, and can
-undo. Offline by default. No registration, no data leaves your machine.
+**Praxis is an AI Security Testing (AIST) CLI — an AI-native scanner with a working fix loop.** 28 parallel agents assess the entire AI/agent attack surface — LLM apps, agents, MCP servers, RAG pipelines, model files, datasets, eval harnesses — plus a baseline of secrets and code vulnerabilities. An LLM drafts fixes you approve, applies, verifies, and can undo. Offline by default. No registration, no data leaves your machine.
 
 > [!IMPORTANT]
 > **Local & gated by design.** Core scans run entirely offline. LLM remediation is

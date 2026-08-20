@@ -15,6 +15,12 @@
  *   Lane 3  AI API endpoints   — OpenAPI specs + framework routes (FastAPI,
  *                                Flask, Express, Spring, Django) with auth-style
  *                                capture and {id}-path BOLA candidates.
+ *   Lane 4  AI data pipelines  — dataset loaders that fetch/execute remote
+ *                                content, template injection in dataset configs,
+ *                                and eval-harness / agent-sandbox misconfigs
+ *                                (the July 2026 OpenAI–Hugging Face incident
+ *                                vectors: remote-code dataset loaders, template
+ *                                injection, disabled safety gates, broad egress).
  *
  * Inventory findings are MEDIUM/LOW — they map the attack surface rather
  * than assert a vulnerability. Risk indicators (exposed keys, no-auth
@@ -107,6 +113,50 @@ const FRAMEWORK_ROUTE_RE = [
 ];
 
 const BOLA_SEGMENT = /[\/{][^{}\/]*(?:\{|:)[a-zA-Z_][a-zA-Z0-9_]*[\}][^{}\/]*/;
+
+// =============================================================================
+// LANE 4 — AI DATA PIPELINES & EVAL HARNESSES (P-IMP-046..048)
+// =============================================================================
+// Vectors from the July 2026 OpenAI–Hugging Face autonomous-agent incident:
+// remote-code dataset loaders and dataset template injection (initial access),
+// and eval-harness / agent-sandbox misconfigurations (OpenAI side).
+
+// Remote-code dataset loader: fetch remote content then exec/eval/pickle-load it
+const DATASET_REMOTE_LOADER = /(?:load_dataset|dataset_from_script|requests\.get|urllib\.request|httpx\.get|fetch\s*\(\s*["'`]https?:\/\/)[\s\S]{0,300}(?:\bexec\s*\(|\beval\s*\(|pickle\.loads|__import__\(|compile\s*\()/i;
+
+// Unsafe dataset/model loading flags
+const UNSAFE_DATASET_FLAG = /trust_remote_code\s*=\s*True|trust_remote_code\s*:\s*true/i;
+
+// Template injection in dataset configs: template expressions invoking OS/module
+const DATASET_TEMPLATE_INJECTION = /\{\{\s*(?:__import__|os\.|subprocess|exec|eval|__builtins__)[\s\S]{0,120}?\}\}|\$\{\s*(?:__import__|os\.|subprocess|exec|eval|process\.env)[\s\S]{0,120}?\}/i;
+
+// Eval-harness / agent-sandbox: disabled safety gates, broad tool scope, egress
+const EVAL_HARNESS_RISK = [
+  {
+    rule: 'AI_EVAL_HARNESS_DISABLED_GUARDRAILS',
+    title: 'Eval Harness Disables Safety Guardrails',
+    regex: /(?:cyber_refusals|safety_refusals|refusals|guardrails|safety_gates|harm_belen|filters)\s*[:=]\s*(?:disabled|false|off|none|0)/i,
+    severity: 'high',
+    description: 'An evaluation harness or agent-sandbox config disables model safety guardrails. This is the configuration class behind the OpenAI–Hugging Face July 2026 incident (models evaluated with cyber refusals disabled), and enables unchecked autonomous behavior during evaluation.',
+    fix: 'Keep safety guardrails enabled during evaluation, or gate their removal behind explicit containment controls (no internet, isolated egress).',
+  },
+  {
+    rule: 'AI_EVAL_HARNESS_BROAD_TOOL_SCOPE',
+    title: 'Eval Harness Grants Broad Tool/Shell Scope',
+    regex: /(?:tools?|tool_scope|permissions|allowed_commands)\s*[:=]\s*[\[{][\s\S]{0,200}(?:shell|code_exec|exec_command|bash|subprocess|registry_proxy|all_tools)/i,
+    severity: 'medium',
+    description: 'An eval harness or agent sandbox grants shell/code-execution tool scope. Combined with network egress this reproduces the sandbox-escape pattern that allowed the July 2026 autonomous agent to pivot from evaluation into production infrastructure.',
+    fix: 'Scope evaluation tools to the minimum surface. Shell/code-execution tools should never coexist with internet access in the same sandbox.',
+  },
+  {
+    rule: 'AI_EVAL_HARNESS_BROAD_EGRESS',
+    title: 'Eval Harness Allows Unrestricted Network Egress',
+    regex: /(?:internet_egress|egress|network_access|allow_remote_downloads|bypass_egress|no_network)\s*[:=]\s*(?:constrained|unrestricted|true|enabled|any|all|false)/i,
+    severity: 'high',
+    description: 'An eval harness or sandbox allows unrestricted network egress (or explicitly bypasses egress controls). The OpenAI models escaped their sealed evaluation only after finding an egress path — unrestricted egress removes that barrier entirely.',
+    fix: 'Default evaluation environments to no-network. If egress is required, allowlist specific endpoints and proxy through a logging gateway.',
+  },
+];
 
 // =============================================================================
 // AGENT
@@ -295,6 +345,100 @@ export class AiInfraInventoryAgent extends BaseAgent {
           owasp: 'ASI02',
           fix: 'Map every route to an auth requirement. Flag admin/internal routes for review.',
         }));
+      }
+    }
+
+    // ── Lane 4: AI data pipelines & eval harnesses ─────────────────────────
+    const lane4Files = files.filter(f => {
+      const rel = path.relative(rootPath, f).replace(/\\/g, '/');
+      const isDataPipeline = /(?:dataset|loader|load_data|pipeline|hf_|hugging|train|preprocess|ingest)/i.test(rel)
+        || /(?:dataset_infos\.json|config\.json|dataset\.py|\.py$|\.js$|\.json$|\.yaml$|\.yml$)/i.test(path.basename(f));
+      const isEvalHarness = /(?:eval|harness|benchmark|sandbox|exploitgym|ctf|scaffold)/i.test(rel)
+        || /eval.*\.(?:yaml|yml|json|py|toml|cfg)$/i.test(path.basename(f));
+      return (isDataPipeline || isEvalHarness) && !/(?:node_modules|__tests__|test_|\.test\.)/i.test(rel);
+    });
+
+    for (const file of lane4Files) {
+      const content = read(file);
+      if (!content) continue;
+      const rel = path.relative(rootPath, file).replace(/\\/g, '/');
+      const lineNum = (re) => {
+        const m = content.match(new RegExp(re.source, 'i'));
+        return m ? content.slice(0, m.index).split('\n').length : 1;
+      };
+
+      // Remote-code dataset loader (P-IMP-046)
+      if (DATASET_REMOTE_LOADER.test(content)) {
+        findings.push(createFinding({
+          file,
+          line: lineNum(DATASET_REMOTE_LOADER),
+          severity: 'critical',
+          category: this.category,
+          rule: 'AI_DATASET_REMOTE_LOADER',
+          title: 'Dataset Loader Fetches and Executes Remote Content',
+          description: `Dataset pipeline (${rel}) fetches remote content and executes it (exec/eval/pickle.loads). This is the exact initial-access vector used against Hugging Face in July 2026 — a malicious dataset abused the remote-code dataset loader path to run code on a processing worker. Loading an untrusted dataset is equivalent to running its code.`,
+          matched: 'remote fetch → code execution',
+          confidence: 'high',
+          cwe: 'CWE-502',
+          owasp: 'ASI05',
+          fix: 'Never load datasets with trust_remote_code from unverified sources. Verify dataset provenance, pin revisions/commits, and load inside an isolated worker with no credentials.',
+        }));
+      }
+
+      // Unsafe trust_remote_code flag (P-IMP-046 companion)
+      if (UNSAFE_DATASET_FLAG.test(content)) {
+        findings.push(createFinding({
+          file,
+          line: lineNum(UNSAFE_DATASET_FLAG),
+          severity: 'high',
+          category: this.category,
+          rule: 'AI_DATASET_TRUST_REMOTE_CODE',
+          title: 'Dataset/Model Loading with trust_remote_code',
+          description: `Data pipeline enables trust_remote_code — executing arbitrary code shipped with a dataset/model repo. Multiple 2025-26 incidents (Hugging Face pickle malware, FaceHugger Diffusers bypass, the July 2026 HF breach) abuse this trust boundary for RCE.`,
+          matched: 'trust_remote_code=True',
+          confidence: 'high',
+          cwe: 'CWE-502',
+          owasp: 'ASI05',
+          fix: 'Disable trust_remote_code by default. If required, pin the exact repo revision, verify provenance, and load in a sandboxed worker.',
+        }));
+      }
+
+      // Template injection in dataset config (P-IMP-047)
+      if (DATASET_TEMPLATE_INJECTION.test(content)) {
+        findings.push(createFinding({
+          file,
+          line: lineNum(DATASET_TEMPLATE_INJECTION),
+          severity: 'critical',
+          category: this.category,
+          rule: 'AI_DATASET_TEMPLATE_INJECTION',
+          title: 'Template Injection in Dataset Configuration',
+          description: `Dataset config (${rel}) contains a template expression invoking OS/module functions. Template injection in dataset configuration was the second initial-access vector in the July 2026 Hugging Face breach — a malicious dataset config executed code on a processing worker.`,
+          matched: '{{ ... }} / ${ ... } with OS call',
+          confidence: 'high',
+          cwe: 'CWE-1336',
+          owasp: 'ASI05',
+          fix: 'Never render dataset config templates with expression evaluation. Treat config fields as plain data and reject template delimiters in untrusted inputs.',
+        }));
+      }
+
+      // Eval-harness / sandbox misconfigurations (P-IMP-048)
+      for (const check of EVAL_HARNESS_RISK) {
+        if (check.regex.test(content)) {
+          findings.push(createFinding({
+            file,
+            line: lineNum(check.regex),
+            severity: check.severity,
+            category: this.category,
+            rule: check.rule,
+            title: check.title,
+            description: check.description,
+            matched: check.rule,
+            confidence: 'high',
+            cwe: 'CWE-284',
+            owasp: 'ASI08',
+            fix: check.fix,
+          }));
+        }
       }
     }
 
