@@ -108,6 +108,13 @@ Template: [`.env.example`](.env.example) · Verify with `praxis project doctor`.
     sarif: 'true'          # upload to GitHub Code Scanning
 ```
 
+For `sarif: true`, grant the job permission to upload to Code Scanning:
+
+```yaml
+permissions:
+  security-events: write
+```
+
 ## Documentation
 
 | Document | Content |

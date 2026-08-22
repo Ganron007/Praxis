@@ -78,9 +78,9 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
-        node-version: '20'
+        node-version: '24'
 
     - name: Install Praxis
       shell: bash
@@ -135,7 +135,6 @@ runs:
         echo "secrets=$SECRETS" >> $GITHUB_OUTPUT
         echo "vulns=$VULNS" >> $GITHUB_OUTPUT
         echo "cves=$CVES" >> $GITHUB_OUTPUT
-        echo "fail=$FAIL" >> $GITHUB_OUTPUT
         if [ -f /tmp/praxis-results.sarif ]; then
           echo "sarif-file=/tmp/praxis-results.sarif" >> $GITHUB_OUTPUT
         fi
@@ -178,7 +177,7 @@ runs:
 
     - name: Upload SARIF to GitHub Code Scanning
       if: inputs.sarif == 'true' && steps.scan.outputs.sarif-file != ''
-      uses: github/codeql-action/upload-sarif@ebcb5b36ded6beda4ceefea6a8bc4cc885255bb3 # v3
+      uses: github/codeql-action/upload-sarif@37f2634a92ba38a0926ef79a0748ac8ae7d95ab2 # v4.37.8
       with:
         sarif_file: /tmp/praxis-results.sarif
         category: praxis
