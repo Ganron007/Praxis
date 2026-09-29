@@ -168,7 +168,7 @@ export async function redTeamCommand(targetPath = '.', options = {}) {
   } else if (options.html) {
     const reporter = new HTMLReporter();
     const htmlPath = typeof options.html === 'string' ? options.html : 'praxis-report.html';
-    reporter.generateToFile(scoreResult, filteredFindings, recon, absolutePath, htmlPath);
+    reporter.generateToFile(scoreResult, filteredFindings, recon, absolutePath, htmlPath, agentResults);
     output.success(`HTML report saved to ${htmlPath}`);
   } else {
     printResults(scoreResult, filteredFindings, recon, agentResults, depVulns, absolutePath);

@@ -34,6 +34,11 @@ docs/internal/
 # npm pack artifacts
 *.tgz
 
+# Stray agent/editor session transcripts dropped in the working tree.
+# Untracked tooling state — never part of the project, and it would otherwise be
+# scanned (a session log reads as base64 payloads / agent-transcript findings).
+*.mdexit
+
 # Secrets — never commit real API keys.
 # .env holds your live keys (ignored); .env.example is the tracked template.
 .env

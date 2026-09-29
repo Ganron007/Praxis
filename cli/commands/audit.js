@@ -457,14 +457,14 @@ export async function auditCommand(targetPath = '.', options = {}) {
   if (explicitHtml || (!options.json && !options.sarif && !options.csv && !options.md)) {
     const htmlPath = typeof options.html === 'string' ? options.html : 'praxis-report.html';
     const reporter = new HTMLReporter();
-    reporter.generateToFile(scoreResult, filteredFindings, recon, absolutePath, htmlPath);
+    reporter.generateToFile(scoreResult, filteredFindings, recon, absolutePath, htmlPath, agentResults);
 
     // If --html-dir or --suite specified, also generate granular multi-page report suite
     if (options.htmlDir || options['html-dir'] || options.suite) {
       const suiteDir = typeof (options.htmlDir || options['html-dir'] || options.suite) === 'string'
         ? (options.htmlDir || options['html-dir'] || options.suite)
         : 'report';
-      reporter.generateReportSuite(scoreResult, filteredFindings, depVulns, recon, remediationPlan, absolutePath, suiteDir);
+      reporter.generateReportSuite(scoreResult, filteredFindings, depVulns, recon, remediationPlan, absolutePath, suiteDir, agentResults);
     }
 
     // Keep stdout pure JSON/SARIF when combined with machine output
