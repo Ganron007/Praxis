@@ -18,6 +18,14 @@ import path from 'path';
 import chalk from 'chalk';
 import * as output from '../utils/output.js';
 import { printBanner } from '../utils/output.js';
+import {
+  SEVERITY_COLORS,
+  baseStyles,
+  countBySeverity,
+  documentShell,
+  esc,
+  severityBadge,
+} from '../core/output/html-theme.js';
 
 // =============================================================================
 // ANSI + TERMINAL NOISE STRIPPING
@@ -178,9 +186,6 @@ function generateHTML(target, findings, agentSections, synthesis, bullets) {
     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 
-  const counts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
-  for (const f of findings) counts[f.severity] = (counts[f.severity] || 0) + 1;
-
   // Merge FINDING: JSON lines with bullet-parsed findings (bullets are fallback)
   const allFindings = findings.length > 0 ? findings : bullets.map(b => ({
     severity: b.severity,
@@ -189,90 +194,65 @@ function generateHTML(target, findings, agentSections, synthesis, bullets) {
     remediation: '',
   }));
 
-  // Recalculate counts from allFindings
-  const sevCounts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
-  for (const f of allFindings) sevCounts[f.severity] = (sevCounts[f.severity] || 0) + 1;
+  const sevCounts = countBySeverity(allFindings);
 
   const riskColor = (rp) => {
     if (!rp) return '#94a3b8';
-    const lc = rp.toLowerCase();
-    if (lc.includes('critical')) return '#dc2626';
-    if (lc.includes('high')) return '#f97316';
-    if (lc.includes('medium')) return '#eab308';
+    const lc = String(rp).toLowerCase();
+    if (lc.includes('critical')) return SEVERITY_COLORS.critical;
+    if (lc.includes('high')) return SEVERITY_COLORS.high;
+    if (lc.includes('medium')) return SEVERITY_COLORS.medium;
     return '#22c55e';
   };
 
-  const sevColors = { critical: '#dc2626', high: '#f97316', medium: '#eab308', low: '#3b82f6', info: '#94a3b8' };
-
   const findingRows = allFindings.map(f => `
     <tr>
-      <td><span class="sev sev-${f.severity}">${f.severity.toUpperCase()}</span></td>
-      <td><code>${f.location || '—'}</code></td>
-      <td><strong>${f.title}</strong>${f.cve ? `<br><small>CVE: ${f.cve}</small>` : ''}</td>
-      <td><small>${f.remediation || '—'}</small></td>
+      <td>${severityBadge(f.severity)}</td>
+      <td><code>${esc(f.location) || '—'}</code></td>
+      <td><strong>${esc(f.title)}</strong>${f.cve ? `<br><small>CVE: ${esc(f.cve)}</small>` : ''}</td>
+      <td><small>${esc(f.remediation) || '—'}</small></td>
     </tr>`).join('');
 
   const agentRows = agentSections.sections.map(s => `
     <tr>
-      <td>${s.name}</td>
-      <td><code>${s.role || '—'}</code></td>
-      <td style="color:${s.count > 0 ? '#f97316' : '#22c55e'}">${s.count}</td>
+      <td>${esc(s.name)}</td>
+      <td><code>${esc(s.role) || '—'}</code></td>
+      <td style="color:${s.count > 0 ? SEVERITY_COLORS.high : '#22c55e'}">${esc(s.count)}</td>
     </tr>`).join('');
 
   const roadmap = synthesis.roadmap;
+  const roadmapRow = (label, text, color) => text
+    ? `<tr><td style="color:${color};white-space:nowrap;font-weight:600">${label}</td><td>${esc(text)}</td></tr>`
+    : '';
   const roadmapHTML = (roadmap.immediate || roadmap.shortTerm || roadmap.longTerm) ? `
     <h2>Remediation Roadmap</h2>
     <table>
       <tbody>
-        ${roadmap.immediate ? `<tr><td style="color:#dc2626;white-space:nowrap;font-weight:600">⚡ Immediate (24–48h)</td><td>${roadmap.immediate}</td></tr>` : ''}
-        ${roadmap.shortTerm ? `<tr><td style="color:#f97316;white-space:nowrap;font-weight:600">📅 Short-term (1–2 weeks)</td><td>${roadmap.shortTerm}</td></tr>` : ''}
-        ${roadmap.longTerm  ? `<tr><td style="color:#eab308;white-space:nowrap;font-weight:600">🏗 Long-term (1–3 months)</td><td>${roadmap.longTerm}</td></tr>` : ''}
+        ${roadmapRow('⚡ Immediate (24–48h)', roadmap.immediate, SEVERITY_COLORS.critical)}
+        ${roadmapRow('📅 Short-term (1–2 weeks)', roadmap.shortTerm, SEVERITY_COLORS.high)}
+        ${roadmapRow('🏗 Long-term (1–3 months)', roadmap.longTerm, SEVERITY_COLORS.medium)}
       </tbody>
     </table>` : '';
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Praxis Team Report — ${target}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0f172a;color:#e2e8f0;padding:2rem}
-.container{max-width:1100px;margin:0 auto}
-.header{display:flex;align-items:center;gap:1rem;margin-bottom:2rem}
-.logo{font-size:1.5rem;font-weight:800;color:#38bdf8;letter-spacing:-1px}
-.badge{background:#1e293b;padding:3px 10px;border-radius:20px;font-size:0.75rem;color:#94a3b8;border:1px solid #334155}
-h1{font-size:1.8rem;font-weight:700;color:#f1f5f9;margin-bottom:0.25rem}
-h2{font-size:1.1rem;font-weight:600;margin:2rem 0 1rem;color:#94a3b8;border-bottom:1px solid #1e293b;padding-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em}
-.meta{color:#64748b;font-size:0.85rem;margin-bottom:2rem}
-.risk-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:1.5rem 2rem;margin-bottom:2rem;display:flex;align-items:center;gap:1.5rem}
-.risk-label{font-size:0.75rem;text-transform:uppercase;color:#64748b;margin-bottom:0.25rem}
-.risk-value{font-size:1.5rem;font-weight:700}
-.risk-desc{color:#94a3b8;font-size:0.9rem;flex:1}
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:0.75rem;margin-bottom:2rem}
-.stat{background:#1e293b;padding:1.25rem;border-radius:8px;text-align:center;border:1px solid #334155}
-.stat-number{font-size:2rem;font-weight:bold}
-.stat-label{color:#64748b;font-size:0.75rem;margin-top:0.25rem;text-transform:uppercase}
-table{width:100%;border-collapse:collapse;background:#1e293b;border-radius:8px;overflow:hidden;margin-bottom:2rem;border:1px solid #334155}
-th{background:#334155;text-align:left;padding:0.75rem 1rem;font-size:0.75rem;text-transform:uppercase;color:#94a3b8;font-weight:600;letter-spacing:0.05em}
-td{padding:0.75rem 1rem;border-top:1px solid #0f172a;font-size:0.85rem;vertical-align:top}
-tr:hover{background:#263248}
-code{background:#0f172a;padding:2px 6px;border-radius:4px;font-size:0.8rem;color:#38bdf8;word-break:break-all}
-small{color:#64748b}
-.sev{padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
-.sev-critical{background:#dc262622;color:#fca5a5;border:1px solid #dc262644}
-.sev-high{background:#f9731622;color:#fdba74;border:1px solid #f9731644}
-.sev-medium{background:#eab30822;color:#fde047;border:1px solid #eab30844}
-.sev-low{background:#3b82f622;color:#93c5fd;border:1px solid #3b82f644}
-.sev-info{background:#94a3b822;color:#cbd5e1;border:1px solid #94a3b844}
-.empty{text-align:center;color:#22c55e;padding:2rem}
-.footer{text-align:center;color:#334155;margin-top:3rem;padding-top:1.5rem;border-top:1px solid #1e293b;font-size:0.8rem}
-.powered{color:#38bdf8}
-</style>
-</head>
-<body>
-<div class="container">
+  return documentShell({
+    title: `Praxis Team Report — ${target}`,
+    styles: baseStyles() + `
+      .header{display:flex;align-items:center;gap:1rem;margin-bottom:2rem}
+      .logo{font-size:1.5rem;font-weight:800;color:#38bdf8;letter-spacing:-1px}
+      .badge{background:#1e293b;padding:3px 10px;border-radius:20px;font-size:0.75rem;color:#94a3b8;border:1px solid #334155}
+      .meta{color:#64748b;font-size:0.85rem;margin-bottom:2rem}
+      .risk-card{background:#0d1527;border:1px solid #1e293b;border-radius:12px;padding:1.5rem 2rem;margin-bottom:2rem;display:flex;align-items:center;gap:1.5rem}
+      .risk-label{font-size:0.75rem;text-transform:uppercase;color:#64748b;margin-bottom:0.25rem}
+      .risk-value{font-size:1.5rem;font-weight:700}
+      .risk-desc{color:#94a3b8;font-size:0.9rem;flex:1}
+      .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:0.75rem;margin-bottom:2rem}
+      .stat{background:#0d1527;padding:1.25rem;border-radius:8px;text-align:center;border:1px solid #1e293b}
+      .stat-number{font-size:2rem;font-weight:bold}
+      .stat-label{color:#64748b;font-size:0.75rem;margin-top:0.25rem;text-transform:uppercase}
+      .powered{color:#38bdf8}
+      @media(max-width:1024px){.stats{grid-template-columns:repeat(2,1fr)}}
+    `,
+    body: `<div class="container">
 
   <div class="header">
     <span class="logo">Praxis</span>
@@ -280,30 +260,30 @@ small{color:#64748b}
     <span class="badge">Powered by Hermes Agent</span>
   </div>
 
-  <h1>${target}</h1>
-  <p class="meta">Generated ${date} · ${allFindings.length} finding${allFindings.length !== 1 ? 's' : ''} · ${agentSections.sections.length} agent${agentSections.sections.length !== 1 ? 's' : ''}</p>
+  <h1>${esc(target)}</h1>
+  <p class="meta">Generated ${esc(date)} · ${allFindings.length} finding${allFindings.length !== 1 ? 's' : ''} · ${agentSections.sections.length} agent${agentSections.sections.length !== 1 ? 's' : ''}</p>
 
   ${synthesis.riskPosture ? `
   <div class="risk-card">
     <div>
       <div class="risk-label">Overall Risk Posture</div>
-      <div class="risk-value" style="color:${riskColor(synthesis.riskPosture)}">${synthesis.riskPosture.split('—')[0].trim()}</div>
+      <div class="risk-value" style="color:${riskColor(synthesis.riskPosture)}">${esc(String(synthesis.riskPosture).split('—')[0].trim())}</div>
     </div>
-    <div class="risk-desc">${synthesis.riskPosture.includes('—') ? synthesis.riskPosture.split('—').slice(1).join('—').trim() : ''}</div>
+    <div class="risk-desc">${esc(synthesis.riskPosture.includes('—') ? String(synthesis.riskPosture).split('—').slice(1).join('—').trim() : '')}</div>
   </div>` : ''}
 
   <div class="stats">
-    <div class="stat"><div class="stat-number" style="color:#dc2626">${sevCounts.critical}</div><div class="stat-label">Critical</div></div>
-    <div class="stat"><div class="stat-number" style="color:#f97316">${sevCounts.high}</div><div class="stat-label">High</div></div>
-    <div class="stat"><div class="stat-number" style="color:#eab308">${sevCounts.medium}</div><div class="stat-label">Medium</div></div>
-    <div class="stat"><div class="stat-number" style="color:#3b82f6">${sevCounts.low}</div><div class="stat-label">Low</div></div>
-    <div class="stat"><div class="stat-number" style="color:#94a3b8">${sevCounts.info}</div><div class="stat-label">Info</div></div>
+    <div class="stat"><div class="stat-number" style="color:${SEVERITY_COLORS.critical}">${sevCounts.critical}</div><div class="stat-label">Critical</div></div>
+    <div class="stat"><div class="stat-number" style="color:${SEVERITY_COLORS.high}">${sevCounts.high}</div><div class="stat-label">High</div></div>
+    <div class="stat"><div class="stat-number" style="color:${SEVERITY_COLORS.medium}">${sevCounts.medium}</div><div class="stat-label">Medium</div></div>
+    <div class="stat"><div class="stat-number" style="color:${SEVERITY_COLORS.low}">${sevCounts.low}</div><div class="stat-label">Low</div></div>
+    <div class="stat"><div class="stat-number" style="color:${SEVERITY_COLORS.info}">${sevCounts.info}</div><div class="stat-label">Info</div></div>
   </div>
 
   <h2>Findings</h2>
   <table>
     <thead><tr><th>Severity</th><th>Location</th><th>Issue</th><th>Remediation</th></tr></thead>
-    <tbody>${findingRows || '<tr><td colspan="4" class="empty">No findings — clean!</td></tr>'}</tbody>
+    <tbody>${findingRows || '<tr><td colspan="4" class="empty-state">No findings — clean!</td></tr>'}</tbody>
   </table>
 
   ${agentSections.sections.length > 0 ? `
@@ -316,11 +296,10 @@ small{color:#64748b}
   ${roadmapHTML}
 
   <div class="footer">
-    Secured by <span class="powered">Praxis</span> · .com · <code>npx praxis red-team .</code>
+    Secured by <span class="powered">Praxis</span> · <code>npx praxis red-team .</code>
   </div>
-</div>
-</body>
-</html>`;
+</div>`,
+  });
 }
 
 // =============================================================================

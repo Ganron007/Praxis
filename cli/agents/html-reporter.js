@@ -18,16 +18,18 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { getStandardsSummary } from '../utils/standards/index.js';
 import { CATEGORIES, FALLBACK_CATEGORY_MAP } from './scoring-engine.js';
+import {
+  SEVERITY_COLORS as SEV_COLORS,
+  GRADE_COLORS,
+  SEVERITIES,
+  baseStyles,
+  countBySeverity,
+  documentShell,
+  esc,
+  severityBadge,
+} from '../core/output/html-theme.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-/** Severity → color, shared by the distribution bar and its legend. */
-const SEV_COLORS = {
-  critical: '#ef4444',
-  high: '#f97316',
-  medium: '#eab308',
-  low: '#38bdf8',
-};
 const PKG_VERSION = (() => {
   try {
     return JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8')).version;
@@ -37,14 +39,9 @@ const PKG_VERSION = (() => {
 })();
 
 export class HTMLReporter {
+  /** HTML escaping — re-exported from the shared theme so every report agrees. */
   esc(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    return esc(str);
   }
 
   normalizePath(filePath, rootPath) {
@@ -57,13 +54,9 @@ export class HTMLReporter {
     return norm.replace(/^[a-zA-Z]:\/+/, '').replace(/^.*\/Praxis\/showcase-target\//, '').replace(/^.*\/showcase-target\//, '');
   }
 
+  /** Base theme (shared) + the forensic-report components only this report uses. */
   getSharedStyles(gradeColor, score) {
-    return `
-      *{margin:0;padding:0;box-sizing:border-box}
-      html{scroll-behavior:smooth}
-      body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#090d16;color:#cbd5e1;line-height:1.55;font-size:14px}
-      a{color:#38bdf8;text-decoration:none}
-      a:hover{text-decoration:underline}
+    return baseStyles() + `
       .app-header{background:#0d1527;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:50;padding:0.75rem 2rem}
       .header-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1.5rem}
       .brand-group{display:flex;align-items:center;gap:1rem}
@@ -79,37 +72,24 @@ export class HTMLReporter {
       .header-score .score-text{font-size:0.8rem;color:#94a3b8}
       .header-score .score-text strong{color:#f8fafc;font-size:0.95rem}
 
-      .container{max-width:1440px;margin:1.8rem auto;padding:0 2rem}
       .card{background:#0d1527;border:1px solid #1e293b;border-radius:12px;padding:1.4rem;margin-bottom:1.5rem}
       .card-title{font-size:1.15rem;font-weight:800;color:#f8fafc;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
-      
+
       .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.5rem}
       .kpi-card{background:#0d1527;border:1px solid #1e293b;border-radius:10px;padding:1.1rem;text-align:center}
       .kpi-val{font-size:2.2rem;font-weight:900;line-height:1.1}
       .kpi-label{font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;margin-top:0.35rem}
 
-      .sev-badge{display:inline-block;padding:3px 9px;border-radius:6px;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px}
-      .sev-critical{background:#450a0a;color:#fca5a5;border:1px solid #991b1b}
-      .sev-high{background:#431407;color:#fdba74;border:1px solid #9a3412}
-      .sev-medium{background:#422006;color:#fde047;border:1px solid #854d0e}
-      .sev-low{background:#082f49;color:#7dd3fc;border:1px solid #075985}
-
-      .table-responsive{overflow-x:auto}
-      table{width:100%;border-collapse:collapse;font-size:0.86rem;text-align:left}
-      th{background:#131d33;color:#94a3b8;padding:0.75rem 1rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #1e293b}
-      td{padding:0.75rem 1rem;border-bottom:1px solid #172239;vertical-align:top}
-      tr:hover td{background:#111b30}
-      
       .code-view{background:#050811;border:1px solid #1e293b;border-radius:8px;padding:0.8rem;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:0.8rem;line-height:1.45;overflow-x:auto;color:#e2e8f0;white-space:pre}
       .deep-box{background:#0c1c33;border-left:3px solid #38bdf8;padding:0.8rem 1rem;border-radius:6px;margin:0.6rem 0;font-size:0.84rem;color:#bae6fd}
       .ast-box{background:#16102b;border-left:3px solid #c084fc;padding:0.8rem 1rem;border-radius:6px;margin:0.6rem 0;font-size:0.84rem;color:#e9d5ff}
-      
+
       .filter-toolbar{display:flex;align-items:center;gap:0.75rem;background:#0d1527;border:1px solid #1e293b;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.2rem;position:sticky;top:68px;z-index:40}
       .filter-btn{background:#131d33;color:#94a3b8;border:1px solid #1e293b;border-radius:6px;padding:0.35rem 0.85rem;font-size:0.78rem;font-weight:700;cursor:pointer}
       .filter-btn.active{background:#38bdf8;color:#090d16;border-color:#38bdf8}
       .search-box{flex:1;background:#070a14;border:1px solid #1e293b;border-radius:6px;padding:0.4rem 0.9rem;color:#f8fafc;font-size:0.85rem}
       .search-box:focus{outline:1px solid #38bdf8}
-      
+
       .std-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem}
       .std-card{background:#0d1527;border:1px solid #1e293b;border-radius:10px;padding:1.2rem}
       .std-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem}
@@ -119,9 +99,6 @@ export class HTMLReporter {
       .tag-flagged{background:#450a0a;color:#fca5a5;border:1px solid #991b1b}
       .tag-clear{background:#064e3b;color:#6ee7b7;border:1px solid #047857}
       .tag-gap{background:#422006;color:#fde047;border:1px solid #854d0e}
-      
-      .footer{text-align:center;padding:2.5rem 0 1.5rem;color:#64748b;font-size:0.8rem;border-top:1px solid #1e293b;margin-top:3rem}
-      @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.std-grid{grid-template-columns:1fr}}
 
       .sev-bar{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid #1e293b;background:#0a0f1d}
       .sev-seg{height:100%}
@@ -137,20 +114,16 @@ export class HTMLReporter {
       .asi-title{font-size:0.92rem;font-weight:700;color:#f8fafc;margin:0.15rem 0 0.3rem}
       .asi-desc{font-size:0.78rem;color:#94a3b8;line-height:1.5}
       .asi-count{font-size:0.75rem;font-weight:800;margin-top:0.45rem}
-      @media(max-width:1024px){.asi-grid{grid-template-columns:1fr}}
+      @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.std-grid{grid-template-columns:1fr}.asi-grid{grid-template-columns:1fr}}
 
       .agent-name{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:0.8rem;color:#e2e8f0}
       .agent-count{font-weight:800;text-align:right}
-      .ok{color:#6ee7b7}
-      .fail{color:#fca5a5}
-      .muted{color:#64748b}
-      .empty-state{text-align:center;color:#64748b;padding:2.5rem 1rem;font-size:0.9rem}
     `;
   }
 
   generateHeaderHTML(activeTab, projectName, scoreResult, isMultiPage = false) {
     const gradeLetter = scoreResult.grade?.letter || scoreResult.grade || 'F';
-    const gradeColors = { A: '#22c55e', B: '#06b6d4', C: '#eab308', D: '#f97316', F: '#ef4444' };
+    const gradeColors = GRADE_COLORS;
     const gradeColor = gradeColors[gradeLetter] || '#ef4444';
 
     const getHref = (tab) => {
@@ -214,7 +187,7 @@ export class HTMLReporter {
     ];
 
     const gradeLetter = scoreResult.grade?.letter || scoreResult.grade || 'F';
-    const gradeColors = { A: '#22c55e', B: '#06b6d4', C: '#eab308', D: '#f97316', F: '#ef4444' };
+    const gradeColors = GRADE_COLORS;
     const gradeColor = gradeColors[gradeLetter] || '#ef4444';
     const projectName = path.basename(rootPath || 'project');
 
@@ -249,7 +222,7 @@ ${this.generateHeaderHTML(p.tab, projectName, scoreResult, true)}
   generateFullReport(scoreResult, findings = [], depVulns = [], recon = {}, remediationPlan = [], rootPath = process.cwd(), outputPath = null, agentResults = []) {
     const projectName = path.basename(rootPath || 'project');
     const gradeLetter = scoreResult.grade?.letter || scoreResult.grade || 'F';
-    const gradeColors = { A: '#22c55e', B: '#06b6d4', C: '#eab308', D: '#f97316', F: '#ef4444' };
+    const gradeColors = GRADE_COLORS;
     const gradeColor = gradeColors[gradeLetter] || '#ef4444';
 
     const overviewHTML = this.renderOverviewSection(scoreResult, findings, recon, rootPath);
@@ -259,16 +232,10 @@ ${this.generateHeaderHTML(p.tab, projectName, scoreResult, true)}
     const abomHTML = this.renderAbomSection(recon, findings, rootPath);
     const remediationHTML = this.renderRemediationSection(findings, remediationPlan, rootPath);
 
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Praxis Security Assessment — ${this.esc(projectName)}</title>
-<style>${this.getSharedStyles(gradeColor, scoreResult.score)}</style>
-</head>
-<body>
-${this.generateHeaderHTML('overview', projectName, scoreResult, false)}
+    return documentShell({
+      title: `Praxis Security Assessment — ${projectName}`,
+      styles: this.getSharedStyles(gradeColor, scoreResult.score),
+      body: `${this.generateHeaderHTML('overview', projectName, scoreResult, false)}
 
 <main class="container">
   <div id="section-overview" class="tab-pane">${overviewHTML}</div>
@@ -330,16 +297,12 @@ function toggleDetail(id) {
   const el = document.getElementById('detail-' + id);
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
-</script>
-</body>
-</html>`;
+</script>`,
+    });
   }
 
   renderOverviewSection(scoreResult, findings, recon, rootPath) {
-    const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
-    for (const f of findings) {
-      if (bySeverity[f.severity] !== undefined) bySeverity[f.severity]++;
-    }
+    const bySeverity = countBySeverity(findings);
 
     const catEntries = Object.entries(scoreResult.categories || CATEGORIES);
     const catRows = catEntries.map(([k, cat]) => {
@@ -405,12 +368,12 @@ function toggleDetail(id) {
         <div class="card-title">Severity Distribution</div>
         ${findings.length > 0 ? `
         <div class="sev-bar">
-          ${['critical', 'high', 'medium', 'low'].map(sev => bySeverity[sev] > 0
+          ${SEVERITIES.map(sev => bySeverity[sev] > 0
             ? `<div class="sev-seg" style="width:${(bySeverity[sev] / findings.length * 100).toFixed(2)}%;background:${SEV_COLORS[sev]}" title="${sev}: ${bySeverity[sev]}"></div>`
             : '').join('')}
         </div>
         <div class="sev-legend">
-          ${['critical', 'high', 'medium', 'low'].map(sev => `
+          ${SEVERITIES.map(sev => `
             <span><span class="dot" style="background:${SEV_COLORS[sev]}"></span>${sev} <strong>${bySeverity[sev]}</strong>
             <span class="muted">(${findings.length ? Math.round(bySeverity[sev] / findings.length * 100) : 0}%)</span></span>`).join('')}
         </div>`

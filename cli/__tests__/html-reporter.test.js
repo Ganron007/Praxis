@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const { HTMLReporter } = await import('../agents/html-reporter.js');
 
@@ -304,8 +305,149 @@ describe('HTMLReporter — full document', () => {
 });
 
 // =============================================================================
-// File output
+// Shared theme (P-IMP-051c) — single source of truth for every HTML surface
 // =============================================================================
+
+describe('html-theme — shared primitives', async () => {
+  const theme = await import('../core/output/html-theme.js');
+
+  it('esc escapes markup-significant characters', () => {
+    assert.equal(theme.esc('<b>&"\'</b>'), '&lt;b&gt;&amp;&quot;&#039;&lt;/b&gt;');
+    assert.equal(theme.esc(null), '');
+    assert.equal(theme.esc(undefined), '');
+  });
+
+  it('severityBadgeClass only ever returns a known-safe class', () => {
+    for (const sev of ['critical', 'high', 'medium', 'low', 'info', 'CRITICAL']) {
+      assert.match(theme.severityBadgeClass(sev), /^[a-z]*$/, `"${sev}" must be a bare token`);
+    }
+    // Attribute-injection attempts must not survive into the class attribute.
+    for (const hostile of ['x" onclick="alert(1)', 'a b', '<script>', '', null, undefined, 'nope']) {
+      const cls = theme.severityBadgeClass(hostile);
+      assert.doesNotMatch(cls, /["'<>\s]/, `unsafe class from ${JSON.stringify(hostile)}`);
+    }
+  });
+
+  it('severityBadge escapes the label and sanitises the class', () => {
+    const html = theme.severityBadge('critical');
+    assert.ok(html.includes('class="sev-badge sev-critical"'));
+    assert.ok(html.includes('critical'));
+
+    const hostile = theme.severityBadge('bad" onmouseover="alert(1)', '<img src=x>');
+    assert.ok(!hostile.includes('onmouseover="alert(1)"'), 'attribute break-out must be neutralised');
+    assert.ok(hostile.includes('&lt;img'), 'label must be escaped');
+  });
+
+  it('countBySeverity always returns a fully-populated record', () => {
+    const counts = theme.countBySeverity([
+      { severity: 'critical' },
+      { severity: 'critical' },
+      { severity: 'high' },
+      { severity: 'bogus' },
+      {},
+    ]);
+    assert.deepEqual(counts, { critical: 2, high: 1, medium: 0, low: 0, info: 0 });
+    assert.deepEqual(theme.countBySeverity(), { critical: 0, high: 0, medium: 0, low: 0, info: 0 });
+    assert.deepEqual(theme.countBySeverity(null), { critical: 0, high: 0, medium: 0, low: 0, info: 0 });
+  });
+
+  it('baseStyles defines the canonical severity palette once', () => {
+    const css = theme.baseStyles();
+    for (const sev of ['critical', 'high', 'medium', 'low']) {
+      assert.ok(css.includes(`.sev-${sev}{`), `missing .sev-${sev}`);
+    }
+  });
+
+  it('documentShell escapes the title and emits a valid document', () => {
+    const doc = theme.documentShell({
+      title: '<script>alert(1)</script>',
+      styles: theme.baseStyles(),
+      body: '<p>body</p>',
+    });
+    assert.ok(doc.startsWith('<!DOCTYPE html>'));
+    assert.ok(!doc.includes('<script>alert(1)</script>'), 'title must be escaped');
+    assert.ok(doc.includes('&lt;script&gt;'));
+    assert.ok(doc.includes('<p>body</p>'));
+  });
+});
+
+// =============================================================================
+// De-duplication guard
+// =============================================================================
+// The point of P-IMP-051c is that the severity palette and escaping live in ONE
+// place. If a report ever re-introduces its own copy, these fail.
+
+describe('report surfaces share one theme', async () => {
+  const cliDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const reporterSrc = fs.readFileSync(path.join(cliDir, 'agents', 'html-reporter.js'), 'utf8');
+  const teamSrc = fs.readFileSync(path.join(cliDir, 'commands', 'team-report.js'), 'utf8');
+
+  it('neither report hardcodes its own severity palette', () => {
+    for (const [name, src] of [['html-reporter', reporterSrc], ['team-report', teamSrc]]) {
+      assert.doesNotMatch(src, /sev-critical\{/, `${name} redefines .sev-critical`);
+      assert.doesNotMatch(src, /critical:\s*'#(ef4444|dc2626)'/, `${name} redefines the critical colour`);
+    }
+  });
+
+  it('both reports import the shared theme', () => {
+    for (const [name, src] of [['html-reporter', reporterSrc], ['team-report', teamSrc]]) {
+      assert.match(src, /from '\.\.\/core\/output\/html-theme\.js'/, `${name} must consume the shared theme`);
+    }
+  });
+});
+
+// =============================================================================
+// team-report escaping (the injection sink this de-dup closed)
+// =============================================================================
+
+describe('team-report — escapes untrusted report input', async () => {
+  const { teamReportCommand } = await import('../commands/team-report.js');
+
+  it('escapes finding text and neutralises class-attribute injection', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-team-'));
+    try {
+      const input = path.join(tmp, 'hermes.txt');
+      const out = path.join(tmp, 'team.html');
+
+      // The parser reads FINDING: <json> lines, so the payload arrives as JSON.
+      const hostile = {
+        severity: 'critical" onmouseover="alert(1)',
+        title: '<img src=x onerror=alert(2)>',
+        location: '</td><td><script>alert(3)</script>',
+        remediation: '<svg onload=alert(4)>',
+      };
+      const target = '<script>alert("target")</script>';
+
+      fs.writeFileSync(
+        input,
+        [
+          `TARGET: ${target}`,
+          `FINDING: ${JSON.stringify(hostile)}`,
+          `FINDING: ${JSON.stringify({ severity: 'high', title: 'Plain finding', location: 'src/a.js' })}`,
+        ].join('\n'),
+        'utf8'
+      );
+
+      await teamReportCommand(input, { html: out });
+      const html = fs.readFileSync(out, 'utf8');
+
+      // No live markup from any injected field. The payload text may still appear
+      // *escaped* (e.g. `&lt;img src=x onerror=…&gt;`) — that is inert visible text,
+      // which is the correct outcome. What must not exist is an unescaped tag.
+      for (const marker of ['<img src=x', '<script>alert(2)', '<script>alert(3)', '<svg onload']) {
+        assert.ok(!html.includes(marker), `unescaped payload survived: ${marker}`);
+      }
+      assert.ok(!html.includes('onmouseover="alert(1)"'), 'severity broke out of the class attribute');
+
+      // Escaped forms are present instead, and legitimate content still renders.
+      assert.ok(html.includes('&lt;img src=x'), 'img tag should appear escaped');
+      assert.ok(html.includes('&lt;script&gt;'), 'script tag should appear escaped');
+      assert.ok(html.includes('Plain finding'), 'legitimate content must still render');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('HTMLReporter — file output', () => {
   it('generateToFile writes the document and returns the path', async () => {
