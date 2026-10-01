@@ -44,6 +44,13 @@ export const GRADE_COLORS = {
 export const SEVERITIES = ['critical', 'high', 'medium', 'low'];
 
 /**
+ * Severities rendered in distribution bars/legends. Includes `info` so the segments
+ * always sum to 100% of the findings shown — omitting it left the bar visibly
+ * under-filled whenever a scan produced informational findings.
+ */
+export const DISPLAY_SEVERITIES = ['critical', 'high', 'medium', 'low', 'info'];
+
+/**
  * Escapes text for interpolation into HTML markup or a quoted attribute.
  * Null/undefined become an empty string so callers can interpolate directly.
  */

@@ -146,6 +146,21 @@ describe('HTMLReporter — severity distribution', () => {
     assert.ok(html.includes('No findings recorded'));
     assert.ok(!html.includes('class="sev-bar"'), 'must not render an empty bar');
   });
+
+  it('segments sum to 100% even when info findings are present', () => {
+    const reporter = new HTMLReporter();
+    const withInfo = [
+      ...FINDINGS,
+      { file: 'a.js', line: 1, severity: 'info', category: 'misc', rule: 'R', title: 'info finding', description: '', fix: '' },
+    ];
+    const html = reporter.renderOverviewSection(SCORE_RESULT, withInfo, {}, '/proj');
+
+    // Every rendered segment width, summed, must fill the bar.
+    const widths = [...html.matchAll(/class="sev-seg" style="width:([\d.]+)%/g)].map(m => parseFloat(m[1]));
+    const total = widths.reduce((a, b) => a + b, 0);
+    assert.ok(widths.length >= 4, 'info should be rendered as its own segment');
+    assert.ok(Math.abs(total - 100) < 0.1, `bar segments should sum to 100%, got ${total}`);
+  });
 });
 
 // =============================================================================
@@ -302,6 +317,23 @@ describe('HTMLReporter — full document', () => {
     assert.ok(!html.includes('<img src=x'), 'raw img tag must not survive into the document');
     assert.ok(html.includes('&lt;img'), 'hostile title should be escaped');
   });
+
+  it('sanitises a hostile severity in the row badge and the filter key', () => {
+    // `severity` reaches the report from scan data and previously went straight into
+    // both a class attribute and the data-sev filter key.
+    const hostile = [{ ...FINDINGS[0], severity: 'critical" onmouseover="alert(1)' }];
+    const html = reporter.generate(SCORE_RESULT, hostile, {}, '/proj', AGENT_RESULTS);
+
+    assert.ok(!html.includes('onmouseover="alert(1)"'), 'severity broke out of an attribute');
+    assert.ok(html.includes('data-sev=""'), 'unrecognised severity must not become a filter class');
+  });
+
+  it('lowercases the filter key so an uppercase severity still filters', () => {
+    const shouty = [{ ...FINDINGS[0], severity: 'CRITICAL' }];
+    const html = reporter.generate(SCORE_RESULT, shouty, {}, '/proj', AGENT_RESULTS);
+    // The client-side filter compares dataset.sev against lowercase keys.
+    assert.ok(html.includes('data-sev="critical"'), 'filter key must be normalised to lowercase');
+  });
 });
 
 // =============================================================================
@@ -375,23 +407,59 @@ describe('html-theme — shared primitives', async () => {
 // De-duplication guard
 // =============================================================================
 // The point of P-IMP-051c is that the severity palette and escaping live in ONE
-// place. If a report ever re-introduces its own copy, these fail.
+// place. These are deliberately *behavioural* rather than source-scanning: they
+// assert both reports emit the theme's canonical rules, so an intentional
+// re-theme (which changes the theme) keeps passing, while a report that
+// re-introduces its own copy of a rule fails.
 
 describe('report surfaces share one theme', async () => {
-  const cliDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const reporterSrc = fs.readFileSync(path.join(cliDir, 'agents', 'html-reporter.js'), 'utf8');
-  const teamSrc = fs.readFileSync(path.join(cliDir, 'commands', 'team-report.js'), 'utf8');
+  const theme = await import('../core/output/html-theme.js');
 
-  it('neither report hardcodes its own severity palette', () => {
-    for (const [name, src] of [['html-reporter', reporterSrc], ['team-report', teamSrc]]) {
-      assert.doesNotMatch(src, /sev-critical\{/, `${name} redefines .sev-critical`);
-      assert.doesNotMatch(src, /critical:\s*'#(ef4444|dc2626)'/, `${name} redefines the critical colour`);
+  /** Renders a team report through the real command and returns the HTML. */
+  const renderTeamReport = async () => {
+    const { teamReportCommand } = await import('../commands/team-report.js');
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'praxis-theme-'));
+    try {
+      const input = path.join(tmp, 'in.txt');
+      const out = path.join(tmp, 'out.html');
+      fs.writeFileSync(
+        input,
+        [
+          'FINDING: {"severity":"critical","title":"Command injection","location":"src/a.js:1"}',
+          'FINDING: {"severity":"low","title":"Verbose logging","location":"src/b.js:2"}',
+        ].join('\n'),
+        'utf8'
+      );
+      await teamReportCommand(input, { html: out });
+      return fs.readFileSync(out, 'utf8');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  };
+
+  it('both reports emit the theme severity rules verbatim', async () => {
+    const css = theme.baseStyles();
+    const rules = ['critical', 'high', 'medium', 'low'].map(sev => {
+      const m = css.match(new RegExp(`\\.sev-${sev}\\{[^}]*\\}`));
+      assert.ok(m, `theme is missing .sev-${sev}`);
+      return m[0];
+    });
+
+    const forensic = new HTMLReporter().generate(SCORE_RESULT, FINDINGS, {}, '/proj', AGENT_RESULTS);
+    const team = await renderTeamReport();
+
+    for (const rule of rules) {
+      assert.ok(forensic.includes(rule), 'forensic report is missing the shared rule');
+      assert.ok(team.includes(rule), 'team report is missing the shared rule');
     }
   });
 
-  it('both reports import the shared theme', () => {
-    for (const [name, src] of [['html-reporter', reporterSrc], ['team-report', teamSrc]]) {
-      assert.match(src, /from '\.\.\/core\/output\/html-theme\.js'/, `${name} must consume the shared theme`);
+  it('neither report carries a competing .sev-critical definition', async () => {
+    const forensic = new HTMLReporter().generate(SCORE_RESULT, FINDINGS, {}, '/proj', AGENT_RESULTS);
+    const team = await renderTeamReport();
+    for (const [name, html] of [['forensic', forensic], ['team', team]]) {
+      const definitions = html.match(/\.sev-critical\{/g) || [];
+      assert.equal(definitions.length, 1, `${name} report defines .sev-critical ${definitions.length} times`);
     }
   });
 });

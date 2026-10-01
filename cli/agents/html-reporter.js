@@ -21,12 +21,13 @@ import { CATEGORIES, FALLBACK_CATEGORY_MAP } from './scoring-engine.js';
 import {
   SEVERITY_COLORS as SEV_COLORS,
   GRADE_COLORS,
-  SEVERITIES,
+  DISPLAY_SEVERITIES,
   baseStyles,
   countBySeverity,
   documentShell,
   esc,
   severityBadge,
+  severityBadgeClass,
 } from '../core/output/html-theme.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -153,7 +154,7 @@ export class HTMLReporter {
             <a class="tab-link ${activeTab === 'remediation' ? 'active' : ''}" href="${getHref('remediation')}" id="tab-btn-remediation">6 · Remediation Plan</a>
           </nav>
           <div class="header-score">
-            <div class="grade">${gradeLetter}</div>
+            <div class="grade">${this.esc(gradeLetter)}</div>
             <div class="score-text">SCORE: <strong>${scoreResult.score}/100</strong></div>
           </div>
         </div>
@@ -366,17 +367,23 @@ function toggleDetail(id) {
 
       <div class="card">
         <div class="card-title">Severity Distribution</div>
-        ${findings.length > 0 ? `
+        ${findings.length > 0 ? (() => {
+          // Use the severities actually displayed as the denominator, so the bar always
+          // fills completely instead of leaving a gap when a scan reports `info`.
+          const shown = DISPLAY_SEVERITIES.reduce((sum, sev) => sum + (bySeverity[sev] || 0), 0);
+          const denom = shown > 0 ? shown : 1;
+          return `
         <div class="sev-bar">
-          ${SEVERITIES.map(sev => bySeverity[sev] > 0
-            ? `<div class="sev-seg" style="width:${(bySeverity[sev] / findings.length * 100).toFixed(2)}%;background:${SEV_COLORS[sev]}" title="${sev}: ${bySeverity[sev]}"></div>`
-            : '').join('')}
+          ${DISPLAY_SEVERITIES.filter(sev => bySeverity[sev] > 0).map(sev =>
+            `<div class="sev-seg" style="width:${(bySeverity[sev] / denom * 100).toFixed(2)}%;background:${SEV_COLORS[sev]}" title="${sev}: ${bySeverity[sev]}"></div>`
+          ).join('')}
         </div>
         <div class="sev-legend">
-          ${SEVERITIES.map(sev => `
+          ${DISPLAY_SEVERITIES.map(sev => `
             <span><span class="dot" style="background:${SEV_COLORS[sev]}"></span>${sev} <strong>${bySeverity[sev]}</strong>
-            <span class="muted">(${findings.length ? Math.round(bySeverity[sev] / findings.length * 100) : 0}%)</span></span>`).join('')}
-        </div>`
+            <span class="muted">(${Math.round(bySeverity[sev] / denom * 100)}%)</span></span>`).join('')}
+        </div>`;
+        })()
         : '<div class="empty-state">No findings recorded for this run.</div>'}
       </div>
 
@@ -634,9 +641,15 @@ function toggleDetail(id) {
 
       const searchText = `${f.title || ''} ${f.rule || ''} ${f.description || ''} ${relFile} ${f.category || ''}`.toLowerCase();
 
+      // `data-sev` drives the client-side severity filter, and `class` drives the badge.
+      // Both go through severityBadgeClass() so a malformed severity can't break out of
+      // the attribute, and so an uppercase 'CRITICAL' still matches the filter (which
+      // compares against lowercase keys).
+      const sevKey = severityBadgeClass(f.severity);
+
       return `
-        <tr class="finding-row" data-sev="${f.severity}" data-text="${this.esc(searchText)}">
-          <td style="width:100px"><span class="sev-badge sev-${f.severity}">${f.severity}</span></td>
+        <tr class="finding-row" data-sev="${sevKey}" data-text="${this.esc(searchText)}">
+          <td style="width:100px">${severityBadge(f.severity, f.severity || 'unknown')}</td>
           <td style="width:240px"><strong>${this.esc(f.title || f.rule)}</strong><br><small style="color:#64748b">${this.esc(f.category || 'Security')}</small>${f.rule ? `<br><code class="agent-name" style="color:#7dd3fc;font-size:0.72rem">${this.esc(f.rule)}</code>` : ''}</td>
           <td style="width:240px"><code style="color:#38bdf8">${this.esc(relFile)}:${f.line || 1}</code></td>
           <td>
@@ -792,7 +805,7 @@ function toggleDetail(id) {
       return `
         <tr>
           <td style="width:60px"><strong>#${idx + 1}</strong></td>
-          <td style="width:110px"><span class="sev-badge sev-${sev}">${sev}</span></td>
+          <td style="width:110px">${severityBadge(sev, sev)}</td>
           <td style="width:260px"><strong>${this.esc(item.title || item.rule || 'Security Fix')}</strong></td>
           <td style="width:220px"><code>${this.esc(relFile)}:${item.line || 1}</code></td>
           <td style="color:#86efac;font-size:0.85rem">${this.esc(item.action || item.fix || 'Apply recommended validation patch.')}</td>
