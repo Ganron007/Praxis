@@ -343,9 +343,13 @@ describe('sarif consolidation', async () => {
   });
 
   it('relativizes artifact URIs against rootPath so no local path leaks', () => {
+    // Built with path.join so the fixture uses the host separator: on POSIX a
+    // backslash-style path is just a filename, and path.relative cannot relativize it.
+    const root = path.join('C:', 'Users', 'alice', 'projects', 'myapp');
+    const file = path.join(root, 'src', 'db.js');
     const out = parse(renderFindingsSARIF(
-      [{ rule: 'R', file: 'C:\\Users\\alice\\projects\\myapp\\src\\db.js', severity: 'high' }],
-      { rootPath: 'C:\\Users\\alice\\projects\\myapp' },
+      [{ rule: 'R', file, severity: 'high' }],
+      { rootPath: root },
     ));
     const uri = out.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri;
     assert.equal(uri, 'src/db.js');
@@ -355,18 +359,33 @@ describe('sarif consolidation', async () => {
 
   it('never emits an escaping or absolute URI', () => {
     // A finding outside the root must still not become an absolute path.
+    const root = path.join('C:', 'proj');
+    const outside = path.join('C:', 'elsewhere', 'secret.js');
     const out = parse(renderFindingsSARIF(
-      [{ rule: 'R', file: 'C:\\elsewhere\\secret.js', severity: 'high' }],
-      { rootPath: 'C:\\proj' },
+      [{ rule: 'R', file: outside, severity: 'high' }],
+      { rootPath: root },
     ));
     const uri = out.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri;
     assert.ok(!uri.includes('..'), `must not escape the root: ${uri}`);
-    assert.ok(!/^[A-Za-z]:/.test(uri), `must not be absolute: ${uri}`);
+    assert.ok(!/^[A-Za-z]:/.test(uri) && !uri.startsWith('/'), `must not be absolute: ${uri}`);
+  });
+
+  it('leaves an already-relative path intact when rootPath is supplied', () => {
+    // Regression: `path.relative(root, 'src/nested/deep.js')` resolves the input against
+    // the cwd, escapes the root, and the outside-root fallback then reduced it to
+    // `deep.js` — an alert Code Scanning cannot locate.
+    const root = path.join('C:', 'proj');
+    const out = parse(renderFindingsSARIF(
+      [{ rule: 'R', file: path.join('src', 'nested', 'deep.js'), severity: 'high' }],
+      { rootPath: root },
+    ));
+    assert.equal(uriOf(out), 'src/nested/deep.js');
   });
 
   it('does not hardcode a repository name when no rootPath is supplied', () => {
     // The old normalizer stripped a literal `/Praxis/`, written for this repo alone.
-    const out = parse(renderFindingsSARIF([{ rule: 'R', file: 'C:\\a\\Praxis\\b.js', severity: 'high' }]));
+    const file = path.join('C:', 'a', 'Praxis', 'b.js');
+    const out = parse(renderFindingsSARIF([{ rule: 'R', file, severity: 'high' }]));
     const uri = uriOf(out);
     assert.ok(uri.includes('Praxis'), `a user path containing "Praxis" must not be truncated: ${uri}`);
   });

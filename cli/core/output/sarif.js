@@ -124,12 +124,22 @@ function renderSARIFDocument(report, options = {}) {
  * untouched — publishing the local filesystem layout into a target repository.
  */
 function makeRelativizer(rootPath) {
+  // A path that is already relative needs no relativizing. This matters: feeding
+  // `src/nested/deep.js` to `path.relative(root, ...)` resolves it against the cwd,
+  // escapes the root, and the fallback then reduces it to `deep.js` — losing the
+  // directory and making the alert unlocatable in Code Scanning.
+  const isAbsolute = (f) => path.isAbsolute(f) || /^[a-zA-Z]:[\\/]/.test(f);
+
   if (rootPath) {
     return (file) => {
-      const rel = path.relative(rootPath, String(file));
+      const s = String(file);
+      if (!s) return s;
+      if (!isAbsolute(s)) return s.split(path.sep).join('/');
+
+      const rel = path.relative(rootPath, s);
       // A file outside the root still must not leak an absolute path; fall back to the
       // basename rather than emitting `../../..`.
-      if (!rel || rel.startsWith('..')) return path.basename(String(file));
+      if (!rel || rel.startsWith('..')) return path.basename(s);
       return rel.split(path.sep).join('/');
     };
   }
