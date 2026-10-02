@@ -9,13 +9,33 @@
 
 const SARIF_VERSION = '2.1.0';
 
-const LEVEL_FROM_SEVERITY = {
-  critical: 'error',
-  high: 'error',
-  medium: 'warning',
-  low: 'note',
-  info: 'note',
+/**
+ * Severity → SARIF `level` + GitHub `security-severity`.
+ *
+ * These are two different axes and both are needed:
+ *   - `level` is the coarse SARIF gate (`error` / `warning` / `note`).
+ *   - `security-severity` is the 0.0-10.0 number GitHub Code Scanning uses to rank,
+ *     colour and filter alerts.
+ *
+ * Emitting `level` alone collapsed critical and high into the same bucket, so every
+ * Code Scanning consumer saw compressed severity — the tiering the product is built on
+ * was invisible exactly where people look for it. Both fields come from this one table
+ * so they cannot drift apart.
+ *
+ * Emitted as a string because that is the form GitHub's own documentation uses.
+ */
+const SEVERITY = {
+  critical: { level: 'error', securitySeverity: '9.5' },
+  high: { level: 'error', securitySeverity: '7.5' },
+  medium: { level: 'warning', securitySeverity: '5.0' },
+  low: { level: 'note', securitySeverity: '2.5' },
+  info: { level: 'note', securitySeverity: '0.0' },
 };
+
+/** Unknown or absent severity must not silently read as low-risk. */
+const DEFAULT_SEVERITY = { level: 'warning', securitySeverity: '5.0' };
+
+const forSeverity = (severity) => SEVERITY[severity] || DEFAULT_SEVERITY;
 
 export default function sarif(report, options = {}) {
   const {
@@ -63,16 +83,19 @@ function collectRules(findings) {
         for (const sid of ids) ruleTags.push(sid);
       }
     }
+    const sev = forSeverity(f.severity);
     seen.set(id, {
       id,
       name: f.patternName || id,
       shortDescription: { text: f.patternName || id },
       fullDescription: { text: f.description || f.patternName || id },
       defaultConfiguration: {
-        level: LEVEL_FROM_SEVERITY[f.severity] || 'warning',
+        level: sev.level,
       },
       properties: {
         tags: [...new Set(ruleTags)], // dedup
+        // GitHub Code Scanning ranks and filters on this numeric property.
+        'security-severity': sev.securitySeverity,
       },
     });
   }
@@ -86,9 +109,11 @@ function toResult(f) {
     .replace(/^.*\/Praxis\/showcase-target\//, 'showcase-target/')
     .replace(/^.*\/Praxis\//, '');
 
+  const sev = forSeverity(f.severity);
+
   const result = {
     ruleId: f.ruleId || f.pattern || f.type || 'finding',
-    level: LEVEL_FROM_SEVERITY[f.severity] || 'warning',
+    level: sev.level,
     message: { text: f.description || f.message || f.patternName || 'finding' },
     locations: [
       {
@@ -105,7 +130,7 @@ function toResult(f) {
 
   // Embed AI-security standard tags so SARIF consumers (GitHub Code Scanning,
   // SonarQube, etc.) can filter / display alignment per finding.
-  const props = {};
+  const props = { 'security-severity': sev.securitySeverity };
   if (f.cwe) props.cwe = f.cwe;
   if (f.owasp) props.owasp = f.owasp;
   if (f.standards && Object.keys(f.standards).length > 0) {
@@ -116,7 +141,7 @@ function toResult(f) {
     }
     if (tags.length > 0) props.tags = tags;
   }
-  if (Object.keys(props).length > 0) result.properties = props;
+  result.properties = props;
 
   return result;
 }

@@ -62,6 +62,7 @@ import { ciCommand } from '../commands/ci.js';
 import { diffCommand } from '../commands/diff.js';
 import { vibeCheckCommand } from '../commands/vibe-check.js';
 import { webCommand } from '../commands/web.js';
+import { rulesListCommand, rulesExportCommand, rulesImportCommand } from '../commands/rules.js';
 import { benchmarkCommand } from '../commands/benchmark.js';
 import { openclawCommand } from '../commands/openclaw.js';
 import { scanSkillCommand } from '../commands/scan-skill.js';
@@ -571,6 +572,29 @@ project
 // =============================================================================
 // Top-level shortcuts (preserve indie voice)
 // =============================================================================
+
+const rules = program.command('rules').description('Inspect and export Praxis detection rules');
+
+rules
+  .command('list')
+  .description('Summarise the rule inventory by source, severity and portability')
+  .option('--json', 'Output results as JSON')
+  .action(rulesListCommand);
+
+rules
+  .command('export')
+  .description('Write a Semgrep-compatible rule bundle plus a portability manifest')
+  .option('-o, --out <dir>', 'Output directory', 'praxis-rules')
+  .option('--allow-invalid', 'Export even if some patterns fail validation', false)
+  .action(rulesExportCommand);
+
+rules
+  .command('import <bundle>')
+  .description('Load a Praxis portable rule bundle (JSON) and optionally emit a runnable plugin')
+  .option('--write-plugin <dir>', 'Write a runnable plugin to this directory (e.g. .praxis/agents)')
+  .option('--name <name>', 'Plugin class name prefix', 'PortableRules')
+  .option('--json', 'Output results as JSON')
+  .action(rulesImportCommand);
 
 program
   .command('web')

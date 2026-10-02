@@ -18,7 +18,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // INJECTION PATTERNS
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── SQL Injection ──────────────────────────────────────────────────────────
   {
     rule: 'SQL_INJECTION_TEMPLATE_LITERAL',

@@ -26,7 +26,7 @@ import { lookupTrust, listKnown } from '../utils/mcp-trust.js';
 // MCP SECURITY PATTERNS
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── Tool Poisoning & Validation ──────────────────────────────────────────
   {
     rule: 'MCP_NO_TOOL_VALIDATION',

@@ -62,7 +62,7 @@ const KNOWN_SAFE = new Set([
 ]);
 
 // Known malicious package name patterns
-const SUSPICIOUS_NAME_PATTERNS = [
+export const SUSPICIOUS_NAME_PATTERNS = [
   /^@[^/]+\/[^/]+-[0-9]+$/,       // @scope/package-123 (random suffix)
   /^[a-z]+-[a-z]+-[a-z]+-[a-z]+$/, // overly-generic multi-word names
 ];

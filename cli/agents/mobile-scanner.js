@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { BaseAgent, createFinding } from './base-agent.js';
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── M1: Improper Credential Usage ──────────────────────────────────────────
   {
     rule: 'MOBILE_HARDCODED_KEY',

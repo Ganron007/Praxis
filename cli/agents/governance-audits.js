@@ -22,7 +22,7 @@ import path from 'path';
 
 // Approval-gate patterns — presence of any of these near high-risk agent
 // actions counts as a human-oversight control.
-const OVERSIGHT_PATTERNS = [
+export const OVERSIGHT_PATTERNS = [
   /interrupt_before/i, /interrupt_after/i, /human[_-]?in[_-]?the[_-]?loop/i,
   /requires_approval/i, /confirmation_required/i, /requires_confirmation/i,
   /approval[_-]?gate/i, /human[_-]?approval/i, /ask[_-]?for[_-]?confirmation/i,

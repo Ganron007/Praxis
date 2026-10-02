@@ -22,7 +22,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 const AI_ACTION_NAME_RE = /uses\s*:\s*([\w.-]+\/[\w.-]*(?:ai|llm|copilot|claude|openai|anthropic|gpt|gemini|cursor|codeium|tabnine|hermes|codex|devin|agent|autopilot)[\w.-]*)@([\w./-]+)/gi;
 
 // Broad write/admin scopes in the same workflow as an AI action
-const BROAD_SCOPE_PATTERNS = [
+export const BROAD_SCOPE_PATTERNS = [
   {
     rule: 'AI_CI_WRITE_ALL',
     title: 'AI CI Action: Workflow Has write-all Permissions',

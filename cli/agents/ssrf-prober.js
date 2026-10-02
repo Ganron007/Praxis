@@ -12,7 +12,7 @@
 import path from 'path';
 import { BaseAgent } from './base-agent.js';
 
-const PATTERNS = [
+export const PATTERNS = [
   {
     rule: 'SSRF_USER_URL_FETCH',
     title: 'SSRF: User Input in fetch()',

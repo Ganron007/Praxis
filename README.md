@@ -6,6 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/Ganron007/Praxis/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Ganron007/Praxis/ci.yml?label=CI" alt="CI"></a>
+  <a href="https://github.com/marketplace/actions/praxis-security-scan"><img src="https://img.shields.io/badge/Marketplace-Praxis%20Security%20Scan-blue" alt="GitHub Marketplace"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.0.0-blue.svg" alt="Node.js: >=18.0.0">
   <img src="https://img.shields.io/badge/Version-1.0.0-blue.svg" alt="Version: 1.0.0">
@@ -114,6 +115,31 @@ For `sarif: true`, grant the job permission to upload to Code Scanning:
 permissions:
   security-events: write
 ```
+
+`net-new: true` scans the PR's base ref in a worktree and fails only on findings the PR
+*introduced*, so an inherited backlog never blocks a merge.
+
+## Portable rules
+
+Praxis rules are portable data, not lock-in:
+
+```bash
+praxis rules list                    # rule inventory by source, severity, portability
+praxis rules export -o ./rules       # Semgrep YAML + canonical JSON + portability manifest
+semgrep --config ./rules/praxis-rules.yaml .
+```
+
+The export covers the **411 pattern rules**. The accompanying
+`praxis-rules.manifest.json` states plainly what Praxis does that Semgrep cannot express —
+AST/taint dataflow, the prompt-injection probe corpus, entropy-checked secrets, and LLM deep
+analysis — rather than implying full coverage. Import round-trips through the JSON:
+
+```bash
+praxis rules import ./rules/praxis-rules.json --write-plugin .praxis/agents
+```
+
+Rules that cannot be executed as static patterns are rejected **with a reason**, never
+imported in a degraded form.
 
 ## Documentation
 

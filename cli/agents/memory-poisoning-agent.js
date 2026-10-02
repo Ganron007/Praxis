@@ -77,7 +77,7 @@ const DOC_GLOBS = [
 // DETECTION PATTERNS
 // =============================================================================
 
-const INJECTION_PATTERNS = [
+export const INJECTION_PATTERNS = [
   {
     regex: /(?:ignore|disregard|forget|override)\s+(?:all\s+)?(?:previous|prior|above|earlier|system)\s+(?:instructions?|rules?|prompts?|constraints?|guidelines?)/gi,
     rule: 'MEMORY_POISON_OVERRIDE',

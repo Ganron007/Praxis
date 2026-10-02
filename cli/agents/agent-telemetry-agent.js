@@ -29,7 +29,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // PATTERNS & REGEXES
 // =============================================================================
 
-const SECRET_PATTERNS = [
+export const SECRET_PATTERNS = [
   {
     rule: 'AGENT_LOG_EXPOSED_OPENAI_KEY',
     title: 'Exposed OpenAI API Key in Agent Session History',

@@ -17,7 +17,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // 1. STATIC SCANNER AGENT & PATTERNS
 // =============================================================================
 
-const STATIC_PATTERNS = [
+export const STATIC_PATTERNS = [
   {
     rule: 'LLM_OUTPUT_TO_EVAL',
     title: 'LLM Output Passed to eval() / Function()',

@@ -105,7 +105,7 @@ const MEMORY_GLOBS = [
 // PATTERNS — Prompt Injection & Malicious Instructions in Agent Config Files
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── Prompt Override Injection (ASI01) ────────────────────────────────────
   {
     rule: 'AGENT_CFG_PROMPT_OVERRIDE',

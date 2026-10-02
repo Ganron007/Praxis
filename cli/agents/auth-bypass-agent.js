@@ -10,7 +10,7 @@
 import path from 'path';
 import { BaseAgent, createFinding } from './base-agent.js';
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── JWT Issues ─────────────────────────────────────────────────────────────
   {
     rule: 'JWT_ALG_NONE',

@@ -35,7 +35,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // FILES THIS AGENT SCANS
 // =============================================================================
 
-const HERMES_FILE_PATTERNS = [
+export const HERMES_FILE_PATTERNS = [
   '**/hermes.config.{js,ts,json,yaml,yml}',
   '**/agents.{json,yaml,yml}',
   '**/agent-manifest.{json,yaml,yml}',

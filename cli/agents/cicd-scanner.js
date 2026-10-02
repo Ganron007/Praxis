@@ -12,7 +12,7 @@
 import path from 'path';
 import { BaseAgent } from './base-agent.js';
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── CICD-SEC-4: Poisoned Pipeline Execution ────────────────────────────────
   {
     rule: 'CICD_PR_TARGET_CHECKOUT',

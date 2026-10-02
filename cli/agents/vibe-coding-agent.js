@@ -27,7 +27,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // VIBE CODING PATTERNS
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── Placeholder Credentials ───────────────────────────────────────────────
   {
     rule: 'VIBE_PLACEHOLDER_KEY',

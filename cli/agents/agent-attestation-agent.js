@@ -28,7 +28,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // PATTERNS — detected in source files
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── Unpinned versions ──────────────────────────────────────────────────────
   {
     rule: 'AGENT_UNPINNED_VERSION_LATEST',

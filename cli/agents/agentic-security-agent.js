@@ -22,7 +22,7 @@ import { BaseAgent } from './base-agent.js';
 // AGENTIC SECURITY PATTERNS
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── Goal Hijacking (ASI01) ───────────────────────────────────────────────
   {
     rule: 'AGENT_USER_INPUT_IN_SYSTEM_PROMPT',

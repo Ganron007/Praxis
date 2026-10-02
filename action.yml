@@ -1,5 +1,5 @@
 name: 'Praxis Security Scan'
-description: 'Scan your codebase for secrets, vulnerabilities, CVEs, and misconfigurations with 28 AI security agents'
+description: 'AI-native security scanning for LLM apps, agents, MCP servers and RAG pipelines - plus classic code, secrets and dependency CVEs. 28 agents, SARIF to Code Scanning, and a net-new gate that fails only on findings your PR actually introduced.'
 author: 'Praxis'
 
 branding:

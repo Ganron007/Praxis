@@ -21,7 +21,7 @@ import { BaseAgent } from './base-agent.js';
 // RAG SECURITY PATTERNS
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── Document Ingestion ───────────────────────────────────────────────────
   {
     rule: 'RAG_UNSANITIZED_INGESTION',

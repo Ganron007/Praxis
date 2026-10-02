@@ -23,7 +23,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // EXCEPTION HANDLING PATTERNS
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── Empty/Silent Error Handling ────────────────────────────────────────────
   {
     rule: 'EXCEPTION_EMPTY_CATCH',

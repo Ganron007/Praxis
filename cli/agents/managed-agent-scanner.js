@@ -25,7 +25,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // SINGLE-LINE REGEX PATTERNS
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── ASI-03: Excessive Agency — Permission Policies ─────────────────────────
   {
     rule: 'MANAGED_AGENT_ALWAYS_ALLOW',

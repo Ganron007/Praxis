@@ -190,6 +190,92 @@ describe('cli/core/output/sarif', async () => {
     const parsed = JSON.parse(out);
     assert.equal(parsed.runs[0].tool.driver.rules.length, 2);
   });
+
+  // ── GitHub `security-severity` (P-IMP-058) ─────────────────────────────────
+  // `level` alone collapsed critical and high into the same bucket, so every Code
+  // Scanning consumer saw compressed severity. `security-severity` is the numeric
+  // property GitHub ranks and filters on.
+  describe('security-severity', () => {
+    const rulesOf = (findings) => JSON.parse(render('sarif', { findings })).runs[0].tool.driver.rules;
+    const resultsOf = (findings) => JSON.parse(render('sarif', { findings })).runs[0].results;
+    const sevOf = (rules, id) => Number(rules.find(r => r.id === id)?.properties['security-severity']);
+
+    const TIERS = [
+      ['critical', 'R_CRIT'],
+      ['high', 'R_HIGH'],
+      ['medium', 'R_MED'],
+      ['low', 'R_LOW'],
+    ];
+
+    it('emits a numeric security-severity on every rule and result', () => {
+      const findings = TIERS.map(([severity, ruleId]) => ({ ruleId, severity, file: 'a.js', line: 1 }));
+      for (const r of rulesOf(findings)) {
+        assert.ok(r.properties['security-severity'] !== undefined, `${r.id} has no security-severity`);
+        assert.ok(Number.isFinite(Number(r.properties['security-severity'])), `${r.id} is not numeric`);
+      }
+      for (const r of resultsOf(findings)) {
+        assert.ok(r.properties['security-severity'] !== undefined, `${r.ruleId} result has no security-severity`);
+      }
+    });
+
+    it('orders severities so GitHub can rank them', () => {
+      const findings = TIERS.map(([severity, ruleId]) => ({ ruleId, severity, file: 'a.js', line: 1 }));
+      const rules = rulesOf(findings);
+      const crit = sevOf(rules, 'R_CRIT');
+      const high = sevOf(rules, 'R_HIGH');
+      const med = sevOf(rules, 'R_MED');
+      const low = sevOf(rules, 'R_LOW');
+      assert.ok(crit > high, 'critical must outrank high');
+      assert.ok(high > med, 'high must outrank medium');
+      assert.ok(med > low, 'medium must outrank low');
+      assert.ok(low >= 0 && crit <= 10, 'values must sit in the 0.0-10.0 range GitHub expects');
+    });
+
+    it('separates critical from high even though they share a SARIF level', () => {
+      // The whole point of the fix: same coarse gate, different rank.
+      const rules = rulesOf([
+        { ruleId: 'R_CRIT', severity: 'critical', file: 'a.js', line: 1 },
+        { ruleId: 'R_HIGH', severity: 'high', file: 'a.js', line: 1 },
+      ]);
+      const crit = rules.find(r => r.id === 'R_CRIT');
+      const high = rules.find(r => r.id === 'R_HIGH');
+      assert.equal(crit.defaultConfiguration.level, high.defaultConfiguration.level);
+      assert.notEqual(crit.properties['security-severity'], high.properties['security-severity']);
+    });
+
+    it('does not let a missing or unknown severity read as low-risk', () => {
+      const rules = rulesOf([
+        { ruleId: 'R_MISSING', file: 'a.js', line: 1 },
+        { ruleId: 'R_UNKNOWN', severity: 'catastrophic', file: 'a.js', line: 1 },
+      ]);
+      for (const r of rules) {
+        assert.ok(Number(r.properties['security-severity']) >= 5, `${r.id} defaulted too low`);
+        assert.equal(r.defaultConfiguration.level, 'warning');
+      }
+    });
+
+    it('keeps a result level consistent with its rule definition', () => {
+      const findings = TIERS.map(([severity, ruleId]) => ({ ruleId, severity, file: 'a.js', line: 1 }));
+      const rules = rulesOf(findings);
+      for (const result of resultsOf(findings)) {
+        const rule = rules.find(r => r.id === result.ruleId);
+        assert.equal(result.level, rule.defaultConfiguration.level, `${result.ruleId} level drifted`);
+        assert.equal(
+          result.properties['security-severity'],
+          rule.properties['security-severity'],
+          `${result.ruleId} severity drifted`
+        );
+      }
+    });
+
+    it('preserves the pre-existing properties', () => {
+      const results = resultsOf([
+        { ruleId: 'R1', severity: 'high', file: 'a.js', line: 1, cwe: 'CWE-918', owasp: 'A10:2021' },
+      ]);
+      assert.equal(results[0].properties.cwe, 'CWE-918');
+      assert.equal(results[0].properties.owasp, 'A10:2021');
+    });
+  });
 });
 
 // =============================================================================

@@ -24,7 +24,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // PII COMPLIANCE PATTERNS
 // =============================================================================
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── PII in Logging ───────────────────────────────────────────────────────
   {
     rule: 'PII_IN_CONSOLE_LOG',

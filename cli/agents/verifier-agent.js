@@ -51,7 +51,7 @@ const USER_INPUT_SOURCES = [
 ];
 
 /** Sanitization/validation indicators — presence near a finding suggests it's protected */
-const SANITIZATION_PATTERNS = [
+export const SANITIZATION_PATTERNS = [
   /sanitize/i,
   /validate/i,
   /escape/i,

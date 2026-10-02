@@ -12,7 +12,7 @@ import path from 'path';
 import { BaseAgent, createFinding } from './base-agent.js';
 
 // Patterns for client-side code
-const CLIENT_PATTERNS = [
+export const CLIENT_PATTERNS = [
   {
     rule: 'SUPABASE_SERVICE_KEY_CLIENT',
     title: 'Supabase: Service Role Key in Client Code',

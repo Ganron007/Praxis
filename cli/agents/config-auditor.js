@@ -15,7 +15,7 @@ import { BaseAgent, createFinding } from './base-agent.js';
 // DOCKERFILE PATTERNS
 // =============================================================================
 
-const DOCKERFILE_PATTERNS = [
+export const DOCKERFILE_PATTERNS = [
   // DOCKER_RUN_AS_ROOT removed — the per-line negative lookahead was broken
   // (USER is on a separate line from CMD). The whole-file DOCKER_NO_USER check
   // in scanDockerfile() handles this correctly.

@@ -11,7 +11,7 @@
 import path from 'path';
 import { BaseAgent, createFinding } from './base-agent.js';
 
-const PATTERNS = [
+export const PATTERNS = [
   // ── Missing Authentication ─────────────────────────────────────────────────
   {
     rule: 'API_NO_AUTH_CHECK',
