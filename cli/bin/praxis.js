@@ -61,6 +61,7 @@ import { baselineCommand } from '../commands/baseline.js';
 import { ciCommand } from '../commands/ci.js';
 import { diffCommand } from '../commands/diff.js';
 import { vibeCheckCommand } from '../commands/vibe-check.js';
+import { webCommand } from '../commands/web.js';
 import { benchmarkCommand } from '../commands/benchmark.js';
 import { openclawCommand } from '../commands/openclaw.js';
 import { scanSkillCommand } from '../commands/scan-skill.js';
@@ -570,6 +571,15 @@ project
 // =============================================================================
 // Top-level shortcuts (preserve indie voice)
 // =============================================================================
+
+program
+  .command('web')
+  .description('Local web UI for scans and scan projects (read-only; loopback by default)')
+  .option('--port <port>', 'Port to listen on', '7317')
+  .option('--host <host>', 'Host to bind (non-loopback requires --allow-remote and --token)', '127.0.0.1')
+  .option('--allow-remote', 'Permit a non-loopback bind (requires --token)', false)
+  .option('--token <token>', 'Bearer token required for every request when remotely bound')
+  .action(webCommand);
 
 program
   .command('vibe [path]')

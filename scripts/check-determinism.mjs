@@ -86,14 +86,17 @@ for (const f of fingerprints) {
 }
 
 const base = results[0].findings || [];
+const baseIdentityCount = new Set(base.map(f => `${f.file ?? '?'}::${f.rule ?? '?'}`)).size;
 let drifted = false;
 
 for (let i = 1; i < results.length; i++) {
-  const { added, removed, common } = diffFindings(base, results[i].findings || []);
-  const total = base.length || 1;
+  const other = results[i].findings || [];
+  const { added, removed, common } = diffFindings(base, other);
+  const total = baseIdentityCount || 1;
   const drift = Math.round(((added.length + removed.length) / total) * 10000) / 100;
 
   console.log(`\nRun 1 vs run ${i + 1}: ${common} shared identities, ${added.length} added, ${removed.length} removed (${drift}% drift)`);
+  console.log(`  (raw findings: ${base.length} vs ${other.length})`);
   if (added.length) {
     console.log('  + appeared:');
     added.slice(0, 20).forEach(x => console.log(`      ${x}`));
@@ -113,4 +116,4 @@ if (drifted) {
   process.exit(1);
 }
 
-console.log(`\nPASS — detection identical across ${runs} runs (${base.length} identities).`);
+console.log(`\nPASS — detection identical across ${runs} runs (${baseIdentityCount} distinct identities across ${base.length} raw findings).`);

@@ -86,7 +86,7 @@ export class Orchestrator {
     // ── 1. Recon — map the attack surface ─────────────────────────────────────
     const quiet = options.quiet || false;
     const reconSpinner = quiet ? null : ora({ text: 'Mapping attack surface...', color: 'cyan' }).start();
-    const recon = await this.reconAgent.analyze({ rootPath: absolutePath, options });
+    const recon = await this.reconAgent.analyze({ rootPath: absolutePath, options }); // praxis-ignore AGENT_ESCALATED_PERMISSIONS — calling ReconAgent.analyze(); no permission escalation
     if (reconSpinner) reconSpinner.succeed(chalk.green('Attack surface mapped'));
 
     // ── 2. Discover files once (shared across agents) ─────────────────────────
@@ -138,7 +138,7 @@ export class Orchestrator {
     for (let i = 0; i < relevantAgents.length; i += concurrency) {
       const chunk = relevantAgents.slice(i, i + concurrency);
       const settled = await Promise.allSettled(
-        chunk.map(agent => this.runAgent(agent, context, timeout))
+        chunk.map(agent => this.runAgent(agent, context, timeout)) // praxis-ignore AGENT_RECURSIVE_INVOCATION — one agent invoking another by design, not self-recursion
       );
 
       for (let j = 0; j < chunk.length; j++) {
@@ -156,6 +156,20 @@ export class Orchestrator {
           allFindings = allFindings.concat(findings);
           // Share findings with subsequent agents
           sharedFindings.push(...findings);
+          // Optional progress hook: fires once per agent as it settles, so callers
+          // that stream progress (e.g. the web UI) report real work rather than a
+          // placeholder percentage. Optional so existing callers are unaffected.
+          if (typeof options.onProgress === 'function') {
+            try {
+              options.onProgress({
+                agent: agent.name,
+                category: agent.category,
+                done: agentResults.length,
+                total: relevantAgents.length,
+                findingCount: findings.length,
+              });
+            } catch { /* a progress listener must never break a scan */ }
+          }
         } else {
           agentResults.push({
             agent: agent.name,
