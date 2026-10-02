@@ -1,5 +1,8 @@
 name: 'Praxis Security Scan'
-description: 'AI-native security scanning for LLM apps, agents, MCP servers and RAG pipelines - plus classic code, secrets and dependency CVEs. 28 agents, SARIF to Code Scanning, and a net-new gate that fails only on findings your PR actually introduced.'
+# Marketplace caps `description` at 124 characters, so this stays a scannable summary.
+# The longer pitch — SARIF to Code Scanning, the net-new PR gate, framework coverage —
+# belongs in the Marketplace listing body, which has no such limit.
+description: 'AI-native scanning for LLM apps, agents, MCP servers and RAG pipelines. Plus secrets, code flaws and CVEs. 28 agents.'
 author: 'Praxis'
 
 branding:

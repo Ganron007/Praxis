@@ -393,6 +393,84 @@ describe('sarif consolidation', async () => {
 
 
 // =============================================================================
+// action.yml — Marketplace publication requirements
+// =============================================================================
+//
+// GitHub refuses to publish a listing if action.yml fails its schema checks, and the
+// only feedback is a generic "needs changes" banner. These pin the constraints that
+// actually bit: `description` is capped at 124 characters, and `author` plus
+// `branding` are required for a listing (though not for using `uses:` locally).
+
+describe('action.yml Marketplace contract', async () => {
+  const yaml = (await import('js-yaml')).default;
+  const actionPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'action.yml',
+  );
+  const action = yaml.load(fs.readFileSync(actionPath, 'utf8'));
+
+  it('parses as valid YAML', () => {
+    assert.equal(typeof action, 'object');
+    assert.ok(action.name);
+  });
+
+  it('description is within the 124-character Marketplace limit', () => {
+    assert.ok(action.description.length < 125,
+      `description is ${action.description.length} chars; Marketplace rejects >= 125`);
+  });
+
+  it('declares the fields a Marketplace listing requires', () => {
+    assert.ok(action.author, 'author is required to publish a listing');
+    assert.ok(action.branding?.icon, 'branding.icon is required');
+    assert.ok(action.branding?.color, 'branding.color is required');
+  });
+
+  it('uses a real Feather icon for branding', () => {
+    // GitHub validates this against the Feather set and rejects unknown names.
+    assert.ok(['shield', 'lock', 'eye', 'alert-triangle', 'check-circle', 'zap']
+      .includes(action.branding.icon),
+    `"${action.branding.icon}" is not a recognised Feather icon`);
+  });
+
+  it('is a composite action with steps', () => {
+    assert.equal(action.runs.using, 'composite');
+    assert.ok(Array.isArray(action.runs.steps) && action.runs.steps.length > 0);
+  });
+
+  it('every input and output is documented', () => {
+    for (const [name, spec] of Object.entries(action.inputs || {})) {
+      assert.ok(spec?.description, `input "${name}" has no description`);
+    }
+    for (const [name, spec] of Object.entries(action.outputs || {})) {
+      assert.ok(spec?.description, `output "${name}" has no description`);
+    }
+  });
+
+  it('every inline `run:` step declares a shell', () => {
+    // Composite actions require an explicit shell; without it the runner cannot
+    // interpret the script.
+    for (const [i, step] of action.runs.steps.entries()) {
+      if (typeof step.run === 'string' && !step.uses) {
+        assert.ok(step.shell, `step ${i + 1} ("${step.name || 'unnamed'}") has no shell`);
+      }
+    }
+  });
+
+  it('installs the package this repo publishes, not a same-named stranger', () => {
+    // `praxis` on npm belongs to an unrelated React framework. The action must install
+    // the renamed package or users silently get the wrong tool.
+    const pkg = JSON.parse(fs.readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8',
+    ));
+    const installSteps = action.runs.steps.filter(s => /npm install -g/.test(s.run || ''));
+    assert.ok(installSteps.length > 0, 'action must install the CLI');
+    for (const step of installSteps) {
+      assert.match(step.run, new RegExp(`npm install -g ${pkg.name}`),
+        `action installs the wrong package name; expected "${pkg.name}" in: ${step.run.trim()}`);
+    }
+  });
+});
+
+// =============================================================================
 // P-IMP-065 — one source for the tool version
 // =============================================================================
 //
