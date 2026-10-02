@@ -26,11 +26,11 @@
 
 import { program } from 'commander';
 import chalk from 'chalk';
-import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join, resolve } from 'path';
+import { dirname, resolve } from 'path';
 
 import { printBanner, TAGLINE, SUBTITLE } from '../core/branding.js';
+import { toolVersion } from '../core/version.js';
 import { loadDotEnv } from '../core/env.js';
 
 // Load .env from the working directory early so API keys and LLM settings
@@ -89,8 +89,7 @@ import { PolicyEngine } from '../agents/policy-engine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const packageJson = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8'));
-const VERSION = packageJson.version;
+const VERSION = toolVersion();
 
 program
   .name('praxis')

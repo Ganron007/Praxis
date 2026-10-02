@@ -18,14 +18,13 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { toolVersion } from '../core/version.js';
 
-// Read version from package.json
-const __filename = fileURLToPath(import.meta.url); // praxis-ignore — module's own path via import.meta.url, not user input
-const __dirname = dirname(__filename);
-const PACKAGE_VERSION = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8')).version;
+// The cache is keyed on the tool version, so a stale one would silently reuse stale
+// findings. It comes from the single source in `cli/core/version.js`, which reports
+// 'unknown' rather than guessing if package.json is unreadable — and a cache written
+// under 'unknown' simply never matches, which is the safe direction.
+const PACKAGE_VERSION = toolVersion();
 
 // Cache TTL: 24 hours
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;

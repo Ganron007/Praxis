@@ -12,6 +12,7 @@
  */
 
 import path from 'path';
+import { toolVersion as toolVersion_ } from '../version.js';
 
 const SARIF_VERSION = '2.1.0';
 
@@ -81,7 +82,10 @@ export function renderFindingsSARIF(findings, options = {}) {
 function renderSARIFDocument(report, options = {}) {
   const {
     toolName = 'praxis',
-    toolVersion = report.version || '1.0.0',
+    // Defaults to the real package version. This used to fall back to a hardcoded
+    // '1.0.0', so any caller that forgot to pass `toolVersion` reported a confidently
+    // wrong driver version in Code Scanning (P-IMP-065).
+    toolVersion = report.version || toolVersion_(),
     informationUri = 'https://github.com/Ganron007/Praxis',
     rootPath = null,
   } = options;

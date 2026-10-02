@@ -38,10 +38,6 @@ import { isHighEntropyMatch, getConfidence } from '../utils/entropy.js';
 import { ThreatIntel } from '../utils/threat-intel.js';
 import * as intelOrchestrator from '../utils/intel/index.js';
 import fg from 'fast-glob';
-import { fileURLToPath } from 'url';
-
-// cli/commands/ -> repo root, for reading package.json version.
-const TOOL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // =============================================================================
 // MAIN COMMAND
@@ -278,16 +274,7 @@ function emitGitHubAnnotations(findings, rootPath) {
  * repository's Security tab.
  */
 function renderSARIF(findings, rootPath) {
-  return renderFindingsSARIF(findings, { toolVersion: toolVersion(), rootPath });
-}
-
-/** Praxis version for SARIF provenance. Same approach as `commands/rules.js`. */
-function toolVersion() {
-  try {
-    return JSON.parse(fs.readFileSync(path.resolve(TOOL_ROOT, 'package.json'), 'utf8')).version || '1.0.0';
-  } catch {
-    return '1.0.0';
-  }
+  return renderFindingsSARIF(findings, { rootPath });
 }
 
 /**

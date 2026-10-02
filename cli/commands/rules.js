@@ -11,22 +11,12 @@
  * docs/ and P-IMP-059 in the improvement plan.
  */
 
-import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import { collectPortableRules, dedupeRules, writeBundle, SEMGREP_SEVERITY } from '../utils/rule-registry.js';
 import { loadPortableBundle, writePlugin } from '../utils/rule-import.js';
+import { toolVersion } from '../core/version.js';
 import * as output from '../utils/output.js';
-
-function toolVersion() {
-  try {
-    const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
-    const pkg = path.resolve(here, '..', '..', 'package.json');
-    return JSON.parse(fs.readFileSync(pkg, 'utf8')).version || null;
-  } catch {
-    return null;
-  }
-}
 
 async function gather() {
   const collected = await collectPortableRules();

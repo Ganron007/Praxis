@@ -19,19 +19,12 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { toolVersion } from '../core/version.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_DIR = path.resolve(__dirname, '..');
 
-/** Reads the tool's own version from package.json. */
-function toolVersion() {
-  try {
-    const pkgPath = path.resolve(CLI_DIR, '..', 'package.json');
-    return JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version || null;
-  } catch {
-    return null;
-  }
-}
+/** Praxis version comes from the single source in `cli/core/version.js`. */
 
 /**
  * Reads a vendored data asset, returning its version and item count.

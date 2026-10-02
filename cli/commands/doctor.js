@@ -13,25 +13,11 @@ import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { buildOrchestratorAsync } from '../agents/index.js';
 import { autoDetectProvider } from '../providers/llm-provider.js';
+import { toolVersion, isNewerVersion } from '../core/version.js';
 
-const __filename = fileURLToPath(import.meta.url); // praxis-ignore — module's own path via import.meta.url, not user input
-const __dirname = dirname(__filename);
-const PACKAGE_VERSION = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8')).version;
-
-function isNewerVersion(latest, current) {
-  const a = latest.split('.').map(Number);
-  const b = current.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    if ((a[i] || 0) > (b[i] || 0)) return true;
-    if ((a[i] || 0) < (b[i] || 0)) return false;
-  }
-  return false;
-}
+const PACKAGE_VERSION = toolVersion();
 
 export async function doctorCommand() {
   console.log();

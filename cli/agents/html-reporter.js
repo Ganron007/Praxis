@@ -32,15 +32,10 @@ import {
 import { buildScanFingerprint, fingerprintLine } from '../utils/scan-fingerprint.js';
 import { readFixLedger, summarizeFixLedger, isReversible } from '../utils/fix-ledger.js';
 import { readScoreHistory, summarizeHistory } from '../utils/score-history.js';
+import { toolVersion } from '../core/version.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PKG_VERSION = (() => {
-  try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8')).version;
-  } catch {
-    return '1.1.0';
-  }
-})();
+const PKG_VERSION = toolVersion();
 
 export class HTMLReporter {
   /** HTML escaping — re-exported from the shared theme so every report agrees. */

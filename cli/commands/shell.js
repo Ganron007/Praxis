@@ -20,12 +20,11 @@
 
 import { createInterface } from 'readline';
 import { execFileSync, spawnSync } from 'child_process';
-import { readFileSync as fsReadFileSync } from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import ora from 'ora';
 import { autoDetectProvider } from '../providers/llm-provider.js';
+import { toolVersion } from '../core/version.js';
 import { auditCommand } from './audit.js';
 import { agentFixCommand } from './agent-fix.js';
 import { undoCommand } from './undo.js';
@@ -33,14 +32,9 @@ import * as output from '../utils/output.js';
 
 const SEV_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 
-// Read version from package.json so the banner stays in sync with releases.
-const PKG_VERSION = (() => {
-  try {
-    const here = path.dirname(fileURLToPath(import.meta.url));
-    const pkg  = JSON.parse(fsReadFileSync(path.join(here, '..', '..', 'package.json'), 'utf8'));
-    return pkg.version;
-  } catch { return ''; }
-})();
+// Version comes from the single source in `cli/core/version.js` so the REPL banner
+// stays in sync with releases without its own copy of the lookup.
+const PKG_VERSION = toolVersion();
 
 const BANNER_LINES = [
   '  ███████╗██╗  ██╗██╗██████╗     ███████╗ █████╗ ███████╗███████╗',

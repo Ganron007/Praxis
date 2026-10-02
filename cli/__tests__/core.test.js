@@ -393,8 +393,135 @@ describe('sarif consolidation', async () => {
 
 
 // =============================================================================
-// branding.js
+// P-IMP-065 — one source for the tool version
 // =============================================================================
+//
+// Seven modules read `package.json` for the version independently, and one more
+// (`core/output/sarif.js`) did not read it at all and fell back to a hardcoded
+// `'1.0.0'`. Three different wrong values were in circulation: '1.0.0' in ci.js and
+// sarif.js, '1.1.0' in html-reporter.js. At release time that is several chances to
+// publish a wrong version — in SARIF provenance, in the cache key, in the report footer.
+
+describe('tool version', async () => {
+  const { toolVersion, isNewerVersion, UNKNOWN_VERSION } = await import('../core/version.js');
+
+  it('resolves the real package version', () => {
+    const pkg = JSON.parse(fs.readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8',
+    ));
+    assert.equal(toolVersion(), pkg.version);
+  });
+
+  it('never returns a placeholder that could pass for a version', () => {
+    const v = toolVersion();
+    assert.match(v, /^\d+\.\d+\.\d+/, `must be semver-shaped, got ${v}`);
+    assert.notEqual(v, UNKNOWN_VERSION);
+  });
+
+  it('is stable across calls (cached, so it cannot change mid-run)', () => {
+    assert.equal(toolVersion(), toolVersion());
+  });
+
+  it('is importable from every module that reports a version', async () => {
+    // If a module kept its own lookup, these would disagree.
+    const modules = [
+      '../core/output/sarif.js',
+      '../utils/scan-fingerprint.js',
+      '../utils/cache-manager.js',
+    ];
+    for (const m of modules) {
+      assert.doesNotThrow(() => fs.readFileSync(
+        path.join(path.dirname(fileURLToPath(import.meta.url)), m), 'utf8',
+      ), `${m} must remain readable`);
+    }
+  });
+
+  it('no module outside core/version.js may resolve its own package.json version', () => {
+    const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+    const offenders = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name !== '__tests__') walk(full);
+          continue;
+        }
+        if (!entry.name.endsWith('.js')) continue;
+        if (full.endsWith(path.join('core', 'version.js'))) continue;
+        const src = fs.readFileSync(full, 'utf8');
+        // Only a SELF-referential read counts. Reading a scanned target's package.json
+        // (`path.join(rootPath, 'package.json')`) is legitimate and must not be flagged.
+        const selfRead = /(?:__dirname|import\.meta\.url)[\s\S]{0,300}?package\.json/;
+        const versionRead = /package\.json[\s\S]{0,200}?\.version|\.version[\s\S]{0,200}?package\.json/;
+        if (selfRead.test(src) && versionRead.test(src)) {
+          offenders.push(path.relative(root, full));
+        }
+      }
+    };
+    walk(root);
+    assert.deepEqual(offenders, [],
+      `these modules resolve their own version — import cli/core/version.js instead: ${offenders.join(', ')}`);
+  });
+
+  it('no module may hardcode a version literal as a fallback', () => {
+    const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+    const offenders = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name !== '__tests__') walk(full);
+          continue;
+        }
+        if (!entry.name.endsWith('.js')) continue;
+        if (full.endsWith(path.join('core', 'version.js'))) continue;
+        const src = fs.readFileSync(full, 'utf8');
+        // A bare version literal used as a *fallback*, not a SARIF spec/schema version.
+        const m = src.match(/toolVersion\s*=\s*[^,\n]*\|\|\s*'([\d.]+)'|PACKAGE_VERSION\s*=\s*[\s\S]{0,160}?\?\s*'([\d.]+)'|PKG_VERSION[\s\S]{0,200}?return\s+'([\d.]+)'/);
+        if (m) offenders.push(`${path.relative(root, full)} -> ${m[1] || m[2] || m[3]}`);
+      }
+    };
+    walk(root);
+    assert.deepEqual(offenders, [],
+      `hardcoded version fallbacks will drift at release time: ${offenders.join(', ')}`);
+  });
+
+  it('the tool version appears in SARIF and matches package.json', async () => {
+    // Regression: the shared version helper was assigned to `toolVersion` without
+    // being called, so the driver had a function where a version belonged and
+    // JSON.stringify silently dropped the field entirely.
+    const { render } = await import('../core/output/index.js');
+    const pkg = JSON.parse(fs.readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8',
+    ));
+    const doc = JSON.parse(render('sarif', { findings: [{ ruleId: 'R', severity: 'high', file: 'a.js', line: 1 }] }));
+    const version = doc.runs[0].tool.driver.version;
+    assert.equal(version, pkg.version, 'SARIF driver version must be the real package version');
+    assert.match(version, /^\d+\.\d+\.\d+$/, `must be a real version, got ${version}`);
+  });
+
+  it('every module reports the same version', async () => {
+    // A wrong version in the cache key, the report footer or SARIF provenance is the
+    // exact drift this consolidation exists to prevent.
+    const pkg = JSON.parse(fs.readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8',
+    ));
+    const fingerprint = await import('../utils/scan-fingerprint.js');
+    assert.equal(fingerprint.buildScanFingerprint({ filesScanned: 1 }).tool, pkg.version);
+    assert.equal((await import('../core/version.js')).toolVersion(), pkg.version);
+  });
+
+  it('compares versions correctly for the update check', () => {
+    assert.equal(isNewerVersion('1.0.1', '1.0.0'), true);
+    assert.equal(isNewerVersion('1.1.0', '1.0.9'), true);
+    assert.equal(isNewerVersion('2.0.0', '1.9.9'), true);
+    assert.equal(isNewerVersion('1.0.0', '1.0.0'), false);
+    assert.equal(isNewerVersion('0.9.0', '1.0.0'), false);
+    assert.equal(isNewerVersion('1.0.0', '1.0.1'), false);
+    assert.equal(isNewerVersion(UNKNOWN_VERSION, '1.0.0'), false, 'unknown must not claim an update exists');
+    assert.equal(isNewerVersion('1.0.0', UNKNOWN_VERSION), true, 'a known current beats an unknown candidate');
+  });
+});
 
 describe('cli/core/branding', async () => {
   const branding = await import('../core/branding.js');
