@@ -30,6 +30,7 @@ import {
   severityBadgeClass,
 } from '../core/output/html-theme.js';
 import { buildScanFingerprint, fingerprintLine } from '../utils/scan-fingerprint.js';
+import { readFixLedger, summarizeFixLedger, isReversible } from '../utils/fix-ledger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PKG_VERSION = (() => {
@@ -841,6 +842,144 @@ function toggleDetail(id) {
             </tbody>
           </table>
         </div>
+      </div>
+      ${this.renderFixLedger(rootPath)}
+    `;
+  }
+
+  /**
+   * Remediation Ledger — the applied half of the find→fix→verify loop (P-IMP-054).
+   *
+   * Reads `.praxis/fixes.jsonl` (currently applied changes) and `.praxis/failures.jsonl`
+   * (plans proposed and rejected). Rejections are the more telling half: a rejected fix
+   * is the loop declining to change code it cannot justify.
+   *
+   * Note there is deliberately no "undone" count — `praxis undo` removes reverted entries
+   * from the log rather than annotating them, so no such data exists. Reporting zero
+   * would be a false negative.
+   */
+  renderFixLedger(rootPath = process.cwd()) {
+    const ledger = readFixLedger(rootPath);
+    const s = summarizeFixLedger(ledger);
+
+    if (ledger.error) {
+      return `
+        <div class="card">
+          <div class="card-title">Remediation Ledger</div>
+          <div class="empty-state">
+            Could not read the fix ledger (<code>.praxis/fixes.jsonl</code>): ${this.esc(ledger.error)}
+          </div>
+        </div>`;
+    }
+
+    if (s.appliedCount === 0 && s.rejectedCount === 0) {
+      return `
+        <div class="card">
+          <div class="card-title">Remediation Ledger</div>
+          <div class="empty-state">
+            No fixes have been applied to this project yet.<br>
+            <span class="muted">Run <code>praxis fix</code> to generate, verify and record LLM-guided remediations.
+            Findings above are the proposed queue.</span>
+          </div>
+        </div>`;
+    }
+
+    const appliedRows = ledger.applied.map((e, idx) => {
+      const relFile = this.normalizePath(e.file, rootPath);
+      const verified = e.verified === true;
+      const reversible = isReversible(e.plan);
+      const findingCount = Array.isArray(e.findings) ? e.findings.length : 0;
+      const when = e.timestamp ? String(e.timestamp).slice(0, 19).replace('T', ' ') : '—';
+      const rules = (e.findings || []).map(f => this.esc(f.rule || f.title || '')).filter(Boolean).join(', ');
+      return `
+        <tr>
+          <td style="width:150px"><code style="font-size:0.72rem">${this.esc(when)}</code></td>
+          <td style="width:220px"><code>${this.esc(relFile)}</code></td>
+          <td style="width:60px"><strong>${findingCount}</strong></td>
+          <td>${verified
+            ? '<span class="tag tag-clear">VERIFIED</span>'
+            : '<span class="tag tag-gap">UNVERIFIED</span>'}</td>
+          <td>${reversible
+            ? '<span class="tag tag-clear">reversible</span>'
+            : '<span class="tag tag-gap">no plan recorded</span>'}</td>
+          <td><small class="muted">${rules || '—'}</small></td>
+        </tr>`;
+    }).join('\n');
+
+    const rejectedRows = Object.entries(s.rejectedByReason)
+      .sort((a, b) => b[1] - a[1])
+      .map(([reason, count]) => `
+        <tr>
+          <td><code>${this.esc(reason)}</code></td>
+          <td><strong>${count}</strong></td>
+        </tr>`).join('\n');
+
+    const unreadable = (ledger.appliedUnreadable || 0) + (ledger.rejectedUnreadable || 0);
+
+    return `
+      <div class="card">
+        <div class="card-title">
+          <span>Remediation Ledger</span>
+          <span class="muted" style="font-size:0.8rem;font-weight:600">${this.esc(s.appliedCount)} change(s) currently applied</span>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card" style="border-top:3px solid #38bdf8">
+            <div class="kpi-val" style="color:#f8fafc">${s.appliedCount}</div>
+            <div class="kpi-label">Changes Applied</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #22c55e">
+            <div class="kpi-val" style="color:#22c55e">${s.verified}</div>
+            <div class="kpi-label">Verified</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid ${s.unverified > 0 ? '#eab308' : '#334155'}">
+            <div class="kpi-val" style="color:${s.unverified > 0 ? '#eab308' : '#334155'}">${s.unverified}</div>
+            <div class="kpi-label">Unverified</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #c084fc">
+            <div class="kpi-val" style="color:#c084fc">${s.reversible}</div>
+            <div class="kpi-label">Reversible</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #fbbf24">
+            <div class="kpi-val" style="color:#fbbf24">${s.rejectedCount}</div>
+            <div class="kpi-label">Fixes Declined</div>
+          </div>
+        </div>
+
+        <p style="font-size:0.9rem;color:#cbd5e1;line-height:1.6;margin-bottom:1rem">
+          ${s.appliedCount > 0
+            ? `<strong>${s.findingsFixed}</strong> finding(s) addressed across <strong>${s.appliedCount}</strong> applied change(s); <strong>${s.verified}</strong> passed verification.`
+            : ''}
+          ${s.reversible > 0
+            ? ` <strong>${s.reversible}</strong> can be reverted with <code>praxis undo</code>.`
+            : ''}
+          ${s.rejectedCount > 0
+            ? ` <strong>${s.rejectedCount}</strong> proposed fix(es) were <em>declined</em> — a declined fix is the loop refusing to change code it cannot justify.`
+            : ''}
+        </p>
+        ${unreadable > 0 ? `<p style="font-size:0.8rem;color:#eab308">⚠ ${unreadable} unreadable log line(s) were skipped.</p>` : ''}
+
+        <div class="card-title" style="margin-top:1.4rem">Applied Changes</div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>When</th><th>File</th><th>Findings</th><th>Verification</th><th>Reversible</th><th>Rules Addressed</th></tr></thead>
+            <tbody>${appliedRows}</tbody>
+          </table>
+        </div>
+
+        ${rejectedRows ? `
+        <div class="card-title" style="margin-top:1.6rem">Declined Fixes by Reason</div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr><th>Reason</th><th>Count</th></tr></thead>
+            <tbody>${rejectedRows}</tbody>
+          </table>
+        </div>` : ''}
+
+        <p style="font-size:0.75rem;color:#64748b;margin-top:1.2rem">
+          Source: <code>.praxis/fixes.jsonl</code>${s.rejectedCount > 0 ? ' and <code>.praxis/failures.jsonl</code>' : ''}.
+          This log records changes <em>currently applied</em> — <code>praxis undo</code> removes reverted entries
+          rather than annotating them, so no "undone" total is reported.
+        </p>
       </div>
     `;
   }
