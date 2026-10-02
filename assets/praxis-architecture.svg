@@ -127,7 +127,7 @@
     <g transform="translate(24, 60)">
       <text x="0" y="16" font-family="sans-serif" font-size="14.5" font-weight="600" fill="#f3e8ff">• <strong>28 Concurrent Agents:</strong> Prompt Injection · MCP Abuse · Memory Poisoning · RAG · Pickles · Auth</text>
       <text x="0" y="42" font-family="sans-serif" font-size="14.5" font-weight="600" fill="#f3e8ff">• <strong>AST &amp; Taint Engine:</strong> Pure ESM Babel (JS/TS) &amp; Python CST with ScopeTree &amp; Source-to-Sink Taint</text>
-      <text x="0" y="68" font-family="sans-serif" font-size="14.5" font-weight="700" fill="#34d399">• <strong>100% Offline &amp; Free:</strong> 0 token cost, 221 Gitleaks rules &amp; 6 cached Threat Intel feeds (OSV, KEV, EPSS)</text>
+      <text x="0" y="68" font-family="sans-serif" font-size="14.5" font-weight="700" fill="#34d399">• <strong>100% Offline &amp; Free:</strong> 0 token cost, 125 secret &amp; code patterns, 7 cached Threat Intel feeds</text>
     </g>
   </g>
 
@@ -244,7 +244,7 @@
     <g transform="translate(24, 60)">
       <text x="0" y="16" font-family="sans-serif" font-size="14.5" font-weight="600" fill="#fef08a">• <strong>Interactive Diff Review:</strong> Developer inspects verified patch before any disk write</text>
       <text x="0" y="42" font-family="sans-serif" font-size="14.5" font-weight="600" fill="#fef08a">• <strong>Atomic Disk Apply:</strong> Atomic file replacement (`fs.rename` temp-swap) + Undo Log (`praxis undo`)</text>
-      <text x="0" y="68" font-family="sans-serif" font-size="14.5" font-weight="700" fill="#38bdf8">• <strong>Granular HTML Report Suite:</strong> `index.html` · `findings.html` · `standards.html` · `abom.html` · `remediation.html`</text>
+      <text x="0" y="68" font-family="sans-serif" font-size="14.5" font-weight="700" fill="#38bdf8">• <strong>Assessment Report:</strong> single-file tabbed HTML — agent coverage, AST taint, ledger, trend</text>
       <text x="0" y="92" font-family="sans-serif" font-size="14.5" font-weight="700" fill="#34d399">• CI/CD Native: Net-new PR gating, SARIF export to GitHub Code Scanning &amp; PR annotations</text>
     </g>
   </g>

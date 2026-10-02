@@ -6,7 +6,7 @@ other command that consumes the merged feed. It explains what each command
 does, how the system is laid out internally, and what knobs you can turn.
 
 For everything else (general CLI usage, scanning, hooks, etc.), see the main
-[`README.md`](./README.md).
+[`README.md`](../README.md) and the full [`USAGE.md`](USAGE.md) reference.
 
 ---
 

@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/Ganron007/Praxis/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Ganron007/Praxis/ci.yml?label=CI" alt="CI"></a>
-  <a href="https://github.com/marketplace/actions/praxis"><img src="https://img.shields.io/badge/Marketplace-Praxis%20Security%20Scan-blue" alt="GitHub Marketplace"></a>
+  <a href="https://github.com/marketplace/actions/praxis-security-scan"><img src="https://img.shields.io/badge/Marketplace-Praxis%20Security%20Scan-blue" alt="GitHub Marketplace"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.0.0-blue.svg" alt="Node.js: >=18.0.0">
   <img src="https://img.shields.io/npm/v/praxis-sec?label=Version" alt="npm version">
@@ -61,7 +61,7 @@ npm install -g praxis-sec
 
 praxis scan .            # full 28-agent audit + AST taint evaluation
 praxis fix .             # interactive LLM-guided fixes
-praxis redteam .         # dynamic AI red team & DAST prober
+praxis scan redteam .   # adversarial agent pack against a local codebase
 praxis agents audit .    # audit the AI/agent surface
 praxis agents mcp --test-live  # live MCP JSON-RPC probe
 praxis web               # local web UI for scans and findings
@@ -82,18 +82,24 @@ praxis vibe .            # emoji-graded A–F score
 ## Command groups
 
 ```
-praxis scan       secrets · full · changed · env · redteam · standard · ci
+praxis scan       full · secrets · changed · env · redteam · standard · ci
 praxis fix        interactive · quick · from-report · rotate · undo · env-template
 praxis agents     audit · skill · mcp · bom · serve (MCP server)
 praxis intel      update · deps · advisories
 praxis report     team · legal · checklist · sbom · benchmark
-praxis project    init · doctor · hooks · guard · watch · baseline · plugins · policy
-praxis rules      list · export · import      (portable rule bundles)
-praxis web        local web UI                (read-only, loopback by default)
+praxis project    init · doctor · hooks · guard · watch · baseline · memory · playbook · plugins · policy
+praxis rules      list · export · import          (portable rule bundles)
+praxis web        local web UI                    (read-only, loopback by default)
 
+praxis redteam    DAST red team against a live LLM endpoint
+praxis hooks      Claude Code tool-call security gate
 praxis vibe       emoji-graded A–F score
 praxis score      numeric score
 ```
+
+> `praxis redteam` takes a **live endpoint** (e.g. `praxis redteam https://api.example.com`).
+> To run the adversarial agent pack against a **local codebase**, use
+> `praxis scan redteam <path>`.
 
 ## 28 agents at a glance
 
