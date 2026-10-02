@@ -300,6 +300,31 @@ describe('HTMLReporter — full document', () => {
     assert.ok(without.includes('not captured'));
   });
 
+  // P-IMP-056: tab navigation must not rely on inline javascript: URLs.
+  it('uses no javascript: URLs and switches tabs via a delegated handler', () => {
+    const html = reporter.generate(SCORE_RESULT, FINDINGS, {}, '/proj', AGENT_RESULTS);
+    assert.ok(!html.includes('javascript:'), 'inline javascript: URLs break a strict CSP');
+    assert.ok(html.includes("closest('[data-tab]')"), 'tab switching should use one delegated listener');
+    for (const tab of ['overview', 'agents', 'findings', 'standards', 'abom', 'remediation']) {
+      assert.ok(html.includes(`data-tab="${tab}"`), `missing data-tab for ${tab}`);
+      assert.ok(html.includes(`href="#${tab}"`), `tab ${tab} should be a real, shareable hash href`);
+    }
+  });
+
+  it('deep-links the active tab and restores it on load', () => {
+    const html = reporter.generate(SCORE_RESULT, FINDINGS, {}, '/proj', AGENT_RESULTS);
+    assert.ok(html.includes('location.hash'), 'should read the tab from the URL');
+    assert.ok(html.includes('replaceState'), 'should keep the address bar in sync');
+    assert.ok(html.includes('DOMContentLoaded'), 'should restore the tab on load');
+  });
+
+  it('ignores an unknown tab instead of blanking the page', () => {
+    const html = reporter.generate(SCORE_RESULT, FINDINGS, {}, '/proj', AGENT_RESULTS);
+    assert.ok(html.includes('TABS.includes(tabId)'), 'switchTab should validate the tab id');
+    assert.ok(html.includes("if (!tabId) tabId = 'overview'") || html.includes('TABS.includes(fromHash) ? fromHash'),
+      'an unknown hash should fall back to the overview');
+  });
+
   it('lists every finding rule in the findings table', () => {
     const html = reporter.generate(SCORE_RESULT, FINDINGS, {}, '/proj', AGENT_RESULTS);
     for (const f of FINDINGS) assert.ok(html.includes(f.rule), `missing rule ${f.rule}`);

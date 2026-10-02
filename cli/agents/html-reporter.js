@@ -139,8 +139,14 @@ export class HTMLReporter {
     const gradeColors = GRADE_COLORS;
     const gradeColor = gradeColors[gradeLetter] || '#ef4444';
 
+    // Single-page reports switch tabs via a delegated click handler on [data-tab].
+    // This replaces `href="javascript:switchTab(...)"`, which required an inline
+    // javascript: URL (incompatible with a strict Content-Security-Policy, and an odd
+    // smell in a security tool's own output). Using a real href of "#<tab>" instead
+    // also makes the active tab deep-linkable and shareable for free, and degrades to
+    // the page itself if scripting is unavailable.
     const getHref = (tab) => {
-      if (!isMultiPage) return `javascript:switchTab('${tab}')`;
+      if (!isMultiPage) return `#${tab}`;
       if (tab === 'overview') return 'index.html';
       if (tab === 'agents') return 'agents.html';
       if (tab === 'findings') return 'findings.html';
@@ -154,16 +160,21 @@ export class HTMLReporter {
       <header class="app-header">
         <div class="header-inner">
           <div class="brand-group">
-            <a href="${getHref('overview')}" style="text-decoration:none"><div class="brand-title">PRAXIS <span>CORE</span></div></a>
+            <a href="${getHref('overview')}"${isMultiPage ? '' : ' data-tab="overview"'} style="text-decoration:none"><div class="brand-title">PRAXIS <span>CORE</span></div></a>
             <span class="brand-badge">v${PKG_VERSION}</span>
           </div>
           <nav class="nav-tabs">
-            <a class="tab-link ${activeTab === 'overview' ? 'active' : ''}" href="${getHref('overview')}" id="tab-btn-overview">1 · Overview</a>
-            <a class="tab-link ${activeTab === 'agents' ? 'active' : ''}" href="${getHref('agents')}" id="tab-btn-agents">2 · Agent Coverage</a>
-            <a class="tab-link ${activeTab === 'findings' ? 'active' : ''}" href="${getHref('findings')}" id="tab-btn-findings">3 · Findings &amp; AST Dataflow</a>
-            <a class="tab-link ${activeTab === 'standards' ? 'active' : ''}" href="${getHref('standards')}" id="tab-btn-standards">4 · Standards Matrix</a>
-            <a class="tab-link ${activeTab === 'abom' ? 'active' : ''}" href="${getHref('abom')}" id="tab-btn-abom">5 · Agent BOM (ABOM)</a>
-            <a class="tab-link ${activeTab === 'remediation' ? 'active' : ''}" href="${getHref('remediation')}" id="tab-btn-remediation">6 · Remediation Plan</a>
+            ${['overview', 'agents', 'findings', 'standards', 'abom', 'remediation'].map((t, i) => {
+              const labels = {
+                overview: '1 · Overview',
+                agents: '2 · Agent Coverage',
+                findings: '3 · Findings &amp; AST Dataflow',
+                standards: '4 · Standards Matrix',
+                abom: '5 · Agent BOM (ABOM)',
+                remediation: '6 · Remediation Plan',
+              };
+              return `<a class="tab-link${activeTab === t ? ' active' : ''}" href="${getHref(t)}"${isMultiPage ? '' : ` data-tab="${t}"`} id="tab-btn-${t}">${labels[t]}</a>`;
+            }).join('\n            ')}
           </nav>
           <div class="header-score">
             <div class="grade">${this.esc(gradeLetter)}</div>
@@ -266,15 +277,37 @@ ${this.generateHeaderHTML(p.tab, projectName, scoreResult, true)}
 </main>
 
 <script>
-function switchTab(tabId) {
-  document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
-  const targetSec = document.getElementById('section-' + tabId);
-  const targetBtn = document.getElementById('tab-btn-' + tabId);
-  if (targetSec) targetSec.style.display = 'block';
-  if (targetBtn) targetBtn.classList.add('active');
+const TABS = ['overview', 'agents', 'findings', 'standards', 'abom', 'remediation'];
+
+function switchTab(tabId, updateHash) {
+  if (!TABS.includes(tabId)) tabId = 'overview';
+  TABS.forEach(t => {
+    const sec = document.getElementById('section-' + t);
+    const btn = document.getElementById('tab-btn-' + t);
+    if (sec) sec.style.display = t === tabId ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', t === tabId);
+  });
+  if (updateHash !== false) {
+    // Keep the address bar in sync so the view is linkable and survives a reload.
+    if (location.hash.slice(1) !== tabId) history.replaceState(null, '', '#' + tabId);
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// One delegated listener instead of six inline handlers, and no inline-script URLs,
+// so the report works under a strict Content-Security-Policy.
+document.addEventListener('click', function (e) {
+  const link = e.target.closest('[data-tab]');
+  if (!link) return;
+  e.preventDefault();
+  switchTab(link.getAttribute('data-tab'));
+});
+
+// Restore the tab from the URL on load, so a shared link opens the right view.
+window.addEventListener('DOMContentLoaded', function () {
+  const fromHash = location.hash.slice(1);
+  switchTab(TABS.includes(fromHash) ? fromHash : 'overview', false);
+});
 
 let activeSev = 'all';
 let searchTerm = '';
