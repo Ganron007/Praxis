@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/Ganron007/Praxis/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Ganron007/Praxis/ci.yml?label=CI" alt="CI"></a>
-  <a href="https://github.com/marketplace/actions/praxis-sec-scan"><img src="https://img.shields.io/badge/Marketplace-Praxis%20Security%20Scan-blue" alt="GitHub Marketplace"></a>
+  <a href="https://github.com/marketplace/actions/praxis"><img src="https://img.shields.io/badge/Marketplace-Praxis%20Security%20Scan-blue" alt="GitHub Marketplace"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.0.0-blue.svg" alt="Node.js: >=18.0.0">
   <img src="https://img.shields.io/npm/v/praxis-sec?label=Version" alt="npm version">
@@ -40,10 +40,24 @@
 | **CI-native** | `scan ci` gates, SARIF for Code Scanning with real `security-severity` ranking, net-new PR gating (fails only on *introduced* findings), GitHub Action inline PR annotations |
 | **Reproducible** | Every scan reports a provenance fingerprint (tool, runtime, probe/threatpack/data versions), and CI enforces determinism between two runs |
 
+## Install
+
+```bash
+npm install -g praxis-sec     # then just run: praxis
+npx praxis-sec scan .         # or no install at all
+```
+
+Requires Node.js 18+. Nothing else — no account, no API key. LLM-assisted remediation is
+opt-in via `--deep`.
+
+> **The package is `praxis-sec`, but the command is `praxis`.** The unscoped `praxis` name on
+> npm belongs to an unrelated project, so the distribution carries a suffix. Installing it puts
+> a `praxis` executable on your PATH, so every example below reads `praxis …`.
+
 ## Quick start
 
 ```bash
-npm install && npm link
+npm install -g praxis-sec
 
 praxis scan .            # full 28-agent audit + AST taint evaluation
 praxis fix .             # interactive LLM-guided fixes
@@ -110,7 +124,7 @@ Template: [`.env.example`](.env.example) · Verify with `praxis project doctor`.
 ## CI
 
 ```yaml
-- uses: Ganron007/Praxis@master
+- uses: Ganron007/Praxis@v1
   with:
     threshold: '80'
     net-new: 'true'        # fail only on findings introduced by the PR
