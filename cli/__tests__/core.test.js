@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // =============================================================================
 // fs.js
@@ -277,6 +278,100 @@ describe('cli/core/output/sarif', async () => {
     });
   });
 });
+
+// =============================================================================
+// P-IMP-062 / P-IMP-063 — one SARIF serializer, reachable from every command
+// =============================================================================
+//
+// Four commands carried private SARIF serializers. The `security-severity` fix
+// landed in the registry and reached almost nobody — including the GitHub Action's
+// `scan ci --sarif` call, which emitted 0 of 12 rules with a severity. These tests
+// pin both the behaviour and the structure that let it happen.
+
+describe('sarif consolidation', async () => {
+  const { renderFindingsSARIF } = await import('../core/output/sarif.js');
+  const COMMANDS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'commands');
+
+  const parse = (json) => JSON.parse(json);
+  const uriOf = (doc, i = 0) =>
+    doc.runs[0].results[i].locations[0].physicalLocation.artifactLocation.uri;
+
+  it('no command may define a private SARIF serializer', () => {
+    // Structural guard for the actual root cause: a duplicated `runs: [{ ... }]`
+    // literal with a `tool.driver` is how the drift started.
+    const dir = COMMANDS_DIR;
+    const offenders = [];
+    for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.js'))) {
+      const src = fs.readFileSync(path.join(dir, file), 'utf8');
+      if (/runs:\s*\[\s*\{/.test(src) && /tool:\s*\{/.test(src) && /driver:\s*\{/.test(src)) {
+        offenders.push(file);
+      }
+    }
+    assert.deepEqual(offenders, [],
+      `these commands build SARIF by hand — use core/output/sarif.js: ${offenders.join(', ')}`);
+  });
+
+  it('no command may hardcode a SARIF driver version', () => {
+    const dir = COMMANDS_DIR;
+    const offenders = [];
+    for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.js'))) {
+      const src = fs.readFileSync(path.join(dir, file), 'utf8');
+      const m = src.match(/driver:\s*\{[^}]*version:\s*'([^']+)'/);
+      if (m) offenders.push(`${file} -> ${m[1]}`);
+    }
+    assert.deepEqual(offenders, [], `hardcoded driver versions: ${offenders.join(', ')}`);
+  });
+
+  it('renders the flat finding shape used by ci.js and audit.js', () => {
+    const out = parse(renderFindingsSARIF(
+      [{ rule: 'R1', title: 'T', file: '/proj/src/a.js', line: 3, severity: 'critical', description: 'd' }],
+      { rootPath: '/proj' },
+    ));
+    assert.equal(out.runs[0].results[0].ruleId, 'R1');
+    assert.equal(out.runs[0].tool.driver.rules[0].properties['security-severity'], '9.5');
+    assert.equal(uriOf(out) , 'src/a.js');
+  });
+
+  it('renders the nested orchestrator shape used by scan.js', () => {
+    const out = parse(renderFindingsSARIF(
+      [{ file: '/proj/src/b.js', findings: [{ patternName: 'Nested', severity: 'low', description: 'n', line: 9 }] }],
+      { rootPath: '/proj' },
+    ));
+    assert.equal(out.runs[0].results[0].ruleId, 'Nested');
+    assert.equal(out.runs[0].tool.driver.rules[0].properties['security-severity'], '2.5');
+    assert.equal(uriOf(out), 'src/b.js');
+  });
+
+  it('relativizes artifact URIs against rootPath so no local path leaks', () => {
+    const out = parse(renderFindingsSARIF(
+      [{ rule: 'R', file: 'C:\\Users\\alice\\projects\\myapp\\src\\db.js', severity: 'high' }],
+      { rootPath: 'C:\\Users\\alice\\projects\\myapp' },
+    ));
+    const uri = out.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri;
+    assert.equal(uri, 'src/db.js');
+    assert.ok(!uri.includes('alice'), 'must not leak the local username');
+    assert.ok(!uri.startsWith('/') && !/^[A-Za-z]:/.test(uri), 'must be repo-relative');
+  });
+
+  it('never emits an escaping or absolute URI', () => {
+    // A finding outside the root must still not become an absolute path.
+    const out = parse(renderFindingsSARIF(
+      [{ rule: 'R', file: 'C:\\elsewhere\\secret.js', severity: 'high' }],
+      { rootPath: 'C:\\proj' },
+    ));
+    const uri = out.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri;
+    assert.ok(!uri.includes('..'), `must not escape the root: ${uri}`);
+    assert.ok(!/^[A-Za-z]:/.test(uri), `must not be absolute: ${uri}`);
+  });
+
+  it('does not hardcode a repository name when no rootPath is supplied', () => {
+    // The old normalizer stripped a literal `/Praxis/`, written for this repo alone.
+    const out = parse(renderFindingsSARIF([{ rule: 'R', file: 'C:\\a\\Praxis\\b.js', severity: 'high' }]));
+    const uri = uriOf(out);
+    assert.ok(uri.includes('Praxis'), `a user path containing "Praxis" must not be truncated: ${uri}`);
+  });
+});
+
 
 // =============================================================================
 // branding.js

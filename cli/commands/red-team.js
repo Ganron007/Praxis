@@ -15,6 +15,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { renderFindingsSARIF } from '../core/output/sarif.js';
 import chalk from 'chalk';
 import ora from 'ora';
 import { buildOrchestratorAsync } from '../agents/index.js';
@@ -31,6 +32,9 @@ import { printBanner } from '../utils/output.js';
 
 export async function redTeamCommand(targetPath = '.', options = {}) {
   const absolutePath = path.resolve(targetPath);
+
+  // Any of these formats owns stdout; decorative output must not follow it.
+  const machineOutput = !!(options.json || options.sarif || options.html || options.sbom);
 
   if (!fs.existsSync(absolutePath)) {
     output.error(`Path does not exist: ${absolutePath}`);
@@ -201,14 +205,19 @@ export async function redTeamCommand(targetPath = '.', options = {}) {
   }
 
   // ── 9. Trend ────────────────────────────────────────────────────────────────
-  const trend = scoringEngine.getTrend(absolutePath, scoreResult.score);
-  if (trend) {
-    const arrow = trend.diff > 0 ? chalk.green('↑') : trend.diff < 0 ? chalk.red('↓') : chalk.gray('→');
-    console.log();
-    console.log(chalk.gray(`  Trend: ${trend.previousScore} → ${trend.currentScore} ${arrow} (${trend.diff > 0 ? '+' : ''}${trend.diff})`));
-  }
+  // Suppressed for machine output. `scan redteam . --sarif > results.sarif` must
+  // produce a parseable file; printing a trend line after the SARIF document
+  // corrupts it, and `audit.js` already guards the same way via `machineOutput`.
+  if (!machineOutput) {
+    const trend = scoringEngine.getTrend(absolutePath, scoreResult.score);
+    if (trend) {
+      const arrow = trend.diff > 0 ? chalk.green('↑') : trend.diff < 0 ? chalk.red('↓') : chalk.gray('→');
+      console.log();
+      console.log(chalk.gray(`  Trend: ${trend.previousScore} → ${trend.currentScore} ${arrow} (${trend.diff > 0 ? '+' : ''}${trend.diff})`));
+    }
 
-  console.log();
+    console.log();
+  }
 
   // Exit code
   process.exit(scoreResult.score >= 75 ? 0 : 1);
@@ -329,51 +338,13 @@ function outputJSON(scoreResult, findings, recon, agentResults) {
   }, null, 2));
 }
 
+/**
+ * SARIF for GitHub Code Scanning.
+ *
+ * Delegates to the shared serializer in `cli/core/output/sarif.js` (P-IMP-062); this was
+ * a private copy hardcoding a driver version of `4.0.0` and carrying no
+ * `security-severity`.
+ */
 function outputSARIF(findings, rootPath) {
-  const rules = {};
-  for (const f of findings) {
-    if (!rules[f.rule]) {
-      rules[f.rule] = {
-        id: f.rule,
-        name: f.title || f.rule,
-        shortDescription: { text: f.title || f.rule },
-        fullDescription: { text: f.description || '' },
-        defaultConfiguration: {
-          level: ['critical', 'high'].includes(f.severity) ? 'error' : 'warning',
-        },
-        helpUri: 'https://github.com/Ganron007/Praxis',
-      };
-    }
-  }
-
-  const sarif = {
-    version: '2.1.0',
-    $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
-    runs: [{
-      tool: {
-        driver: {
-          name: 'praxis',
-          version: '4.0.0',
-          informationUri: 'https://github.com/Ganron007/Praxis',
-          rules: Object.values(rules),
-        }
-      },
-      results: findings.map(f => ({
-        ruleId: f.rule,
-        level: ['critical', 'high'].includes(f.severity) ? 'error' : 'warning',
-        message: { text: `${f.title}: ${f.description}` },
-        locations: [{
-          physicalLocation: {
-            artifactLocation: {
-              uri: path.relative(rootPath, f.file).replace(/\\/g, '/'),
-              uriBaseId: '%SRCROOT%',
-            },
-            region: { startLine: f.line, startColumn: f.column || 1 },
-          }
-        }],
-      })),
-    }],
-  };
-
-  console.log(JSON.stringify(sarif, null, 2));
+  console.log(renderFindingsSARIF(findings, { rootPath }));
 }

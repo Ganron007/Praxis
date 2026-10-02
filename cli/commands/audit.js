@@ -14,6 +14,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { renderFindingsSARIF } from '../core/output/sarif.js';
 import chalk from 'chalk';
 import ora from 'ora';
 import fg from 'fast-glob';
@@ -907,47 +908,16 @@ function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remedi
 // SARIF OUTPUT
 // =============================================================================
 
+/**
+ * SARIF for GitHub Code Scanning.
+ *
+ * Delegates to the shared serializer in `cli/core/output/sarif.js` (P-IMP-062). This was
+ * a private copy, hardcoding a driver version of `4.0.0` while the package was at a
+ * different number entirely, and it carried no `security-severity` — so the default
+ * `praxis scan` lost severity fidelity in Code Scanning.
+ */
 function outputSARIF(findings, rootPath) {
-  const rules = {};
-  for (const f of findings) {
-    if (!rules[f.rule]) {
-      rules[f.rule] = {
-        id: f.rule,
-        name: f.title || f.rule,
-        shortDescription: { text: f.title || f.rule },
-        fullDescription: { text: f.description || '' },
-        defaultConfiguration: {
-          level: ['critical', 'high'].includes(f.severity) ? 'error' : 'warning',
-        },
-      };
-    }
-  }
-
-  console.log(JSON.stringify({
-    version: '2.1.0',
-    $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
-    runs: [{
-      tool: {
-        driver: {
-          name: 'praxis',
-          version: '4.0.0',
-          informationUri: 'https://github.com/Ganron007/Praxis',
-          rules: Object.values(rules),
-        }
-      },
-      results: findings.map(f => ({
-        ruleId: f.rule,
-        level: ['critical', 'high'].includes(f.severity) ? 'error' : 'warning',
-        message: { text: `${f.title}: ${f.description}` },
-        locations: [{
-          physicalLocation: {
-            artifactLocation: { uri: path.relative(rootPath, f.file).replace(/\\/g, '/'), uriBaseId: '%SRCROOT%' },
-            region: { startLine: f.line, startColumn: f.column || 1 },
-          }
-        }],
-      })),
-    }],
-  }, null, 2));
+  console.log(renderFindingsSARIF(findings, { rootPath }));
 }
 
 // =============================================================================

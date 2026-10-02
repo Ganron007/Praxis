@@ -1,11 +1,17 @@
 /**
  * SARIF v2.1.0 output formatter.
  *
- * Centralizes the SARIF emission logic that previously lived in
- * `cli/commands/audit.js` and a separate copy in `cli/commands/ci.js`.
+ * The single SARIF serializer for Praxis (P-IMP-062). Every emitting path must go
+ * through here: `scan --sarif`, `scan ci --sarif`, `audit --sarif`, `redteam --sarif`,
+ * `scan standard --sarif` and `--format sarif`. Four commands used to carry private
+ * copies of this logic, which meant fixes applied here reached almost nobody — most
+ * visibly `security-severity`, which the GitHub Action's `scan ci --sarif` call never
+ * emitted. Do not reintroduce a local serializer.
  *
  * Spec: https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html
  */
+
+import path from 'path';
 
 const SARIF_VERSION = '2.1.0';
 
@@ -37,15 +43,52 @@ const DEFAULT_SEVERITY = { level: 'warning', securitySeverity: '5.0' };
 
 const forSeverity = (severity) => SEVERITY[severity] || DEFAULT_SEVERITY;
 
-export default function sarif(report, options = {}) {
+/**
+ * Normalizes Praxis's internal finding shape and renders SARIF.
+ *
+ * Commands hold findings in two shapes: a flat list using `rule`/`title`/`file`, and
+ * the per-file `[{ file, findings }]` shape the orchestrator returns. This accepts
+ * either, so no command has to know the SARIF field names — which is what let four
+ * private serializers drift apart in the first place.
+ *
+ * @param {object[]} findings
+ * @param {object} [options]  forwarded to the serializer; pass `rootPath` or artifact
+ *                            URIs will not be repo-relative.
+ */
+export function renderFindingsSARIF(findings, options = {}) {
+  const flat = Array.isArray(findings) && findings.length > 0 && findings[0] && Array.isArray(findings[0].findings)
+    ? findings.flatMap(({ file, findings: fileFindings }) =>
+      (fileFindings || []).map((f) => ({ ...f, file: f.file || file })))
+    : (findings || []);
+
+  return renderSARIFDocument({
+    findings: flat.map((f) => ({
+      ruleId: f.ruleId || f.rule || f.patternName || f.pattern || f.type,
+      title: f.title || f.patternName || f.rule,
+      file: f.file,
+      line: f.line,
+      column: f.column,
+      severity: f.severity,
+      description: f.description,
+      cwe: f.cwe,
+      owasp: f.owasp,
+      standards: f.standards,
+      category: f.category,
+    })),
+  }, options);
+}
+
+function renderSARIFDocument(report, options = {}) {
   const {
     toolName = 'praxis',
     toolVersion = report.version || '1.0.0',
     informationUri = 'https://github.com/Ganron007/Praxis',
+    rootPath = null,
   } = options;
 
   const findings = report.findings || [];
   const rules = collectRules(findings);
+  const relativize = makeRelativizer(rootPath);
 
   const sarifReport = {
     $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
@@ -60,12 +103,50 @@ export default function sarif(report, options = {}) {
             rules,
           },
         },
-        results: findings.map(toResult),
+        results: findings.map((f) => toResult(f, relativize)),
       },
     ],
   };
 
   return JSON.stringify(sarifReport, null, 2);
+}
+
+/**
+ * Builds the artifact-URI normaliser.
+ *
+ * SARIF is uploaded to GitHub Code Scanning, so artifact URIs must be repo-relative.
+ * When `rootPath` is supplied, findings are relativized against it. Without it we fall
+ * back to stripping a leading drive letter or POSIX root and collapsing `..` segments.
+ *
+ * This fallback used to strip a hardcoded `/Praxis/` prefix. That was written for this
+ * repository's own dogfooding and failed open for every real user: a Windows path
+ * surfaced the username and the whole directory tree, and a POSIX path passed through
+ * untouched — publishing the local filesystem layout into a target repository.
+ */
+function makeRelativizer(rootPath) {
+  if (rootPath) {
+    return (file) => {
+      const rel = path.relative(rootPath, String(file));
+      // A file outside the root still must not leak an absolute path; fall back to the
+      // basename rather than emitting `../../..`.
+      if (!rel || rel.startsWith('..')) return path.basename(String(file));
+      return rel.split(path.sep).join('/');
+    };
+  }
+
+  return (file) => {
+    let s = String(file).split(path.sep).join('/');
+    s = s.replace(/^[a-zA-Z]:\/*/, '').replace(/^\/+/, '');
+
+    // Collapse `.`/`..` segments without escaping the repo.
+    const out = [];
+    for (const seg of s.split('/')) {
+      if (seg === '' || seg === '.') continue;
+      if (seg === '..') { out.pop(); continue; }
+      out.push(seg);
+    }
+    return out.join('/') || path.basename(String(file));
+  };
 }
 
 function collectRules(findings) {
@@ -102,12 +183,8 @@ function collectRules(findings) {
   return [...seen.values()];
 }
 
-function toResult(f) {
-  const normFile = String(f.file || f.path || '')
-    .replace(/\\/g, '/')
-    .replace(/^[a-zA-Z]:\/+/, '')
-    .replace(/^.*\/Praxis\/showcase-target\//, 'showcase-target/')
-    .replace(/^.*\/Praxis\//, '');
+function toResult(f, relativize) {
+  const uri = relativize(f.file || f.path || '');
 
   const sev = forSeverity(f.severity);
 
@@ -118,7 +195,7 @@ function toResult(f) {
     locations: [
       {
         physicalLocation: {
-          artifactLocation: { uri: normFile },
+          artifactLocation: { uri, uriBaseId: '%SRCROOT%' },
           region: {
             startLine: f.line || 1,
             startColumn: f.column || 1,
@@ -145,3 +222,5 @@ function toResult(f) {
 
   return result;
 }
+
+export default renderSARIFDocument;

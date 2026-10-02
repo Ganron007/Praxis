@@ -21,6 +21,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { renderFindingsSARIF } from '../core/output/sarif.js';
 import fg from 'fast-glob';
 import ora from 'ora';
 import chalk from 'chalk';
@@ -200,7 +201,7 @@ export async function scanCommand(targetPath = '.', options = {}) {
 
     // Output results
     if (options.sarif) {
-      outputSARIF(allResults, absolutePath);
+      console.log(renderSARIF(allResults, absolutePath));
     } else if (options.json) {
       outputJSON(allResults, files.length);
     } else {
@@ -507,63 +508,17 @@ function outputJSON(results, filesScanned) {
  * Then upload via:
  *   github/codeql-action/upload-sarif@v3
  */
-function outputSARIF(results, rootPath) {
-  const rules = {};
-
-  // Build rules from findings
-  for (const { findings } of results) {
-    for (const f of findings) {
-      if (!rules[f.patternName]) {
-        rules[f.patternName] = {
-          id: f.patternName.replace(/\s+/g, '-').toLowerCase(),
-          name: f.patternName,
-          shortDescription: { text: f.patternName },
-          fullDescription: { text: f.description },
-          defaultConfiguration: {
-            level: f.severity === 'critical' ? 'error'
-              : f.severity === 'high' ? 'error'
-              : f.severity === 'medium' ? 'warning'
-              : 'note'
-          },
-          helpUri: 'https://github.com/Ganron007/Praxis',
-        };
-      }
-    }
-  }
-
-  const sarif = {
-    version: '2.1.0',
-    $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
-    runs: [{
-      tool: {
-        driver: {
-          name: 'praxis',
-          version: '2.1.0',
-          informationUri: 'https://github.com/Ganron007/Praxis',
-          rules: Object.values(rules),
-        }
-      },
-      results: results.flatMap(({ file, findings }) =>
-        findings.map(f => ({
-          ruleId: f.patternName.replace(/\s+/g, '-').toLowerCase(),
-          level: f.severity === 'critical' || f.severity === 'high' ? 'error' : 'warning',
-          message: { text: f.description },
-          locations: [{
-            physicalLocation: {
-              artifactLocation: {
-                uri: path.relative(rootPath, file).replace(/\\/g, '/'),
-                uriBaseId: '%SRCROOT%'
-              },
-              region: {
-                startLine: f.line,
-                startColumn: f.column,
-              }
-            }
-          }]
-        }))
-      )
-    }]
-  };
-
-  console.log(JSON.stringify(sarif, null, 2));
+/**
+ * SARIF output for GitHub Code Scanning.
+ *
+ * Delegates to the shared serializer in `cli/core/output/sarif.js` (P-IMP-062); this used
+ * to be a private copy. That copy also disagreed with itself — it gave a `low` finding
+ * rule-level `note` but result-level `warning` — and hardcoded the SARIF spec version
+ * `2.1.0` as the tool driver version.
+ *
+ * `allResults` arrives as `[{ file, findings }]`, so findings are flattened with their
+ * file attached before serializing. `--sarif` writes to stdout; redirect it.
+ */
+function renderSARIF(allResults, rootPath) {
+  return renderFindingsSARIF(allResults, { rootPath });
 }

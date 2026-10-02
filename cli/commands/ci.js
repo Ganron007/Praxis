@@ -19,6 +19,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { renderFindingsSARIF } from '../core/output/sarif.js';
 import { execFileSync } from 'child_process';
 import { buildOrchestrator } from '../agents/index.js';
 import { ScoringEngine } from '../agents/scoring-engine.js';
@@ -37,6 +38,10 @@ import { isHighEntropyMatch, getConfidence } from '../utils/entropy.js';
 import { ThreatIntel } from '../utils/threat-intel.js';
 import * as intelOrchestrator from '../utils/intel/index.js';
 import fg from 'fast-glob';
+import { fileURLToPath } from 'url';
+
+// cli/commands/ -> repo root, for reading package.json version.
+const TOOL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // =============================================================================
 // MAIN COMMAND
@@ -142,8 +147,7 @@ export async function ciCommand(targetPath = '.', options = {}) {
 
   // ── SARIF Output ─────────────────────────────────────────────────────────
   if (sarifPath) {
-    const sarif = buildSARIF(allFindings, absolutePath);
-    fs.writeFileSync(sarifPath, JSON.stringify(sarif, null, 2));
+    fs.writeFileSync(sarifPath, renderSARIF(allFindings, absolutePath));
   }
 
   // ── JSON Output ──────────────────────────────────────────────────────────
@@ -262,48 +266,28 @@ function emitGitHubAnnotations(findings, rootPath) {
   }
 }
 
-function buildSARIF(findings, rootPath) {
-  const rules = {};
-  for (const f of findings) {
-    if (!rules[f.rule]) {
-      rules[f.rule] = {
-        id: f.rule, name: f.title || f.rule,
-        shortDescription: { text: f.title || f.rule },
-        fullDescription: { text: f.description || '' },
-        defaultConfiguration: {
-          level: ['critical', 'high'].includes(f.severity) ? 'error' : 'warning',
-        },
-      };
-    }
-  }
+/**
+ * SARIF for GitHub Code Scanning.
+ *
+ * Delegates to the shared serializer in `cli/core/output/sarif.js` (P-IMP-062). This
+ * used to be a private copy, which is why the GitHub Action's SARIF carried no
+ * `security-severity` at all — the fix landed in the registry and never reached here.
+ *
+ * `rootPath` is mandatory in practice: it is what makes artifact URIs repo-relative.
+ * Without it a scan uploads the local username and directory layout to the target
+ * repository's Security tab.
+ */
+function renderSARIF(findings, rootPath) {
+  return renderFindingsSARIF(findings, { toolVersion: toolVersion(), rootPath });
+}
 
-  return {
-    version: '2.1.0',
-    $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
-    runs: [{
-      tool: {
-        driver: {
-          name: 'praxis', version: '1.0.0',
-          informationUri: 'https://github.com/Ganron007/Praxis',
-          rules: Object.values(rules),
-        },
-      },
-      results: findings.map(f => ({
-        ruleId: f.rule,
-        level: ['critical', 'high'].includes(f.severity) ? 'error' : 'warning',
-        message: { text: `${f.title}: ${f.description}` },
-        locations: [{
-          physicalLocation: {
-            artifactLocation: {
-              uri: path.relative(rootPath, f.file).replace(/\\/g, '/'),
-              uriBaseId: '%SRCROOT%',
-            },
-            region: { startLine: f.line, startColumn: f.column || 1 },
-          },
-        }],
-      })),
-    }],
-  };
+/** Praxis version for SARIF provenance. Same approach as `commands/rules.js`. */
+function toolVersion() {
+  try {
+    return JSON.parse(fs.readFileSync(path.resolve(TOOL_ROOT, 'package.json'), 'utf8')).version || '1.0.0';
+  } catch {
+    return '1.0.0';
+  }
 }
 
 /**

@@ -28,14 +28,25 @@ const SCAN_EXTS = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.py', 
 
 let _cachedCorpus = null;
 
+/** Reads a JSON file, returning null rather than throwing. */
+function readJson(file) {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+const THREATPACK_SEED = path.join(path.dirname(CORPUS_PATH), '..', 'threatpacks', 'latest.json');
+
 function loadCorpus() {
   if (_cachedCorpus) return _cachedCorpus;
   try {
-    const raw = fs.readFileSync(CORPUS_PATH, 'utf-8');
-    const data = JSON.parse(raw);
+    const data = readJson(CORPUS_PATH) || {};
     const categoryById = {};
     for (const c of data.categories || []) categoryById[c.id] = c;
-    const probes = (data.probes || []).map(p => {
+
+    const decorate = (p) => {
       const cat = categoryById[p.category] || {};
       let regex;
       try {
@@ -43,28 +54,80 @@ function loadCorpus() {
       } catch {
         regex = null;
       }
-      return { ...p, patternSource: p.regex, regex, categoryTitle: cat.title || p.category, tags: cat.tags || [] };
-    });
+      return {
+        ...p,
+        patternSource: p.regex,
+        regex,
+        categoryTitle: cat.title || p.category,
+        tags: cat.tags || [],
+      };
+    };
 
-    // Overlay threat-pack probes from the merged intel feed (fetched via
-    // `praxis intel update`). New attack-vector signatures arrive as data.
-    try {
-      const feed = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.praxis', 'threat-intel.json'), 'utf-8'));
-      const packProbes = feed?.threatPack?.probes || [];
-      for (const p of packProbes) {
-        const cat = categoryById[p.category] || {};
-        let regex;
-        try { regex = compileProbeRegex(p.regex); } catch { regex = null; }
-        probes.push({ ...p, patternSource: p.regex, regex, categoryTitle: cat.title || p.category, tags: cat.tags || [] });
-      }
-    } catch { /* no feed yet — bundled corpus only */ }
+    // 1. Bundled prompt-injection corpus.
+    const probes = (data.probes || []).map(decorate);
 
-    _cachedCorpus = { version: data.version, probes };
+    // 2. Bundled threat-pack seed — the detection floor for this release.
+    //
+    // The seed used to be consulted only via `praxis intel update`. Loading it here
+    // means the shipped attack-vector families work on a first run with no network,
+    // and it makes the release's own signatures authoritative (P-IMP-064).
+    const seed = readJson(THREATPACK_SEED);
+    const seedVersion = seed?.version || null;
+    for (const p of seed?.probes || []) probes.push(decorate(p));
+
+    // 3. Overlay the fetched intel feed, which may bring newer signatures.
+    //
+    //    Version-gated per probe: a feed older than the bundled seed must not replace
+    //    a probe the release already ships. A stale `threat-intel.json` holding
+    //    threatpack 1.0.0 was reinstating the pre-fix TP-003 pattern
+    //    (`when\s+combined\s+with`, no referent, no instruction noun) and reporting
+    //    ordinary English as prompt injection. A feed newer than, or equal to, the
+    //    seed still wins, so updates keep working.
+    let feedApplied = 0;
+    let feedRejected = 0;
+    const feed = readJson(path.join(os.homedir(), '.praxis', 'threat-intel.json'));
+    const pack = feed?.threatPack;
+    const feedVersion = pack?.version || null;
+    const feedIsOlder = seedVersion && feedVersion
+      && compareVersions(feedVersion, seedVersion) < 0;
+
+    for (const p of pack?.probes || []) {
+      if (feedIsOlder) { feedRejected++; continue; }
+      const decorated = decorate(p);
+      const existing = probes.findIndex(x => x.id === p.id);
+      if (existing >= 0) probes[existing] = decorated;
+      else probes.push(decorated);
+      feedApplied++;
+    }
+
+    _cachedCorpus = {
+      version: data.version,
+      probes,
+      seedThreatPackVersion: seedVersion,
+      feedThreatPackVersion: feedVersion,
+      feedApplied,
+      feedRejected,
+    };
     return _cachedCorpus;
   } catch {
-    _cachedCorpus = { version: '0', probes: [] };
+    _cachedCorpus = { version: '0', probes: [], feedApplied: 0, feedRejected: 0 };
     return _cachedCorpus;
   }
+}
+
+/**
+ * Compares dotted version strings numerically. Returns <0, 0 or >0.
+ * Missing/invalid segments compare as 0, so `1.0` and `1.0.0` are equal.
+ */
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map(n => parseInt(n, 10) || 0);
+  const pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return d;
+  }
+  return 0;
 }
 
 function compileProbeRegex(pattern) {
