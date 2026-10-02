@@ -471,6 +471,106 @@ describe('action.yml Marketplace contract', async () => {
 });
 
 // =============================================================================
+// Architecture diagram — claims must match the code
+// =============================================================================
+//
+// The diagram drifted twice before (a rule count that appeared nowhere in the
+// codebase, a stale report description) and briefly rendered text outside a card
+// border. These pin the claims to measured reality and check the geometry.
+
+describe('architecture diagram', async () => {
+  const svgPath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'praxis-architecture.svg',
+  );
+  const svg = fs.readFileSync(svgPath, 'utf8');
+  const visible = [...svg.matchAll(/<text[^>]*>([\s\S]*?)<\/text>/g)]
+    .map(m => m[1]
+      .replace(/<[^>]+>/g, '')                                  // strip nested markup
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&middot;/g, '·').replace(/&ge;/g, '>=').replace(/&rarr;/g, '->')
+      .replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+
+  it('is structurally valid', () => {
+    const opens = (svg.match(/<[a-zA-Z]/g) || []).length;
+    const closes = (svg.match(/<\//g) || []).length + (svg.match(/\/>/g) || []).length;
+    assert.equal(opens, closes, 'unbalanced tags');
+    assert.match(svg, /<svg[^>]*xmlns=/);
+    // Every referenced paint server must be defined, or the browser renders nothing.
+    const defined = new Set([...svg.matchAll(/<(?:linear|radial)Gradient id="([^"]+)"/g)].map(m => m[1]));
+    for (const m of svg.matchAll(/url\(#([^)]+)\)/g)) {
+      const id = m[1];
+      if (id.endsWith('Grad') || id === 'shadow' || id.startsWith('arrDown') || id === 'topGlow') {
+        assert.ok(defined.has(id) || svg.includes(`id="${id}"`), `undefined paint server: ${id}`);
+      }
+    }
+  });
+
+  it('canvas height matches the background rect', () => {
+    const vb = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)/);
+    const bg = svg.match(/<rect width="(\d+)" height="(\d+)"/);
+    assert.ok(vb && bg);
+    assert.equal(bg[2], vb[2], 'background must cover the full canvas');
+  });
+
+  it('renders no text below a card border', () => {
+    const DESCENDER = 5;
+    const cards = [...svg.matchAll(/<g transform="translate\((\d+), (\d+)\)" filter="url\(#shadow\)"/g)];
+    assert.ok(cards.length >= 6, 'expected the six-stage diagram');
+    for (const c of cards) {
+      const i = svg.indexOf(`translate(${c[1]}, ${c[2]})" filter`);
+      const block = svg.slice(i, i + 2600);
+      const h = +((block.match(/width="780" height="(\d+)"/) || [])[1]);
+      const ys = [...block.matchAll(/<text x="0" y="(\d+)"/g)].map(m => +m[1]);
+      const inner = +((block.match(/<g transform="translate\(24, (\d+)\)"/) || [])[1] || 0);
+      if (!ys.length || !h) continue;
+      const lowest = inner + Math.max(...ys);
+      assert.ok(lowest + DESCENDER <= h,
+        `card at y=${c[2]} overflows by ${lowest + DESCENDER - h}px (text bottom ${lowest + DESCENDER}, height ${h})`);
+    }
+  });
+
+  it('states the real rule and feed counts', async () => {
+    const patterns = await import('../utils/patterns.js');
+    const shared = patterns.SECRET_PATTERNS.length + patterns.SECURITY_PATTERNS.length;
+    assert.ok(visible.some(t => t.includes(`${shared} secret & code patterns`)),
+      `diagram must state the real shared-pattern count (${shared})`);
+
+    // svgPath is <repo>/assets/..., so one `..` reaches the repo root.
+    const intelDir = path.join(path.dirname(svgPath), '..', 'cli', 'utils', 'intel', 'sources');
+    const sources = fs.readdirSync(intelDir).filter(f => f.endsWith('.js'));
+    const core = sources.filter(f => !/tier = 'optional'/.test(fs.readFileSync(path.join(intelDir, f), 'utf8'))).length;
+    assert.ok(visible.some(t => t.includes(`${core} cached Threat Intel feeds`)),
+      `diagram must state the real core-feed count (${core})`);
+  });
+
+  it('states the real exportable rule count', async () => {
+    const { collectPortableRules } = await import('../utils/rule-registry.js');
+    const { rules } = await collectPortableRules();
+    assert.ok(visible.some(t => t.includes(`${rules.length} pattern rules`)),
+      `diagram must state the real exportable rule count (${rules.length})`);
+  });
+
+  it('mentions the surfaces that were previously missing', () => {
+    for (const needle of ['praxis web', 'praxis rules export', 'security-severity', 'fingerprint']) {
+      assert.ok(visible.some(t => t.includes(needle)), `diagram omits "${needle}"`);
+    }
+  });
+
+  it('no bullet is longer than one already known to fit the same 780px card', () => {
+    // Absolute width estimation is unreliable; compare against known-good lines.
+    const bullets = visible.filter(t => t.startsWith('•'));
+    const longestKnown = bullets
+      .filter(t => !/praxis web|rules export|security-severity|fingerprint|125 secret/.test(t))
+      .reduce((a, b) => Math.max(a, b.length), 0);
+    for (const b of bullets) {
+      assert.ok(b.length <= longestKnown,
+        `bullet may overflow: "${b.slice(0, 60)}" (${b.length} vs known-good ${longestKnown})`);
+    }
+  });
+});
+
+// =============================================================================
 // P-IMP-065 — one source for the tool version
 // =============================================================================
 //

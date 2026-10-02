@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1120" viewBox="0 0 960 1120" role="img" aria-label="Praxis AI Security Architecture and Autonomous Fix Loop Flow">
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1340" viewBox="0 0 960 1340" role="img" aria-label="Praxis AI Security Architecture and Autonomous Fix Loop Flow">
   <defs>
     <!-- Background Canvas Gradient -->
     <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
@@ -37,6 +37,11 @@
     <linearGradient id="cardHitl" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#241403"/>
       <stop offset="100%" stop-color="#140a02"/>
+    </linearGradient>
+
+    <linearGradient id="cardSurfaces" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#082f49"/>
+      <stop offset="100%" stop-color="#04141f"/>
     </linearGradient>
 
     <!-- Brand Color Gradients -->
@@ -88,7 +93,7 @@
   </defs>
 
   <!-- Base Canvas Background -->
-  <rect width="960" height="1120" fill="url(#bgGrad)"/>
+  <rect width="960" height="1340" fill="url(#bgGrad)"/>
   <rect width="960" height="420" fill="url(#topGlow)"/>
 
   <!-- ========================================================================= -->
@@ -264,9 +269,34 @@
   </g>
 
   <!-- ========================================================================= -->
+  <!-- STAGE 6 : OUTPUT SURFACES, PORTABILITY & REPRODUCIBILITY                   -->
+  <!-- ========================================================================= -->
+  <path d="M 480 1055 L 480 1087" fill="none" stroke="#38bdf8" stroke-width="3.5" marker-end="url(#arrDownCyan)"/>
+
+  <g transform="translate(90, 1095)" filter="url(#shadow)">
+    <rect x="0" y="0" width="780" height="165" rx="14" fill="url(#cardSurfaces)" stroke="#38bdf8" stroke-width="2.2"/>
+
+    <!-- Stage Header Badge -->
+    <circle cx="28" cy="28" r="16" fill="url(#cyanGrad)"/>
+    <text x="28" y="34" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="900" fill="#04141f">6</text>
+
+    <text x="56" y="34" font-family="sans-serif" font-size="18.5" font-weight="900" fill="#ffffff">OUTPUT SURFACES &amp; REPRODUCIBILITY</text>
+    <rect x="635" y="14" width="130" height="28" rx="6" fill="#082f49" stroke="#38bdf8" stroke-width="1.2"/>
+    <text x="700" y="32" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="900" fill="#7dd3fc">READ-ONLY</text>
+
+    <!-- Sub-bullets -->
+    <g transform="translate(24, 60)">
+      <text x="0" y="16" font-family="sans-serif" font-size="14.5" font-weight="600" fill="#bae6fd">• <strong>Web UI:</strong> <tspan fill="#7dd3fc">`praxis web`</tspan> — local browser UI, live SSE progress, loopback-only</text>
+      <text x="0" y="42" font-family="sans-serif" font-size="14.5" font-weight="600" fill="#bae6fd">• <strong>Portable Rules:</strong> <tspan fill="#7dd3fc">`praxis rules export`</tspan> — 411 pattern rules as Semgrep YAML</text>
+      <text x="0" y="68" font-family="sans-serif" font-size="14.5" font-weight="600" fill="#bae6fd">• <strong>Code Scanning:</strong> SARIF carries numeric <tspan fill="#7dd3fc">`security-severity`</tspan> so alerts rank properly</text>
+      <text x="0" y="92" font-family="sans-serif" font-size="14.5" font-weight="700" fill="#34d399">• Reproducible: scan fingerprint + CI determinism gate over <tspan fill="#a7f3d0">`file::rule`</tspan> identities</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
   <!-- FOOTER                                                                    -->
   <!-- ========================================================================= -->
-  <g transform="translate(480, 1085)">
+  <g transform="translate(480, 1300)">
     <text text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="13.5" font-weight="600" fill="#c084fc">
       Node.js ≥ 18 · Pure ESM · 28 Security Agents · 4-Tier Verification Ladder · Multi-LLM Autopilot
     </text>
