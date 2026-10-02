@@ -31,6 +31,7 @@ import {
 } from '../core/output/html-theme.js';
 import { buildScanFingerprint, fingerprintLine } from '../utils/scan-fingerprint.js';
 import { readFixLedger, summarizeFixLedger, isReversible } from '../utils/fix-ledger.js';
+import { readScoreHistory, summarizeHistory } from '../utils/score-history.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PKG_VERSION = (() => {
@@ -425,6 +426,7 @@ function toggleDetail(id) {
         </div>
       </div>
       ${this.renderAsiSection(scoreResult)}
+      ${this.renderTrendSection(scoreResult, rootPath)}
     `;
   }
 
@@ -845,6 +847,113 @@ function toggleDetail(id) {
       </div>
       ${this.renderFixLedger(rootPath)}
     `;
+  }
+
+  /**
+   * Score trend over time, from `.praxis/history.json`.
+   *
+   * This is the part that must not overstate (P-IMP-055). An empty graph reads as
+   * "flat, no change", which is a different claim from "we have no data", so:
+   *   - no prior scans  → say the project is at its baseline
+   *   - fewer than 3 measurements → say a trend needs more, and show what exists
+   *   - always show the sample size and time span beside the chart
+   */
+  renderTrendSection(scoreResult = {}, rootPath = process.cwd()) {
+    const history = readScoreHistory(rootPath);
+    const s = summarizeHistory(history.points, {
+      score: scoreResult.score,
+      grade: scoreResult.grade?.letter ?? scoreResult.grade ?? null,
+    });
+
+    const sampleLabel = `${s.measurementCount} measurement${s.measurementCount === 1 ? '' : 's'}` +
+      (s.spanDays !== null ? ` over ${s.spanDays} day${s.spanDays === 1 ? '' : 's'}` : '');
+
+    if (history.error) {
+      return `
+        <div class="card">
+          <div class="card-title">Score Trend</div>
+          <div class="empty-state">
+            Score history could not be read (<code>.praxis/history.json</code>): ${this.esc(history.error)}<br>
+            <span class="muted">The current score is still accurate; only the trend is unavailable.</span>
+          </div>
+        </div>`;
+    }
+
+    // No history at all: this run is the baseline. Say so — do not draw an empty chart.
+    if (s.measurementCount <= 1) {
+      const currentScore = s.latest ?? scoreResult.score;
+      return `
+        <div class="card">
+          <div class="card-title">
+            <span>Score Trend</span>
+            <span class="muted" style="font-size:0.8rem;font-weight:600">${this.esc(sampleLabel)}</span>
+          </div>
+          <div class="empty-state">
+            ${s.latest !== null
+              ? `This is the <strong>first recorded scan</strong> for this project — it establishes the baseline.`
+              : `No prior scans recorded — this scan establishes the <strong>baseline</strong>.`}
+            <br>
+            <span class="muted">A trend needs at least two measurements. Current score:
+              <strong>${currentScore ?? '—'}/100</strong>. Re-run <code>praxis scan</code> to build a series.</span>
+          </div>
+        </div>`;
+    }
+
+    // Sparkline: score over time, 0-100, with the current point marked.
+    const W = 640, H = 120, PAD = 8;
+    const xs = i => s.series.length === 1 ? W / 2 : PAD + (i / (s.series.length - 1)) * (W - PAD * 2);
+    const ys = v => H - PAD - (Math.max(0, Math.min(100, v)) / 100) * (H - PAD * 2);
+    const path = s.series.map((p, i) => `${i === 0 ? 'M' : 'L'}${xs(i).toFixed(1)},${ys(p.score).toFixed(1)}`).join(' ');
+    const dots = s.series.map((p, i) =>
+      `<circle cx="${xs(i).toFixed(1)}" cy="${ys(p.score).toFixed(1)}" r="${i === s.series.length - 1 ? 4 : 2.5}" fill="${i === s.series.length - 1 ? '#38bdf8' : '#64748b'}"><title>${this.esc(String(p.score))}/100${p.timestamp ? ' — ' + this.esc(String(p.timestamp).slice(0, 10)) : ''}</title></circle>`
+    ).join('');
+
+    const delta = s.delta;
+    const deltaHtml = delta === null ? '' : delta > 0
+      ? `<span class="tag tag-clear">+${delta} vs previous</span>`
+      : delta < 0
+        ? `<span class="tag tag-flagged">${delta} vs previous</span>`
+        : '<span class="muted" style="font-size:0.78rem">no change vs previous</span>';
+
+    return `
+      <div class="card">
+        <div class="card-title">
+          <span>Score Trend</span>
+          <span class="muted" style="font-size:0.8rem;font-weight:600">${this.esc(sampleLabel)}</span>
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:#050811;border:1px solid #1e293b;border-radius:8px" role="img" aria-label="Security score over time">
+          <path d="${path}" fill="none" stroke="#38bdf8" stroke-width="2" />
+          ${dots}
+        </svg>
+        <div class="kpi-grid" style="margin-top:1rem">
+          <div class="kpi-card" style="border-top:3px solid #38bdf8">
+            <div class="kpi-val" style="color:#38bdf8">${s.latest ?? '—'}</div>
+            <div class="kpi-label">Latest Score</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid ${s.best !== null && s.best >= 75 ? '#22c55e' : '#64748b'}">
+            <div class="kpi-val" style="color:#6ee7b7">${s.best ?? '—'}</div>
+            <div class="kpi-label">Best</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #ef4444">
+            <div class="kpi-val" style="color:#fca5a5">${s.worst ?? '—'}</div>
+            <div class="kpi-label">Worst</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #c084fc">
+            <div class="kpi-val" style="color:#c084fc">${s.priorCount}</div>
+            <div class="kpi-label">Prior Scans</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #334155">
+            <div class="kpi-val" style="color:#94a3b8;font-size:1.3rem">${deltaHtml}</div>
+            <div class="kpi-label">Change</div>
+          </div>
+        </div>
+        ${s.needsMoreData ? `
+        <p style="font-size:0.8rem;color:#eab308;margin-top:0.8rem">
+          ⚠ Based on ${s.measurementCount} measurement${s.measurementCount === 1 ? '' : 's'} — too few to call a trend.
+          Treat this as a starting point, not a trajectory.
+        </p>` : ''}
+        ${history.unreadable > 0 ? `<p style="font-size:0.78rem;color:#eab308">⚠ ${history.unreadable} unreadable history entr${history.unreadable === 1 ? 'y was' : 'ies were'} skipped.</p>` : ''}
+      </div>`;
   }
 
   /**
