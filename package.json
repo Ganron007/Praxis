@@ -53,6 +53,7 @@
     "snippets/",
     "ai-defense/",
     "docs/",
+    "!docs/internal/",
     "scripts/check-determinism.mjs",
     "README.md",
     "LICENSE"
