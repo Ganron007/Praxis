@@ -120,7 +120,33 @@ Full audit: secrets + 28 agents + deps + score + remediation plan.
 | `--agentic-target <score>` | Target security score for agentic loop |
 | `--hermes-only` | Run only Hermes-relevant agents |
 | `--fail-below <threshold>` | Exit 1 if score < threshold |
+| `-b, --branch <name>` | Branch or tag to scan (when target is a Git URL) |
+| `--depth <n>` | Git clone depth (default: 1 for shallow clone, 0 for full history) |
+| `--git-token <token>` | Auth token for private Git repositories (or set `PRAXIS_GIT_TOKEN` / `GITHUB_TOKEN`) |
+| `--git-history` | Include Git commit history secret audit |
+| `--keep-clone` | Retain cloned repository on disk after scan instead of deleting |
+| `--submodules` | Recursively clone Git submodules |
 | `-v, --verbose` | Verbose output |
+
+> **Direct Git Repository Scanning:** You can pass any remote Git URL directly to `praxis scan` (e.g., `praxis scan https://github.com/OWASP/wrongsecrets`). Praxis clones the repository into an isolated, secure temporary directory, executes the audit, and automatically purges the workspace upon completion.
+
+### `scan git <url>` / `scan repo <url>`
+
+Direct remote Git repository audit. Clones the remote repository to an isolated temporary workspace, runs the 28-agent audit, generates compliance and remediation reports, and cleans up the temporary files safely.
+
+```bash
+# Scan a public GitHub repository with depth 1 (fast SAST audit)
+praxis scan git https://github.com/OWASP/wrongsecrets
+
+# Scan a specific branch with full commit history secret audit
+praxis scan git https://github.com/org/repo -b staging --git-history
+
+# Scan a private repository using an auth token
+praxis scan git https://github.com/private-org/repo --git-token "$GITHUB_TOKEN" --json > report.json
+
+# Shorthand syntax also supported:
+praxis scan gh:OWASP/wrongsecrets
+```
 
 ### `scan secrets [path]`
 

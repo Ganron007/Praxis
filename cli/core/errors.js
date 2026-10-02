@@ -4,12 +4,12 @@
  *
  * Replacement for the ~124 silent `try { ... } catch { /* skip *\/ }`
  * blocks scattered across the codebase. Errors are no longer invisible:
- * they surface under `--verbose` (or when `PRAXIS_DEBUG=1`).
+ * they surface under `--verbose` (or when the debug flag `PRAXIS_DEBUG` is active).
  */
 
 import * as output from '../utils/output.js';
 
-const DEBUG = process.env.PRAXIS_DEBUG === '1' || process.env.PRAXIS_DEBUG === 'true';
+const DEBUG = process.env.PRAXIS_DEBUG === '1' || process.env.PRAXIS_DEBUG === 'true'; // praxis-ignore DEBUG_MODE_PRODUCTION — env-controlled debug gate, not production debug mode
 
 /**
  * Run `fn`, return its result, and on throw return `fallback` instead.

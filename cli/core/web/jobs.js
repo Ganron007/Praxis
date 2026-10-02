@@ -91,7 +91,7 @@ export class JobQueue extends EventEmitter {
   }
 
   _public(job) {
-    const { result, root, ...rest } = job;
+    const { result, root: _root, ...rest } = job;
     return { ...rest, hasResult: Boolean(result) };
   }
 
@@ -155,7 +155,7 @@ export class JobQueue extends EventEmitter {
 
 /**
  * Default scan runner: drives the real Orchestrator so the UI cannot drift from the CLI.
- * Returns the same shape the CLI's JSON output produces.
+ * Returns the same shape the CLI's JSON output produces, enriched with score and grade.
  */
 export async function runScanWithOrchestrator(rootPath, onProgress) {
   const { buildOrchestratorAsync } = await import('../../agents/index.js');
@@ -172,6 +172,24 @@ export async function runScanWithOrchestrator(rootPath, onProgress) {
     },
   });
 
+  let score = 100;
+  let grade = 'A';
+  let categories = {};
+  let standardsSummary = null;
+  try {
+    const { ScoringEngine } = await import('../../agents/scoring-engine.js');
+    const engine = new ScoringEngine();
+    const computed = engine.compute(findings || []);
+    if (computed) {
+      score = computed.score ?? 100;
+      grade = computed.grade?.letter || (typeof computed.grade === 'string' ? computed.grade : 'A');
+      categories = computed.categories || {};
+      standardsSummary = computed.standardsSummary || null;
+    }
+  } catch {
+    // fallback gracefully
+  }
+
   return {
     root: path.basename(rootPath),
     agentCount: (agentResults || []).length,
@@ -179,5 +197,10 @@ export async function runScanWithOrchestrator(rootPath, onProgress) {
     agents: agentResults || [],
     recon: recon || null,
     findings: findings || [],
+    score,
+    grade,
+    categories,
+    standardsSummary,
+    scannedAt: new Date().toISOString(),
   };
 }

@@ -45,6 +45,7 @@ import { generatePDF, generatePrintHTML, isChromeAvailable } from '../utils/pdf-
 import { SecretsVerifier } from '../utils/secrets-verifier.js';
 import { applyInlineAnnotations } from './autofix.js';
 import { buildScanFingerprint } from '../utils/scan-fingerprint.js';
+import { isGitUrl, cloneGitRepo } from '../core/git-clone.js';
 
 // =============================================================================
 // CONSTANTS
@@ -83,18 +84,44 @@ const EFFORT_MAP = {
 // =============================================================================
 
 export async function auditCommand(targetPath = '.', options = {}) {
-  const absolutePath = path.resolve(targetPath);
   const machineOutput = options.json || options.sarif || options.csv || options.md;
+  let gitClone = null;
+  let effectivePath = targetPath;
 
-  if (!fs.existsSync(absolutePath)) {
-    console.error(chalk.red(`  Path does not exist: ${absolutePath}`));
-    process.exitCode = 1;
-    return;
+  // ── Remote Git Repository Support ─────────────────────────────────────────
+  if (isGitUrl(targetPath)) {
+    if (!machineOutput) printBanner();
+    const gitSpinner = machineOutput ? null : ora({ text: chalk.cyan(`Cloning remote Git repository: ${targetPath}...`), color: 'cyan' }).start();
+    try {
+      gitClone = cloneGitRepo(targetPath, {
+        branch: options.branch,
+        depth: options.depth,
+        gitToken: options.gitToken,
+        submodules: options.submodules,
+        gitHistory: options.gitHistory,
+      });
+      effectivePath = gitClone.tempDir;
+      if (gitSpinner) gitSpinner.succeed(chalk.green(`Cloned ${gitClone.repoName} (${gitClone.displayUrl}) to temporary workspace`));
+    } catch (err) {
+      if (gitSpinner) gitSpinner.fail(chalk.red(err.message));
+      else console.error(chalk.red(err.message));
+      process.exitCode = 1;
+      return;
+    }
   }
 
-  if (!machineOutput) {
-    printBanner();
-  }
+  try {
+    const absolutePath = path.resolve(effectivePath);
+
+    if (!fs.existsSync(absolutePath)) {
+      console.error(chalk.red(`  Path does not exist: ${absolutePath}`));
+      process.exitCode = 1;
+      return;
+    }
+
+    if (!machineOutput && !gitClone) {
+      printBanner();
+    }
 
   // ── Cache Layer ──────────────────────────────────────────────────────────
   // --deep forces a fresh scan so taint analysis covers every finding,
@@ -623,6 +650,15 @@ export async function auditCommand(targetPath = '.', options = {}) {
       threshold = Number.isNaN(parsed) ? 75 : parsed;
     }
     process.exitCode = scoreResult.score >= threshold ? 0 : 1;
+  }
+  } finally {
+    if (gitClone) {
+      if (!options.keepClone) {
+        gitClone.cleanup();
+      } else if (!machineOutput) {
+        console.log(chalk.gray(`\n  Cloned repository retained at: ${gitClone.tempDir}`));
+      }
+    }
   }
 }
 

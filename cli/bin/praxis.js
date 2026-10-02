@@ -150,8 +150,49 @@ scan
   .option('--agentic-target <score>', 'Target security score for agentic loop', parseInt)
   .option('--hermes-only', 'Run only Hermes-relevant agents')
   .option('--fail-below <threshold>', 'Exit 1 if score is below threshold')
+  .option('-b, --branch <name>', 'Git branch or tag to scan (when target is a Git URL)')
+  .option('--depth <n>', 'Git clone depth (default: 1 for shallow clone, 0 for full history)', parseInt)
+  .option('--git-token <token>', 'Auth token for private Git repositories (or set PRAXIS_GIT_TOKEN / GITHUB_TOKEN)')
+  .option('--git-history', 'Include Git commit history secret scanning')
+  .option('--keep-clone', 'Keep cloned repository on disk after scan instead of deleting')
+  .option('--submodules', 'Recursively clone Git submodules')
   .option('-v, --verbose', 'Verbose output')
   .action(auditCommand);
+
+scan
+  .command('git <url>')
+  .description('Direct remote Git repository audit: clone to secure temp workspace and scan')
+  .option('-b, --branch <name>', 'Git branch or tag to clone and scan')
+  .option('--depth <n>', 'Git clone depth (default: 1 for shallow clone)', parseInt)
+  .option('--git-token <token>', 'Auth token for private repositories (or set PRAXIS_GIT_TOKEN / GITHUB_TOKEN)')
+  .option('--git-history', 'Include Git commit history secret scanning')
+  .option('--keep-clone', 'Keep cloned repository on disk after scan')
+  .option('--submodules', 'Recursively clone Git submodules')
+  .option('--json', 'Output results as JSON')
+  .option('--sarif', 'Output results in SARIF format')
+  .option('--csv', 'Output results as CSV')
+  .option('--md', 'Output results as Markdown')
+  .option('--html [file]', 'HTML report path (default: praxis-report.html)')
+  .option('--no-deps', 'Skip dependency audit')
+  .option('--no-ai', 'Skip AI classification')
+  .option('--deep', 'LLM-powered taint analysis for critical/high findings')
+  .option('-v, --verbose', 'Verbose output')
+  .action((url, opts) => auditCommand(url, opts));
+
+scan
+  .command('repo <url>')
+  .description('Alias for "praxis scan git <url>"')
+  .option('-b, --branch <name>', 'Git branch or tag to clone and scan')
+  .option('--depth <n>', 'Git clone depth (default: 1)', parseInt)
+  .option('--git-token <token>', 'Auth token for private repositories')
+  .option('--git-history', 'Include Git commit history secret scanning')
+  .option('--keep-clone', 'Keep cloned repository on disk after scan')
+  .option('--json', 'Output results as JSON')
+  .option('--sarif', 'Output results in SARIF format')
+  .option('--html [file]', 'HTML report path (default: praxis-report.html)')
+  .option('--no-deps', 'Skip dependency audit')
+  .option('-v, --verbose', 'Verbose output')
+  .action((url, opts) => auditCommand(url, opts));
 
 scan
   .command('secrets [path]')
@@ -162,6 +203,10 @@ scan
   .option('--sarif', 'Output results in SARIF format')
   .option('--include-tests', 'Also scan test files')
   .option('--no-cache', 'Force full rescan')
+  .option('-b, --branch <name>', 'Git branch or tag to scan (when target is a Git URL)')
+  .option('--depth <n>', 'Git clone depth (default: 1)', parseInt)
+  .option('--git-token <token>', 'Auth token for private Git repositories')
+  .option('--keep-clone', 'Keep cloned repository on disk after scan')
   .action(scanCommand);
 
 scan

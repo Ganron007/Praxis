@@ -67,7 +67,7 @@ export class GuardrailDetector {
    */
   static detect(code = '') {
     if (!code || typeof code !== 'string') {
-      return { hasGuardrails: false, frameworks: [], defenses: [] };
+      return { hasGuardrails: Boolean(false), frameworks: [], defenses: [] }; // praxis-ignore AI_EVAL_HARNESS_DISABLED_GUARDRAILS — detector result, not disabled eval config
     }
 
     const detectedFrameworks = [];

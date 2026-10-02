@@ -60,6 +60,7 @@ opt-in via `--deep`.
 npm install -g praxis-sec
 
 praxis scan .            # full 28-agent audit + AST taint evaluation
+praxis scan git <url>    # direct remote Git repo audit (clones to temp dir & audits)
 praxis fix .             # interactive LLM-guided fixes
 praxis scan redteam .   # adversarial agent pack against a local codebase
 praxis agents audit .    # audit the AI/agent surface
@@ -82,7 +83,7 @@ praxis vibe .            # emoji-graded A–F score
 ## Command groups
 
 ```
-praxis scan       full · secrets · changed · env · redteam · standard · ci
+praxis scan       full · git · secrets · changed · env · redteam · standard · ci
 praxis fix        interactive · quick · from-report · rotate · undo · env-template
 praxis agents     audit · skill · mcp · bom · serve (MCP server)
 praxis intel      update · deps · advisories

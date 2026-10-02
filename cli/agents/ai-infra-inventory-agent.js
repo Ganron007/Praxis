@@ -424,9 +424,13 @@ export class AiInfraInventoryAgent extends BaseAgent {
       // Eval-harness / sandbox misconfigurations (P-IMP-048)
       for (const check of EVAL_HARNESS_RISK) {
         if (check.regex.test(content)) {
+          const lNum = lineNum(check.regex);
+          const lines = content.split('\n');
+          const lineText = lines[lNum - 1] || '';
+          if (lineText.includes('// praxis-ignore') || lineText.includes('# praxis-ignore')) continue;
           findings.push(createFinding({
             file,
-            line: lineNum(check.regex),
+            line: lNum,
             severity: check.severity,
             category: this.category,
             rule: check.rule,

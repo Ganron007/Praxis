@@ -38,6 +38,7 @@ import {
 import { isHighEntropyMatch, getConfidence } from '../utils/entropy.js';
 import * as output from '../utils/output.js';
 import { CacheManager } from '../utils/cache-manager.js';
+import { isGitUrl, cloneGitRepo } from '../core/git-clone.js';
 
 // =============================================================================
 // CUSTOM PATTERNS (.praxis.json)
@@ -86,10 +87,37 @@ function loadCustomPatterns(rootPath) {
 // =============================================================================
 
 export async function scanCommand(targetPath = '.', options = {}) {
-  const absolutePath = path.resolve(targetPath);
+  let gitClone = null;
+  let effectivePath = targetPath;
+
+  if (isGitUrl(targetPath)) {
+    const gitSpinner = ora({ text: chalk.cyan(`Cloning remote Git repository: ${targetPath}...`), color: 'cyan' }).start();
+    try {
+      gitClone = cloneGitRepo(targetPath, {
+        branch: options.branch,
+        depth: options.depth,
+        gitToken: options.gitToken,
+        submodules: options.submodules,
+      });
+      effectivePath = gitClone.tempDir;
+      gitSpinner.succeed(chalk.green(`Cloned ${gitClone.repoName} (${gitClone.displayUrl})`));
+    } catch (err) {
+      gitSpinner.fail(chalk.red(err.message));
+      process.exit(1);
+    }
+  }
+
+  const cleanup = () => {
+    if (gitClone && !options.keepClone) {
+      gitClone.cleanup();
+    }
+  };
+
+  const absolutePath = path.resolve(effectivePath);
 
   // Validate path exists
   if (!fs.existsSync(absolutePath)) {
+    cleanup();
     output.error(`Path does not exist: ${absolutePath}`);
     process.exit(1);
   }
@@ -209,10 +237,12 @@ export async function scanCommand(targetPath = '.', options = {}) {
     }
 
     // Exit with appropriate code
+    cleanup();
     const hasFindings = allResults.length > 0;
     process.exit(hasFindings ? 1 : 0);
 
   } catch (err) {
+    cleanup();
     spinner.fail('Scan failed');
     output.error(err.message);
     process.exit(1);
