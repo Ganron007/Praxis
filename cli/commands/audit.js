@@ -43,6 +43,7 @@ import { ScanPlaybook } from '../utils/scan-playbook.js';
 import { generatePDF, generatePrintHTML, isChromeAvailable } from '../utils/pdf-generator.js';
 import { SecretsVerifier } from '../utils/secrets-verifier.js';
 import { applyInlineAnnotations } from './autofix.js';
+import { buildScanFingerprint } from '../utils/scan-fingerprint.js';
 
 // =============================================================================
 // CONSTANTS
@@ -445,7 +446,7 @@ export async function auditCommand(targetPath = '.', options = {}) {
   } else if (options.md) {
     outputMarkdown(scoreResult, filteredFindings, depVulns, remediationPlan, absolutePath);
   } else if (options.json) {
-    outputJSON(scoreResult, filteredFindings, depVulns, recon, agentResults, remediationPlan, suppressions, options.compare ? scoringEngine.loadHistory(absolutePath) : null);
+    outputJSON(scoreResult, filteredFindings, depVulns, recon, agentResults, remediationPlan, suppressions, options.compare ? scoringEngine.loadHistory(absolutePath) : null, filesScanned);
   } else if (options.sarif) {
     outputSARIF(filteredFindings, absolutePath);
   } else {
@@ -457,14 +458,14 @@ export async function auditCommand(targetPath = '.', options = {}) {
   if (explicitHtml || (!options.json && !options.sarif && !options.csv && !options.md)) {
     const htmlPath = typeof options.html === 'string' ? options.html : 'praxis-report.html';
     const reporter = new HTMLReporter();
-    reporter.generateToFile(scoreResult, filteredFindings, recon, absolutePath, htmlPath, agentResults);
+    reporter.generateToFile(scoreResult, filteredFindings, recon, absolutePath, htmlPath, agentResults, filesScanned);
 
     // If --html-dir or --suite specified, also generate granular multi-page report suite
     if (options.htmlDir || options['html-dir'] || options.suite) {
       const suiteDir = typeof (options.htmlDir || options['html-dir'] || options.suite) === 'string'
         ? (options.htmlDir || options['html-dir'] || options.suite)
         : 'report';
-      reporter.generateReportSuite(scoreResult, filteredFindings, depVulns, recon, remediationPlan, absolutePath, suiteDir, agentResults);
+      reporter.generateReportSuite(scoreResult, filteredFindings, depVulns, recon, remediationPlan, absolutePath, suiteDir, agentResults, filesScanned);
     }
 
     // Keep stdout pure JSON/SARIF when combined with machine output
@@ -830,7 +831,7 @@ function printReport(scoreResult, findings, depVulns, recon, plan, rootPath, fil
 // JSON OUTPUT
 // =============================================================================
 
-function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remediationPlan, suppressions, history) {
+function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remediationPlan, suppressions, history, filesScanned = null) {
   const output = {
     score: scoreResult.score,
     grade: scoreResult.grade.letter,
@@ -872,6 +873,8 @@ function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remedi
     remediationPlan,
     recon,
     agents: agentResults,
+    // Provenance: which tool, runtime and vendored data produced these numbers (P-IMP-053).
+    fingerprint: buildScanFingerprint({ filesScanned }),
   };
   if (scoreResult.compliance) output.compliance = scoreResult.compliance;
   if (scoreResult.standardsSummary) output.standardsSummary = scoreResult.standardsSummary;

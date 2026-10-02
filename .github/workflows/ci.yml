@@ -38,6 +38,28 @@ jobs:
       - name: Verify CLI help surface
         run: node cli/bin/praxis.js --help > /dev/null
 
+  determinism:
+    name: Determinism gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Two scans of an unchanged tree must produce identical detection identities.
+      # A scanner whose output drifts cannot be baselined or trusted, so this fails the
+      # build on drift rather than papering over it with a suppression.
+      - name: Determinism — two scans must agree
+        run: node scripts/check-determinism.mjs .
+
   package:
     name: Package
     runs-on: ubuntu-latest

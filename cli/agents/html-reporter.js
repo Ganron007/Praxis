@@ -29,6 +29,7 @@ import {
   severityBadge,
   severityBadgeClass,
 } from '../core/output/html-theme.js';
+import { buildScanFingerprint, fingerprintLine } from '../utils/scan-fingerprint.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PKG_VERSION = (() => {
@@ -53,6 +54,15 @@ export class HTMLReporter {
       return norm.slice(normRoot.length).replace(/^\/+/, '');
     }
     return norm.replace(/^[a-zA-Z]:\/+/, '').replace(/^.*\/Praxis\/showcase-target\//, '').replace(/^.*\/showcase-target\//, '');
+  }
+
+  /**
+   * The provenance line printed in report footers: exactly which tool, runtime and
+   * vendored data assets produced this document (P-IMP-053). A surprising result should
+   * be attributable, not mysterious.
+   */
+  getFingerprintLine(filesScanned = null) {
+    return fingerprintLine(buildScanFingerprint({ filesScanned }));
   }
 
   /** Base theme (shared) + the forensic-report components only this report uses. */
@@ -162,12 +172,12 @@ export class HTMLReporter {
     `;
   }
 
-  generate(scoreResult, findings, recon, rootPath, agentResults = []) {
-    return this.generateFullReport(scoreResult, findings, [], recon, [], rootPath, null, agentResults);
+  generate(scoreResult, findings, recon, rootPath, agentResults = [], filesScanned = null) {
+    return this.generateFullReport(scoreResult, findings, [], recon, [], rootPath, null, agentResults, filesScanned);
   }
 
-  generateToFile(scoreResult, findings, recon, rootPath, outputPath, agentResults = []) {
-    const html = this.generateFullReport(scoreResult, findings, [], recon, [], rootPath, outputPath, agentResults);
+  generateToFile(scoreResult, findings, recon, rootPath, outputPath, agentResults = [], filesScanned = null) {
+    const html = this.generateFullReport(scoreResult, findings, [], recon, [], rootPath, outputPath, agentResults, filesScanned);
     fs.writeFileSync(outputPath, html, 'utf8');
     return outputPath;
   }
@@ -175,7 +185,7 @@ export class HTMLReporter {
   /**
    * Generates a Granular Multi-Page Security Report Suite into a target directory.
    */
-  generateReportSuite(scoreResult, findings = [], depVulns = [], recon = {}, remediationPlan = [], rootPath = process.cwd(), outputDir = 'report', agentResults = []) {
+  generateReportSuite(scoreResult, findings = [], depVulns = [], recon = {}, remediationPlan = [], rootPath = process.cwd(), outputDir = 'report', agentResults = [], filesScanned = null) {
     fs.mkdirSync(outputDir, { recursive: true });
 
     const pages = [
@@ -207,6 +217,7 @@ ${this.generateHeaderHTML(p.tab, projectName, scoreResult, true)}
   ${p.content}
   <footer class="footer">
     Praxis AI Security Framework v${PKG_VERSION} · Target: <code>${this.esc(projectName)}</code> · 100% Relative Path Normalization
+    <br><span style="font-size:0.72rem">${this.esc(this.getFingerprintLine(filesScanned))}</span>
   </footer>
 </main>
 </body>
@@ -220,7 +231,7 @@ ${this.generateHeaderHTML(p.tab, projectName, scoreResult, true)}
   /**
    * Generates a Unified Single-File HTML Report with instant tabbed switching.
    */
-  generateFullReport(scoreResult, findings = [], depVulns = [], recon = {}, remediationPlan = [], rootPath = process.cwd(), outputPath = null, agentResults = []) {
+  generateFullReport(scoreResult, findings = [], depVulns = [], recon = {}, remediationPlan = [], rootPath = process.cwd(), outputPath = null, agentResults = [], filesScanned = null) {
     const projectName = path.basename(rootPath || 'project');
     const gradeLetter = scoreResult.grade?.letter || scoreResult.grade || 'F';
     const gradeColors = GRADE_COLORS;
@@ -248,6 +259,7 @@ ${this.generateHeaderHTML(p.tab, projectName, scoreResult, true)}
 
   <footer class="footer">
     Praxis AI Security Framework v${PKG_VERSION} · Target: <code>${this.esc(projectName)}</code> · 100% Relative Path Normalization
+    <br><span style="font-size:0.72rem">${this.esc(this.getFingerprintLine(filesScanned))}</span>
   </footer>
 </main>
 
