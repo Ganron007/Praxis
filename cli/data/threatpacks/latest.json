@@ -1,10 +1,10 @@
 {
-  "version": "1.0.0",
+  "version": "1.1",
   "_refresh_policy": {
     "cadence": "Incident-driven + weekly review",
     "process": "1. Track OWASP LLM/Agentic releases and reported AI attack incidents. 2. Add signatures in own phrasing (never copy AGPL/copyrighted text verbatim). 3. Bump version. 4. Run npm test (prober tests enforce compilation + ReDoS guard).",
     "owner": "Praxis contributors",
-    "lastReviewed": "2026-08-20"
+    "lastReviewed": "2026-10-02"
   },
   "probes": [
     {
@@ -29,10 +29,11 @@
       "id": "TP-003",
       "category": "indirect-injection",
       "title": "Document-payload split injection (multi-file chaining)",
-      "regex": "(?i)(?:part\\s*\\d+\\s*of\\s*\\d+|continue\\s+(?:reading|with|in)\\s+(?:the\\s+)?(?:next|following|part|message)|when\\s+combined\\s+with)",
+      "regex": "(?i)(?:part\\s*\\d+\\s*of\\s*\\d+|continue\\s+(?:reading|with|in)\\s+(?:the\\s+)?(?:next|following|part|message)|when\\s+combined\\s+with\\s+(?:the\\s+)?(?:above|previous|preceding|earlier|these|prior|other)\\s+(?:instruction|instructions|rule|rules|prompt|prompts|text|content|contents|message|messages|directive|directives|command|commands|guideline|guidelines)\\b)",
       "severity": "medium",
       "description": "Source contains split-payload markers that chain instructions across documents/messages — the payload-splitting technique that defeats per-input content filters.",
-      "fix": "Evaluate documents independently; do not concatenate instruction-like text across untrusted sources."
+      "fix": "Evaluate documents independently; do not concatenate instruction-like text across untrusted sources.",
+      "_tightened": "P-IMP-057: the bare phrase \"when combined with\" matched ordinary English (e.g. the comment \"when combined with machine output\") and produced a medium-severity finding. It now requires a chaining referent (above/previous/preceding/earlier/these/prior/other) AND an instruction-like noun, so benign prose like \"merged when combined with the previous version\" no longer matches."
     }
   ],
   "eaa": [],
