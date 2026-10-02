@@ -21,14 +21,20 @@ offline; LLM features are optional.
 7. [`praxis intel` — threat intelligence](#praxis-intel--threat-intelligence)
 8. [`praxis report` — format/share results](#praxis-report--formatshare-results)
 9. [`praxis project` — setup & state](#praxis-project--setup--state)
-10. [Top-level shortcuts](#top-level-shortcuts)
-11. [AI security standards alignment](#ai-security-standards-alignment)
-12. [Environment variables](#environment-variables)
-13. [Configuration files](#configuration-files)
-14. [Output formats](#output-formats)
-15. [CI/CD integration](#cicd-integration)
-16. [Custom plugins](#custom-plugins)
-17. [Troubleshooting](#troubleshooting)
+10. [`praxis rules` — portable rule inventory](#praxis-rules--portable-rule-inventory)
+11. [`praxis web` — local web UI](#praxis-web--local-web-ui)
+12. [Top-level shortcuts](#top-level-shortcuts)
+13. [AI security standards alignment](#ai-security-standards-alignment)
+14. [AST & CST dataflow analysis engine](#ast--cst-dataflow-analysis-engine)
+15. [Threat packs (AI attack-vector signatures)](#threat-packs-ai-attack-vector-signatures)
+16. [Environment variables](#environment-variables)
+17. [Configuration files](#configuration-files)
+18. [Output formats](#output-formats)
+19. [CI/CD integration](#cicd-integration)
+20. [Custom plugins](#custom-plugins)
+21. [Troubleshooting](#troubleshooting)
+22. [`praxis mcp` — MCP server mode](#praxis-mcp--mcp-server-mode)
+23. [Get help](#get-help)
 
 ---
 
@@ -74,6 +80,8 @@ Running `praxis` with no args on a TTY drops into the interactive REPL.
 | `intel` | Threat-intelligence feed updates and advisory operations |
 | `report` | Format, diff, or share existing scan results |
 | `project` | Init, hooks, watch, doctor, baseline, plugins, policies |
+| `rules` | Inspect and export the detection rules (portable Semgrep-compatible bundle) |
+| `web` | Local web UI for running scans and managing scan projects |
 
 Plus three top-level shortcuts: `praxis vibe`, `praxis score`, and `praxis` alone (REPL on a TTY).
 
@@ -508,6 +516,123 @@ Manage security policies. Action `init` creates a `.praxis.policy.json` template
 
 ---
 
+## `praxis rules` — portable rule inventory
+
+Inspect Praxis's detection rules and export them in a form other tools can read.
+The rules are data, not lock-in.
+
+### `rules list`
+
+Summarise the inventory by source, severity and portability.
+
+```bash
+praxis rules list
+praxis rules list --json
+```
+
+Reports how many rules are exportable and validated, the severity mix, and which
+sources contribute. Also names the layers that have **no** portable equivalent (see below).
+
+### `rules export`
+
+Write a portable bundle. Three files:
+
+| File | Purpose |
+| --- | --- |
+| `praxis-rules.yaml` | Semgrep-compatible, using `pattern-regex` (PCRE2) |
+| `praxis-rules.json` | Canonical format, re-importable by Praxis |
+| `praxis-rules.manifest.json` | What is portable, what is Praxis-only, and why |
+
+```bash
+praxis rules export -o ./rules
+semgrep --config ./rules/praxis-rules.yaml .
+```
+
+Every pattern is validated before the bundle is written, and the export **refuses to
+write** if any pattern is malformed — a partially broken bundle would fail inside
+someone else's Semgrep with no useful context. Patterns that are valid PCRE2 but have no
+JavaScript equivalent (atomic groups, POSIX classes) are reported as *unverifiable* rather
+than silently passed off as checked.
+
+Rule **ids are identifiers** (`AWS_ACCESS_KEY_ID`, not `AWS Access Key ID`), because
+Semgrep suppressions (`# nosemgrep:`) and baselining key on them.
+
+**Scope — what the export does not cover.** 411 of the rules are static patterns. Three
+layers have no Semgrep representation and are declared in the manifest rather than
+approximated:
+
+| Layer | Why it is Praxis-only |
+| --- | --- |
+| AST / taint dataflow | "User input reaches this sink" is not a pattern |
+| Prompt-injection probe corpus | Versioned data with its own compiler and ReDoS guard |
+| Entropy-checked secrets (10 rules) | A runtime Shannon-entropy heuristic over the match |
+| LLM deep analysis (`--deep`) | Runtime exploitability verdicts |
+
+### `rules import <bundle>`
+
+Load a portable bundle and optionally emit a runnable plugin.
+
+```bash
+# Preview: what would be accepted or rejected, and why
+praxis rules import ./rules/praxis-rules.json
+
+# Emit a plugin that participates in real scans
+praxis rules import ./rules/praxis-rules.json --write-plugin .praxis/agents
+```
+
+Import accepts **pattern rules only**. Anything it cannot execute as a static pattern is
+**rejected with a stated reason**, never imported in a degraded form.
+
+The canonical round-trip format is the JSON, not the YAML: Praxis has no YAML runtime
+dependency, and adding one for this would not be worth it. Handing it the Semgrep YAML
+produces an explanation rather than a silent failure.
+
+| Flag | Description |
+| --- | --- |
+| `--write-plugin <dir>` | Write a runnable plugin (e.g. `.praxis/agents`) |
+| `--name <name>` | Plugin class name prefix |
+| `--json` | Machine-readable output |
+
+---
+
+## `praxis web` — local web UI
+
+A browser front-end for running scans and managing scan projects: register projects, run
+single or concurrent scans, watch live progress over SSE, and browse findings.
+
+**Read-only by design.** It orchestrates scans and shows results; it deliberately does
+**not** expose fix application. See [`docs/design/WEB-UI.md`](design/WEB-UI.md) for the
+full threat model.
+
+```bash
+praxis web                         # http://127.0.0.1:7317
+praxis web --port 8080
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--port <port>` | `7317` | Port to listen on |
+| `--host <host>` | `127.0.0.1` | Host to bind |
+| `--allow-remote` | off | Permit a non-loopback bind (requires `--token`) |
+| `--token <token>` | — | Bearer token required for every request when remotely bound |
+
+### Security model
+
+- **Loopback-only by default.** A non-loopback bind is refused unless *both*
+  `--allow-remote` and a `--token` of at least 16 characters are supplied.
+- **The browser never sends a filesystem path.** Projects are registered by the operator,
+  resolved and pinned server-side, then addressed only by **id** — so no request can ask
+  the server to scan `/` or a home directory.
+- **Anti-CSRF.** Mutating requests must carry a header a cross-origin form cannot set,
+  plus a same-origin `Origin` (defends against DNS rebinding).
+- **Nothing is served from disk.** The frontend is generated in memory from the shared
+  theme, so there is no static-file path to traverse.
+- **Bounded work.** Concurrency, queue depth and request body size are all capped.
+- Loopback-only is a safe default, **not** a boundary against an attacker already on the
+  machine. There is no authentication, multi-user or tenancy support.
+
+---
+
 ## Top-level shortcuts
 
 ### `praxis vibe [path]`
@@ -753,9 +878,9 @@ The output formatter registry lives in `cli/core/output/`. Built-in formats:
 
 | Format | Flag | Notes |
 | --- | --- | --- |
-| `json` | `--json` | `schemaVersion: 3`, `findings[]`, `standardsSummary`, `compliance`, `agenticSummary` |
-| `sarif` | `--sarif [file]` | SARIF 2.1.0; `result.properties.standards` + flat `tags` |
-| `html` | `--html [file]` | **Professional assessment report** — sidebar navigation, executive risk narrative, findings grouped by category (each card: *what it means · evidence · how to fix · references*), remediation roadmap, 3-state standards compliance map, AI attack-surface lanes, score trend, scope & limitations footer |
+| `json` | `--json` | `schemaVersion: 3`, `findings[]`, `standardsSummary`, `compliance`, `agenticSummary`, and a `fingerprint` block (see below) |
+| `sarif` | `--sarif [file]` | SARIF 2.1.0 with **`security-severity`** (critical 9.5 / high 7.5 / medium 5.0 / low 2.5) so GitHub Code Scanning ranks alerts correctly; `result.properties.standards` + flat `tags` |
+| `html` | `--html [file]` | **Professional assessment report** — tabbed single-file report: Overview (KPIs, severity distribution, category breakdown, discovered attack surface, OWASP ASI agentic-risk coverage, score trend), **Agent Coverage**, Findings & AST Dataflow (per-finding rule IDs, severity filter, search, evidence + dataflow panels, LLM verdicts), Standards Matrix, Agent BOM (ABOM), Remediation Plan + **Remediation Ledger** |
 | `pdf` | `--pdf [file]` | Print-rendered PDF (requires Chrome/Chromium) |
 | `csv` | `--csv` | Tabular |
 | `md` | `--md` | Markdown |
@@ -763,6 +888,22 @@ The output formatter registry lives in `cli/core/output/`. Built-in formats:
 Add a new format by writing `cli/core/output/<name>.js` exporting
 `default function(report, options): string` and registering it in `REGISTRY`
 in `cli/core/output/index.js`.
+
+All HTML surfaces share one theme in `cli/core/output/html-theme.js`, so severity colours,
+badges, tables and escaping stay consistent across reports. Values interpolated into
+report markup are escaped centrally, and severities are mapped through a sanitiser that
+only ever emits a known class name.
+
+**Scan fingerprint.** JSON output carries a `fingerprint` block, and every HTML report
+prints a provenance line in its footer:
+
+```
+praxis 1.0.0 · node v24.14.1 · probes v1.1(23) · threatpack v1.1(3) · eaa v0.1.0 · files 197
+```
+
+It records the tool version, the runtime, and the version of every vendored data asset
+that can change detection behaviour. A surprising result should be *attributable* rather
+than mysterious.
 
 **Secret redaction invariant:** secret-category findings never expose their
 raw matched value in any report output — `matched` is redacted centrally
@@ -828,11 +969,50 @@ fail the build, at or above `fail-on-new`. Pre-existing debt never blocks.
 ### Plain GitHub Actions
 
 ```yaml
-- run: npm install -g praxis@latest
-- run: praxis ci . --threshold 80 --sarif results.sarif --strict-intel
-- uses: github/codeql-action/upload-sarif@v3
-  with: { sarif_file: results.sarif }
+permissions:
+  security-events: write     # required for SARIF upload
+steps:
+  - run: npm install -g praxis@latest
+  - run: praxis ci . --threshold 80 --sarif results.sarif --strict-intel
+  - uses: github/codeql-action/upload-sarif@v4
+    with: { sarif_file: results.sarif }
 ```
+
+`security-events: write` is required — without it the upload fails with a 403 even though
+the scan itself succeeded.
+
+### Using the action from another repository
+
+Once the action is listed on the GitHub Marketplace and a `v1` release tag exists:
+
+```yaml
+permissions:
+  security-events: write
+steps:
+  - uses: Ganron007/Praxis@v1
+    with:
+      net-new: 'true'
+      fail-on-new: 'high'
+```
+
+Inside this repository `- uses: ./` works immediately and needs no publishing step.
+
+### Determinism gate
+
+A scan's findings should be identical across runs on identical inputs. `check-determinism`
+enforces that by comparing finding identities (`file::rule`) between two runs, so a
+detection change cannot land unnoticed:
+
+```bash
+node scripts/check-determinism.mjs .
+```
+
+CI runs this as its own job. A failure means the rule set, the probe corpus or the
+threatpack changed behaviour — which is sometimes intended (a version bump should change
+results), so the gate exists to make the change *deliberate* and visible in the diff
+rather than silent.
+
+---
 
 ### Pre-commit hook
 
@@ -913,6 +1093,12 @@ plugin-side wiring required.
 | Test files report secrets | Confidence is auto-downgraded in test/doc/example paths — but use `praxis-ignore` for explicit suppression. |
 | Feed lives somewhere else | Override `HOME` (Unix) or `USERPROFILE` (Windows) — used by the test suite. |
 | Standards summary shows `0/X` everywhere | The standards registry maps via `cwe`/`owasp`/`category` on findings. If you've written a custom agent that doesn't set these, populate them in `createFinding({...})`. |
+| `rules export` refuses to write | A pattern failed validation. The message names the rule and the error — the bundle is not written rather than shipping broken YAML. Fix the pattern, or pass `--allow-invalid` if you understand the risk. |
+| `rules import` rejects a bundle | Only static pattern rules are importable. The rejection reason is printed per rule; AST/taint, probe-corpus and entropy rules cannot be expressed as a pattern. |
+| `rules import` says "YAML is an export format" | Import the sibling `praxis-rules.json`. Praxis has no YAML runtime dependency, so YAML is export-only. |
+| `praxis web` refuses to start on a non-loopback host | Remote bind requires **both** `--allow-remote` and `--token` of at least 16 characters. This is deliberate. |
+| `praxis web` won't load a project path | Projects are registered by the operator and addressed by **id**. The API intentionally does not accept client-supplied paths. |
+| Determinism gate fails in CI | Two scans of identical inputs disagreed on `file::rule`. Usually a probe-corpus or threatpack change — check `git diff` on `cli/data/`. Expected when you intentionally change detection. |
 
 ---
 

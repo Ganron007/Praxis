@@ -34,8 +34,11 @@
 | **MCP trust registry & live probing** | Known MCP servers with trust scores (SHA-256 integrity-checked) + live runtime JSON-RPC handshakes and tool fuzzing (`--test-live`) |
 | **Threat intel** | 6 free feeds cached locally (OSV, GHSA, KEV, EPSS, NVD, Gitleaks) + 5 optional paid; findings enriched with exploit likelihood |
 | **Compliance mapping** | Findings tagged against 8 frameworks — OWASP LLM/ML/Agentic, MITRE ATLAS (+ mitigations & case studies), NIST AI 600-1, AVID, EU AI Act, ISO 42001, Google SAIF |
-| **Executive Pro Report** | Interactive dark-mode HTML: sidebar navigation, real-time search & severity filters, code line highlighting, AST taint blocks, AI lanes, and remediation roadmap |
-| **CI-native** | `scan ci` gates, SARIF for Code Scanning, net-new PR gating (fails only on *introduced* findings), GitHub Action inline PR annotations |
+| **Professional HTML report** | Tabbed single-file report: overview KPIs + severity distribution, OWASP ASI agentic-risk coverage, per-agent coverage, findings with rule IDs and AST taint blocks, standards matrix, Agent BOM, remediation plan, remediation ledger (incl. declines and reasons), score trend, and a provenance footer |
+| **Web UI** | `praxis web` — register projects, run scans, watch live progress, browse findings. Read-only, loopback-only by default |
+| **Portable rules** | `praxis rules export` — 411 pattern rules as Semgrep-compatible YAML, with a manifest that states plainly what Praxis does that Semgrep cannot |
+| **CI-native** | `scan ci` gates, SARIF for Code Scanning with real `security-severity` ranking, net-new PR gating (fails only on *introduced* findings), GitHub Action inline PR annotations |
+| **Reproducible** | Every scan reports a provenance fingerprint (tool, runtime, probe/threatpack/data versions), and CI enforces determinism between two runs |
 
 ## Quick start
 
@@ -47,7 +50,9 @@ praxis fix .             # interactive LLM-guided fixes
 praxis redteam .         # dynamic AI red team & DAST prober
 praxis agents audit .    # audit the AI/agent surface
 praxis agents mcp --test-live  # live MCP JSON-RPC probe
+praxis web               # local web UI for scans and findings
 praxis report benchmark  # run ground-truth accuracy benchmark
+praxis rules export      # portable Semgrep-compatible rule bundle
 praxis intel update      # refresh local threat feeds
 praxis vibe .            # emoji-graded A–F score
 ```
@@ -69,6 +74,11 @@ praxis agents     audit · skill · mcp · bom · serve (MCP server)
 praxis intel      update · deps · advisories
 praxis report     team · legal · checklist · sbom · benchmark
 praxis project    init · doctor · hooks · guard · watch · baseline · plugins · policy
+praxis rules      list · export · import      (portable rule bundles)
+praxis web        local web UI                (read-only, loopback by default)
+
+praxis vibe       emoji-graded A–F score
+praxis score      numeric score
 ```
 
 ## 28 agents at a glance

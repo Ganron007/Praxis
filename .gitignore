@@ -7,11 +7,12 @@ praxis-report.html
 # Archive (old reports, samples, generated artifacts)
 archive/
 
-# Claude Code local config (AGENTS.md is tracked — the cross-agent standard)
+# Claude Code local config (local-only, never published)
 CLAUDE.md
 .claude/
 
-# Local-only working docs (not shipped in the public repo)
+# Local-only working docs. The public repo describes the tool — README, docs/,
+# .github/CONTRIBUTING.md. These two are working notes and are not published.
 AGENTS.md
 CHANGELOG.md
 

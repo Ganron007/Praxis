@@ -45,9 +45,19 @@ New test files under `cli/__tests__/` **must** be added to the `test` script in
 ## Tests
 
 ```bash
-npm test                          # node --test, ~210 cases
-node cli/bin/praxis.js scan .     # dogfood self-scan
+npm test                                 # node --test
+node cli/bin/praxis.js scan .            # dogfood self-scan (CI runs this)
+node scripts/check-determinism.mjs .     # two scans must agree on file::rule
 ```
+
+CI runs the test matrix on Node 18, 20, 22 and 24, plus a determinism gate and a package
+build. A detection change is expected to alter results — the determinism gate exists so
+that change is *deliberate and visible*, not silent.
+
+The self-scan currently reports **307 findings and zero criticals**. Suppress with
+`.praxisignore` or an inline `praxis-ignore` annotation. The annotation must be a **trailing
+comment on the matched line** — `base-agent.js` checks the finding's own line, so placing it
+on the preceding line does nothing at all.
 
 ## Security
 
