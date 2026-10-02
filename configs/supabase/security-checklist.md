@@ -80,7 +80,7 @@ WITH CHECK (auth.uid() = user_id);   -- Can't change user_id to someone else
 
 ```bash
 # Scan your codebase
-npx praxis scan .
+npx praxis-sec scan .
 
 # Or manually grep
 grep -r "service_role" ./src
@@ -275,4 +275,4 @@ WHERE schemaname = 'public';
 
 **Remember: Supabase makes it easy to build fast, but security is still your responsibility.**
 
-Run `npx praxis scan .` to check for leaked keys before every deploy.
+Run `npx praxis-sec scan .` to check for leaked keys before every deploy.

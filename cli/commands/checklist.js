@@ -40,7 +40,7 @@ const CHECKLIST_ITEMS = [
   },
   {
     title: 'No hardcoded API keys in frontend',
-    check: 'Run: npx praxis scan ./src',
+    check: 'Run: npx praxis-sec scan ./src',
     risk: 'Anyone viewing source code can steal your API keys.',
     fix: 'Move secrets to server-side environment variables. Use API routes to proxy.'
   },
@@ -124,7 +124,7 @@ function printChecklist() {
 
   console.log(chalk.cyan('='.repeat(60)));
   console.log(chalk.gray('Copy this checklist or run with interactive mode:'));
-  console.log(chalk.white('  npx praxis checklist'));
+  console.log(chalk.white('  npx praxis-sec checklist'));
   console.log(chalk.cyan('='.repeat(60)));
 }
 

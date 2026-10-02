@@ -13,13 +13,13 @@ You are using Praxis's remediation engine to automatically fix security issues i
 Always start with a dry run to show what will change:
 
 ```bash
-npx praxis@latest remediate $ARGUMENTS --dry-run 2>&1
+npx praxis-sec@latest remediate $ARGUMENTS --dry-run 2>&1
 ```
 
 If `$ARGUMENTS` is empty, default to `. --all` (fix both secrets and agent findings):
 
 ```bash
-npx praxis@latest remediate . --all --dry-run 2>&1
+npx praxis-sec@latest remediate . --all --dry-run 2>&1
 ```
 
 **Flags:**
@@ -39,13 +39,13 @@ Show the user what will be changed:
 Ask the user if they want to proceed. If yes:
 
 ```bash
-npx praxis@latest remediate . --all --yes 2>&1
+npx praxis-sec@latest remediate . --all --yes 2>&1
 ```
 
 If the user only wants to fix secrets (not agent findings):
 
 ```bash
-npx praxis@latest remediate . --yes 2>&1
+npx praxis-sec@latest remediate . --yes 2>&1
 ```
 
 ## Step 4: Post-fix verification
@@ -54,7 +54,7 @@ After applying fixes:
 
 1. Run a quick scan to verify secrets were removed:
    ```bash
-   npx praxis@latest scan . --json 2>/dev/null
+   npx praxis-sec@latest scan . --json 2>/dev/null
    ```
 
 2. Report the results — how many issues were fixed vs. remaining
@@ -66,7 +66,7 @@ After applying fixes:
 Suggest:
 - **Review `.env.example`** — make sure variable names make sense
 - **Add `.env` to `.gitignore`** if not already there
-- **Rotate exposed secrets** — run `npx praxis rotate .` for step-by-step guides
+- **Rotate exposed secrets** — run `npx praxis-sec rotate .` for step-by-step guides
 - **Update baseline** — run `/praxis-baseline .` to update after fixes
 - **Stage changes** — offer to stage the modified files with git
 

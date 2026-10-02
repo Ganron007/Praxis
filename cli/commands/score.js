@@ -6,8 +6,8 @@
  * Combines secret detection, code vulnerability detection, and dependency auditing.
  *
  * USAGE:
- *   npx praxis score [path]          Score the project in the current directory
- *   npx praxis score . --no-deps     Skip dependency audit (faster)
+ *   npx praxis-sec score [path]          Score the project in the current directory
+ *   npx praxis-sec score . --no-deps     Skip dependency audit (faster)
  *
  * SCORING ALGORITHM (starts at 100):
  *   Secrets:       critical −25, high −15, medium −5   (capped at −40)
@@ -277,13 +277,13 @@ function printScore(score, grade, ctx) {
     console.log();
     const actions = [];
     if (Object.values(ctx.secretCounts).some(n => n > 0)) {
-      actions.push(chalk.white('  npx praxis agent .') + chalk.gray('     # AI audit: classify + auto-fix secrets'));
+      actions.push(chalk.white('  npx praxis-sec agent .') + chalk.gray('     # AI audit: classify + auto-fix secrets'));
     }
     if (Object.values(ctx.vulnCounts).some(n => n > 0)) {
-      actions.push(chalk.white('  npx praxis agent .') + chalk.gray('     # AI audit: classify + fix suggestions'));
+      actions.push(chalk.white('  npx praxis-sec agent .') + chalk.gray('     # AI audit: classify + fix suggestions'));
     }
     if (ctx.runDeps && Object.values(ctx.depCounts).some(n => n > 0) && ctx.pm) {
-      actions.push(chalk.white(`  npx praxis deps .`) + chalk.gray('      # See full dependency CVE details'));
+      actions.push(chalk.white(`  npx praxis-sec deps .`) + chalk.gray('      # See full dependency CVE details'));
     }
     if (actions.length > 0) {
       console.log(chalk.gray('  Fix issues:'));

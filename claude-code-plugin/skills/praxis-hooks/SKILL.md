@@ -22,17 +22,17 @@ Otherwise (default or `install`): run the install command.
 
 **Install (default):**
 ```bash
-npx praxis@latest hooks install
+npx praxis-sec@latest hooks install
 ```
 
 **Remove:**
 ```bash
-npx praxis@latest hooks remove
+npx praxis-sec@latest hooks remove
 ```
 
 **Status check:**
 ```bash
-npx praxis@latest hooks status
+npx praxis-sec@latest hooks status
 ```
 
 ## Step 3: Report the result
@@ -53,7 +53,7 @@ npx praxis@latest hooks status
 
 **On error:**
 - If the command fails, check whether Node.js 18+ is available: `node --version`
-- If hook scripts are missing, suggest reinstalling: `npm install -g praxis`
+- If hook scripts are missing, suggest reinstalling: `npm install -g praxis-sec`
 
 ## Notes
 

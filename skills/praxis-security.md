@@ -1,5 +1,5 @@
 ---
-name: praxis-security
+name: praxis-sec
 version: 8.0.0
 description: Run Praxis security scans from within a Hermes Agent workflow. Detects vulnerabilities in codebases, MCP servers, agent manifests, and Hermes deployments.
 author: Praxis ()

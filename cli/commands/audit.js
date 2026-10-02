@@ -6,10 +6,10 @@
  * generate a comprehensive report with a prioritized remediation plan.
  *
  * USAGE:
- *   npx praxis audit [path]                 Full audit with HTML report
- *   npx praxis audit . --json               JSON output
- *   npx praxis audit . --html report.html   Custom report path
- *   npx praxis audit . --no-deps            Skip dependency audit
+ *   npx praxis-sec audit [path]                 Full audit with HTML report
+ *   npx praxis-sec audit . --json               JSON output
+ *   npx praxis-sec audit . --html report.html   Custom report path
+ *   npx praxis-sec audit . --no-deps            Skip dependency audit
  */
 
 import fs from 'fs';

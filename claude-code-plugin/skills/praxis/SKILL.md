@@ -13,13 +13,13 @@ You are a senior security engineer using Praxis to audit this project. Your job 
 Run the full security audit with JSON output:
 
 ```bash
-npx praxis@latest audit $ARGUMENTS --json --no-ai 2>/dev/null
+npx praxis-sec@latest audit $ARGUMENTS --json --no-ai 2>/dev/null
 ```
 
 If `$ARGUMENTS` is empty, default to `.` (current directory):
 
 ```bash
-npx praxis@latest audit . --json --no-ai 2>/dev/null
+npx praxis-sec@latest audit . --json --no-ai 2>/dev/null
 ```
 
 The command exits 1 when findings exist — this is expected. Capture stdout regardless of exit code.
@@ -27,7 +27,7 @@ The command exits 1 when findings exist — this is expected. Capture stdout reg
 If the command fails to produce JSON (e.g., no lockfile for deps), retry with `--no-deps`:
 
 ```bash
-npx praxis@latest audit . --json --no-ai --no-deps 2>/dev/null
+npx praxis-sec@latest audit . --json --no-ai --no-deps 2>/dev/null
 ```
 
 ## Step 2: Parse the JSON output
@@ -155,9 +155,9 @@ For each fix:
 ## Step 5: Suggest Next Steps
 
 After fixing, suggest:
-- `npx praxis baseline .` — to baseline remaining findings so future scans only show regressions
-- `npx praxis guard` — to install a pre-push hook that blocks commits with secrets
-- `npx praxis watch .` — for continuous monitoring during development
+- `npx praxis-sec baseline .` — to baseline remaining findings so future scans only show regressions
+- `npx praxis-sec guard` — to install a pre-push hook that blocks commits with secrets
+- `npx praxis-sec watch .` — for continuous monitoring during development
 
 ## Important Notes
 

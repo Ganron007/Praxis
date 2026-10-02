@@ -51,7 +51,7 @@ export async function fixCommand(options = {}) {
     if (results.length === 0) {
       output.success('No secrets found — nothing to fix!');
       console.log(chalk.gray('\nYour codebase looks clean. Keep it that way with:'));
-      console.log(chalk.gray('  npx praxis guard   # Block pushes if secrets are found'));
+      console.log(chalk.gray('  npx praxis-sec guard   # Block pushes if secrets are found'));
       return;
     }
 
@@ -212,7 +212,7 @@ function printEnvExample(envVars, dryRun) {
     console.log(chalk.white('2.') + chalk.gray(' Replace placeholder values with your real secrets'));
     console.log(chalk.white('3.') + chalk.gray(' Remove the hardcoded values from your source code'));
     console.log(chalk.white('4.') + chalk.gray(' Verify .env is in your .gitignore'));
-    console.log(chalk.white('5.') + chalk.gray(' Run npx praxis scan . to confirm clean'));
+    console.log(chalk.white('5.') + chalk.gray(' Run npx praxis-sec scan . to confirm clean'));
     console.log();
   }
 }

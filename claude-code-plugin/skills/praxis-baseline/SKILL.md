@@ -17,23 +17,23 @@ You are helping the user manage their security baseline. A baseline lets teams "
 ## Step 1: Run the baseline command
 
 ```bash
-npx praxis@latest baseline $ARGUMENTS 2>&1
+npx praxis-sec@latest baseline $ARGUMENTS 2>&1
 ```
 
 If `$ARGUMENTS` is empty, default to `.`:
 
 ```bash
-npx praxis@latest baseline . 2>&1
+npx praxis-sec@latest baseline . 2>&1
 ```
 
 For diff mode:
 ```bash
-npx praxis@latest baseline . --diff 2>&1
+npx praxis-sec@latest baseline . --diff 2>&1
 ```
 
 For clearing:
 ```bash
-npx praxis@latest baseline --clear 2>&1
+npx praxis-sec@latest baseline --clear 2>&1
 ```
 
 ## Step 2: Explain the result
@@ -41,7 +41,7 @@ npx praxis@latest baseline --clear 2>&1
 ### If creating a baseline:
 1. Report how many findings were baselined
 2. Explain that `.praxis/baseline.json` was created
-3. Tell the user they can now run `npx praxis audit . --baseline` (or `/praxis --baseline`) to only see new findings
+3. Tell the user they can now run `npx praxis-sec audit . --baseline` (or `/praxis --baseline`) to only see new findings
 4. Recommend adding `.praxis/baseline.json` to version control so the whole team shares the same baseline
 
 ### If showing diff:
@@ -55,7 +55,7 @@ Confirm the baseline was removed. Future scans will show all findings again.
 ## Step 3: Suggest workflow
 
 After creating a baseline, suggest this workflow:
-- **CI pipeline**: Add `npx praxis audit . --baseline --json` to fail builds only on new findings
+- **CI pipeline**: Add `npx praxis-sec audit . --baseline --json` to fail builds only on new findings
 - **Periodic review**: Run `/praxis-baseline --diff` to track progress on reducing technical debt
 - **After fixing**: Run `/praxis-baseline .` to update the baseline
 

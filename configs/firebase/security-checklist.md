@@ -91,7 +91,7 @@ const firebaseConfig = {
 
 ```bash
 # Scan for service account files
-npx praxis scan .
+npx praxis-sec scan .
 
 # Or manually search
 find . -name "*.json" -exec grep -l "private_key" {} \;
@@ -205,7 +205,7 @@ firebase emulators:start --only firestore
 ### Scan for secrets
 
 ```bash
-npx praxis scan .
+npx praxis-sec scan .
 ```
 
 ---
@@ -233,4 +233,4 @@ Before launch, test these scenarios:
 
 **Remember: Firebase makes it easy to build fast, but "test mode" is not a security strategy.**
 
-Run `npx praxis scan .` to check for leaked keys before every deploy.
+Run `npx praxis-sec scan .` to check for leaked keys before every deploy.

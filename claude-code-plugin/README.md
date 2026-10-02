@@ -24,7 +24,7 @@ claude plugin add github:Ganron007/Praxis
 
 ## How It Works
 
-These skills invoke [praxis](https://www.npmjs.com/package/praxis) via `npx`, so you always get the latest version. No API keys required — Claude Code itself interprets the results, explains findings in plain language, and can directly fix issues in your codebase.
+These skills invoke [praxis](https://www.npmjs.com/package/praxis-sec) via `npx`, so you always get the latest version. No API keys required — Claude Code itself interprets the results, explains findings in plain language, and can directly fix issues in your codebase.
 
 ## Examples
 
@@ -81,5 +81,5 @@ mode, XSS, Docker :latest, shell injection).
 
 ## Links
 
-- [Praxis on npm](https://www.npmjs.com/package/praxis)
+- [Praxis on npm](https://www.npmjs.com/package/praxis-sec)
 - [Praxis usage reference](../docs/USAGE.md)

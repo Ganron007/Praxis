@@ -3,7 +3,7 @@
  * ===================================
  *
  * This file exports the CLI commands and agents for programmatic use.
- * For normal CLI usage, run: npx praxis
+ * For normal CLI usage, run: npx praxis-sec
  */
 
 // ── Core Commands ─────────────────────────────────────────────────────────────

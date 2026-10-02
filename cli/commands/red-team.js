@@ -6,11 +6,11 @@
  * This is the main entry point for the multi-agent security audit.
  *
  * USAGE:
- *   npx praxis red-team [path]           Full multi-agent audit
- *   npx praxis red-team . --agents injection,auth  Run specific agents
- *   npx praxis red-team . --json         JSON output
- *   npx praxis red-team . --html report.html  Generate HTML report
- *   npx praxis red-team . --sarif        SARIF output
+ *   npx praxis-sec red-team [path]           Full multi-agent audit
+ *   npx praxis-sec red-team . --agents injection,auth  Run specific agents
+ *   npx praxis-sec red-team . --json         JSON output
+ *   npx praxis-sec red-team . --html report.html  Generate HTML report
+ *   npx praxis-sec red-team . --sarif        SARIF output
  */
 
 import fs from 'fs';
@@ -296,9 +296,9 @@ function printResults(scoreResult, findings, recon, agentResults, depVulns, root
     console.log();
     console.log(chalk.yellow.bold('  Next steps:'));
     console.log(chalk.gray('    1. Review and fix findings above'));
-    console.log(chalk.gray('    2. Run again: ') + chalk.cyan('npx praxis red-team .'));
-    console.log(chalk.gray('    3. Generate report: ') + chalk.cyan('npx praxis red-team . --html report.html'));
-    console.log(chalk.gray('    4. Set policy: ') + chalk.cyan('npx praxis policy init'));
+    console.log(chalk.gray('    2. Run again: ') + chalk.cyan('npx praxis-sec red-team .'));
+    console.log(chalk.gray('    3. Generate report: ') + chalk.cyan('npx praxis-sec red-team . --html report.html'));
+    console.log(chalk.gray('    4. Set policy: ') + chalk.cyan('npx praxis-sec policy init'));
   } else {
     console.log();
     output.success('All agents report clean — safe to ship!');

@@ -25,17 +25,17 @@ If no key is set, ask the user if they want to use `--local` (requires Ollama) o
 ## Step 2: Run the deep audit
 
 ```bash
-npx praxis@latest audit $ARGUMENTS --deep --json --no-ai 2>/dev/null
+npx praxis-sec@latest audit $ARGUMENTS --deep --json --no-ai 2>/dev/null
 ```
 
 For local Ollama:
 ```bash
-npx praxis@latest audit $ARGUMENTS --deep --local --json --no-ai 2>/dev/null
+npx praxis-sec@latest audit $ARGUMENTS --deep --local --json --no-ai 2>/dev/null
 ```
 
 With budget control:
 ```bash
-npx praxis@latest audit $ARGUMENTS --deep --budget 100 --json --no-ai 2>/dev/null
+npx praxis-sec@latest audit $ARGUMENTS --deep --budget 100 --json --no-ai 2>/dev/null
 ```
 
 ## Step 3: Interpret deep analysis results

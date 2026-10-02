@@ -111,7 +111,7 @@ async function scanWorkspace() {
     statusBarItem.text = '$(shield) Praxis';
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('not found') || msg.includes('not recognized')) {
-      vscode.window.showErrorMessage('Praxis CLI not found. Install with: npm install -g praxis');
+      vscode.window.showErrorMessage('Praxis CLI not found. Install with: npm install -g praxis-sec');
     } else {
       vscode.window.showErrorMessage(`Praxis scan failed: ${msg.slice(0, 200)}`);
     }
@@ -299,5 +299,5 @@ function getCliCommand(config: vscode.WorkspaceConfiguration, subcommand: string
     }
     return `"${cliPath}" ${subcommand} ${args}`;
   }
-  return `npx praxis ${subcommand} ${args}`;
+  return `npx praxis-sec ${subcommand} ${args}`;
 }

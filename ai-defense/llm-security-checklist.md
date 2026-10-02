@@ -186,7 +186,7 @@ async function logAIInteraction(
 
 ```bash
 # Scan for leaked keys
-npx praxis scan .
+npx praxis-sec scan .
 ```
 
 ```typescript

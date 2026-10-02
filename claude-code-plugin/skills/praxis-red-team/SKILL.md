@@ -11,19 +11,19 @@ You are running a multi-agent red team scan using Praxis's 28 security agents.
 ## Step 1: Run the red team scan
 
 ```bash
-npx praxis@latest red-team $ARGUMENTS --json --no-ai 2>/dev/null
+npx praxis-sec@latest red-team $ARGUMENTS --json --no-ai 2>/dev/null
 ```
 
 If `$ARGUMENTS` is empty, default to `.`:
 
 ```bash
-npx praxis@latest red-team . --json --no-ai 2>/dev/null
+npx praxis-sec@latest red-team . --json --no-ai 2>/dev/null
 ```
 
 If the user wants specific agents only, use the `--agents` flag:
 
 ```bash
-npx praxis@latest red-team . --agents injection,auth,ssrf --json --no-ai 2>/dev/null
+npx praxis-sec@latest red-team . --agents injection,auth,ssrf --json --no-ai 2>/dev/null
 ```
 
 Available agents: `injection`, `auth`, `ssrf`, `supply-chain`, `config`, `llm`, `mobile`, `git-history`, `cicd`, `api`, `supabase-rls`
@@ -54,7 +54,7 @@ For the most critical findings:
 1. Read the actual source file for full context
 2. Explain the vulnerability in plain language — what could an attacker do?
 3. Offer to fix it with a concrete code change
-4. After fixing, offer to re-run just that agent to verify: `npx praxis@latest red-team . --agents <agent>`
+4. After fixing, offer to re-run just that agent to verify: `npx praxis-sec@latest red-team . --agents <agent>`
 
 ## Step 4: Recommendations
 

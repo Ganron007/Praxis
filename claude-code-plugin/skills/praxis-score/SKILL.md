@@ -11,13 +11,13 @@ You are checking this project's security health score.
 ## Step 1: Run the score command
 
 ```bash
-npx praxis@latest score $ARGUMENTS 2>&1
+npx praxis-sec@latest score $ARGUMENTS 2>&1
 ```
 
 If `$ARGUMENTS` is empty, default to `.`:
 
 ```bash
-npx praxis@latest score . 2>&1
+npx praxis-sec@latest score . 2>&1
 ```
 
 If the user mentions skipping dependencies, add `--no-deps`.
@@ -41,7 +41,7 @@ Extract and present:
 
 Based on the score:
 
-- **A or B (75+)**: Congratulate the user. Suggest running `npx praxis guard` to install a pre-push git hook that maintains the score. Mention they can run `/praxis` for a detailed breakdown anytime.
+- **A or B (75+)**: Congratulate the user. Suggest running `npx praxis-sec guard` to install a pre-push git hook that maintains the score. Mention they can run `/praxis` for a detailed breakdown anytime.
 
 - **C (60-74)**: Recommend running `/praxis` for a full audit to see exactly what needs fixing. Mention the most likely problem areas based on the category breakdown.
 

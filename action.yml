@@ -84,7 +84,7 @@ runs:
 
     - name: Install Praxis
       shell: bash
-      run: npm install -g praxis@latest
+      run: npm install -g praxis-sec@latest
 
     - name: Run security scan
       id: scan

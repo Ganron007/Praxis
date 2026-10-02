@@ -33,7 +33,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 ### Scan for leaked keys
 
 ```bash
-npx praxis scan .
+npx praxis-sec scan .
 ```
 
 ### Rotate keys periodically

@@ -7,7 +7,7 @@
  * praxis's security tools directly during conversations.
  *
  * USAGE:
- *   npx praxis mcp       Start the MCP server (stdio transport)
+ *   npx praxis-sec mcp       Start the MCP server (stdio transport)
  *
  * SETUP (Claude Desktop):
  *   Add to ~/Library/Application Support/Claude/claude_desktop_config.json:
@@ -117,7 +117,7 @@ const TOOLS = [
   },
   {
     name: 'get_findings',
-    description: 'Read and return findings from a praxis JSON report file previously saved by scan_repo or the praxis CLI (npx praxis audit --json). Useful for reviewing or referencing a prior scan without re-running it.',
+    description: 'Read and return findings from a praxis JSON report file previously saved by scan_repo or the praxis CLI (npx praxis-sec audit --json). Useful for reviewing or referencing a prior scan without re-running it.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -214,20 +214,20 @@ function getChecklist() {
   return {
     title: 'Praxis Launch-Day Security Checklist',
     items: [
-      { id: 1, category: 'Secrets', check: 'No API keys hardcoded in source code', command: 'npx praxis scan .' },
+      { id: 1, category: 'Secrets', check: 'No API keys hardcoded in source code', command: 'npx praxis-sec scan .' },
       { id: 2, category: 'Secrets', check: '.env file is in .gitignore', command: null },
-      { id: 3, category: 'Secrets', check: '.env.example exists with placeholder values', command: 'npx praxis fix' },
+      { id: 3, category: 'Secrets', check: '.env.example exists with placeholder values', command: 'npx praxis-sec fix' },
       { id: 4, category: 'Database', check: 'Row Level Security (RLS) enabled on all Supabase tables', command: null },
       { id: 5, category: 'Database', check: 'Service role key is server-side only (never in frontend)', command: null },
       { id: 6, category: 'Auth', check: 'Authentication required on all sensitive API routes', command: null },
       { id: 7, category: 'Auth', check: 'JWT tokens expire within 24 hours', command: null },
-      { id: 8, category: 'Headers', check: 'Security headers configured (CSP, X-Frame-Options, HSTS)', command: 'npx praxis init --headers' },
+      { id: 8, category: 'Headers', check: 'Security headers configured (CSP, X-Frame-Options, HSTS)', command: 'npx praxis-sec init --headers' },
       { id: 9, category: 'API', check: 'Rate limiting implemented on auth and AI endpoints', command: null },
       { id: 10, category: 'API', check: 'Input validation on all API endpoints', command: null },
       { id: 11, category: 'AI', check: 'Token limits set on all LLM API calls', command: null },
       { id: 12, category: 'AI', check: 'Budget caps configured in AI provider dashboard', command: null },
       { id: 13, category: 'CI/CD', check: 'praxis scan runs in CI pipeline', command: null },
-      { id: 14, category: 'CI/CD', check: 'Pre-push hook installed', command: 'npx praxis guard' },
+      { id: 14, category: 'CI/CD', check: 'Pre-push hook installed', command: 'npx praxis-sec guard' },
     ],
   };
 }

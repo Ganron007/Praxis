@@ -27,7 +27,7 @@ import * as output from '../utils/output.js';
 const PRE_PUSH_HOOK = `#!/bin/sh
 # praxis pre-push hook
 # Scans for leaked secrets before every git push.
-# Remove this hook with: npx praxis guard remove
+# Remove this hook with: npx praxis-sec guard remove
 
 echo ""
 echo "🔍 praxis: Scanning for secrets before push..."
@@ -38,7 +38,7 @@ if [ $? -ne 0 ]; then
   echo ""
   echo "❌ praxis: Secrets detected! Push blocked."
   echo ""
-  echo "Run 'npx praxis scan .' to see details."
+  echo "Run 'npx praxis-sec scan .' to see details."
   echo "Fix the issues, then push again."
   echo ""
   echo "To skip this check (not recommended):"
@@ -56,7 +56,7 @@ exit 0
 const PRE_COMMIT_HOOK = `#!/bin/sh
 # praxis pre-commit hook
 # Scans staged files for leaked secrets before every commit.
-# Remove this hook with: npx praxis guard remove
+# Remove this hook with: npx praxis-sec guard remove
 
 echo ""
 echo "🔍 praxis: Scanning for secrets before commit..."
@@ -67,7 +67,7 @@ if [ $? -ne 0 ]; then
   echo ""
   echo "❌ praxis: Secrets detected! Commit blocked."
   echo ""
-  echo "Run 'npx praxis scan .' to see details."
+  echo "Run 'npx praxis-sec scan .' to see details."
   echo "Fix the issues, then commit again."
   echo ""
   echo "To skip this check (not recommended):"
@@ -88,12 +88,12 @@ const HUSKY_PRE_PUSH = `#!/usr/bin/env sh
 echo ""
 echo "🔍 praxis: Scanning for secrets before push..."
 
-npx praxis scan . --json > /tmp/praxis-scan.json 2>/dev/null
+npx praxis-sec scan . --json > /tmp/praxis-scan.json 2>/dev/null
 
 if [ $? -ne 0 ]; then
   echo ""
   echo "❌ praxis: Secrets detected! Push blocked."
-  echo "Run 'npx praxis scan .' to see details."
+  echo "Run 'npx praxis-sec scan .' to see details."
   rm -f /tmp/praxis-scan.json
   exit 1
 fi
@@ -108,12 +108,12 @@ const HUSKY_PRE_COMMIT = `#!/usr/bin/env sh
 echo ""
 echo "🔍 praxis: Scanning for secrets before commit..."
 
-npx praxis scan . --json > /tmp/praxis-scan.json 2>/dev/null
+npx praxis-sec scan . --json > /tmp/praxis-scan.json 2>/dev/null
 
 if [ $? -ne 0 ]; then
   echo ""
   echo "❌ praxis: Secrets detected! Commit blocked."
-  echo "Run 'npx praxis scan .' to see details."
+  echo "Run 'npx praxis-sec scan .' to see details."
   rm -f /tmp/praxis-scan.json
   exit 1
 fi
@@ -174,7 +174,7 @@ function installHook(gitDir, cwd, options) {
   console.log(chalk.gray('  If secrets are found, the operation is blocked'));
   console.log(chalk.gray('  Use --no-verify to skip (not recommended)'));
   console.log();
-  console.log(chalk.gray('To remove: npx praxis guard remove'));
+  console.log(chalk.gray('To remove: npx praxis-sec guard remove'));
 }
 
 function installGitHook(gitDir, hookType, script) {

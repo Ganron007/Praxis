@@ -1009,7 +1009,7 @@ fail the build, at or above `fail-on-new`. Pre-existing debt never blocks.
 permissions:
   security-events: write     # required for SARIF upload
 steps:
-  - run: npm install -g praxis@latest
+  - run: npm install -g praxis-sec@latest
   - run: praxis ci . --threshold 80 --sarif results.sarif --strict-intel
   - uses: github/codeql-action/upload-sarif@v4
     with: { sarif_file: results.sarif }
@@ -1148,7 +1148,7 @@ from chat — real-time vulnerability feedback without leaving the editor.
 ### Quick start
 
 ```bash
-npx praxis mcp
+npx praxis-sec mcp
 # → Praxis MCP server listening on stdio (JSON-RPC 2.0)
 ```
 

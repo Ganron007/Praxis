@@ -1,8 +1,8 @@
 {
-  "name": "praxis-security-scan",
+  "name": "praxis-sec-scan",
   "version": "9.0.0",
   "description": "Run praxis security scan on your AI agent configuration — detects ClawJacked, malicious skills, prompt injection, missing auth, Hermes Agent vulnerabilities, and 80+ attack classes.",
-  "command": "npx praxis openclaw . --preflight --json",
+  "command": "npx praxis-sec openclaw . --preflight --json",
   "permissions": ["read"],
   "author": "praxis contributors",
   "homepage": "https://github.com/Ganron007/Praxis",

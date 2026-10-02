@@ -6,8 +6,8 @@
  * Same security scan as `audit`, but with personality.
  *
  * USAGE:
- *   npx praxis vibe-check [path]     Run a vibe check
- *   npx praxis vibe-check . --badge  Generate a markdown badge
+ *   npx praxis-sec vibe-check [path]     Run a vibe check
+ *   npx praxis-sec vibe-check . --badge  Generate a markdown badge
  *
  * OUTPUT:
  *   Big ASCII art grade, emoji severity indicators,

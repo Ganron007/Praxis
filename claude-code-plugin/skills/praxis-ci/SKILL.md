@@ -11,7 +11,7 @@ You are helping the user set up Praxis as a security gate in their CI/CD pipelin
 ## Step 1: Run CI scan
 
 ```bash
-npx praxis@latest ci $ARGUMENTS 2>/dev/null
+npx praxis-sec@latest ci $ARGUMENTS 2>/dev/null
 ```
 
 Default: pass/fail based on score >= 75.
@@ -48,7 +48,7 @@ Based on the user's CI platform, offer to create or update their workflow file:
 ### GitHub Actions
 ```yaml
 - name: Security Scan
-  run: npx praxis@latest ci . --threshold 75 --sarif results.sarif
+  run: npx praxis-sec@latest ci . --threshold 75 --sarif results.sarif
 
 - name: Upload SARIF
   if: always()
@@ -61,7 +61,7 @@ Based on the user's CI platform, offer to create or update their workflow file:
 ```yaml
 security-scan:
   script:
-    - npx praxis@latest ci . --threshold 75 --json > security-report.json
+    - npx praxis-sec@latest ci . --threshold 75 --json > security-report.json
   artifacts:
     reports:
       sast: security-report.json
@@ -69,13 +69,13 @@ security-scan:
 
 ### Generic CI
 ```bash
-npx praxis@latest ci . --threshold 75 || exit 1
+npx praxis-sec@latest ci . --threshold 75 || exit 1
 ```
 
 ## Step 4: Suggest baseline workflow
 
 If there are many findings:
-1. Create a baseline: `npx praxis baseline .`
+1. Create a baseline: `npx praxis-sec baseline .`
 2. Use `--baseline` in CI to only catch new vulnerabilities
 3. Gradually fix baselined issues over time
 

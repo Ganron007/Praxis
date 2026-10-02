@@ -6,7 +6,7 @@
  * cache directory, and package version.
  *
  * USAGE:
- *   npx praxis doctor
+ *   npx praxis-sec doctor
  */
 
 import { execFileSync } from 'child_process';

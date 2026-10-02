@@ -7,8 +7,8 @@
  * typical vulnerability rates in web applications and open source projects.
  *
  * USAGE:
- *   npx praxis benchmark [path]       Compare against industry averages
- *   npx praxis benchmark . --json     Output as JSON
+ *   npx praxis-sec benchmark [path]       Compare against industry averages
+ *   npx praxis-sec benchmark . --json     Output as JSON
  *
  * DATA SOURCES:
  *   - OWASP Web Application Security Statistics (2024)

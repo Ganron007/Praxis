@@ -6,8 +6,8 @@
  * built-in audit tool (npm, yarn, pnpm, pip-audit, bundler-audit).
  *
  * USAGE:
- *   npx praxis deps [path]    Audit dependencies in the project
- *   npx praxis deps . --fix   Also run the package manager fix command
+ *   npx praxis-sec deps [path]    Audit dependencies in the project
+ *   npx praxis-sec deps . --fix   Also run the package manager fix command
  *
  * SUPPORTED PACKAGE MANAGERS:
  *   npm     →  npm audit --json

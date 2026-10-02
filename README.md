@@ -6,10 +6,10 @@
 
 <p align="center">
   <a href="https://github.com/Ganron007/Praxis/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Ganron007/Praxis/ci.yml?label=CI" alt="CI"></a>
-  <a href="https://github.com/marketplace/actions/praxis-security-scan"><img src="https://img.shields.io/badge/Marketplace-Praxis%20Security%20Scan-blue" alt="GitHub Marketplace"></a>
+  <a href="https://github.com/marketplace/actions/praxis-sec-scan"><img src="https://img.shields.io/badge/Marketplace-Praxis%20Security%20Scan-blue" alt="GitHub Marketplace"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Node.js-%E2%89%A518.0.0-blue.svg" alt="Node.js: >=18.0.0">
-  <img src="https://img.shields.io/npm/v/praxis?label=Version" alt="npm version">
+  <img src="https://img.shields.io/npm/v/praxis-sec?label=Version" alt="npm version">
   <img src="https://img.shields.io/badge/Status-Public%20Beta-yellow.svg" alt="Status: Public Beta">
 </p>
 

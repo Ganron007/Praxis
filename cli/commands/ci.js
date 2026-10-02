@@ -10,11 +10,11 @@
  *   - --fail-on flag for severity-based gating
  *
  * USAGE:
- *   npx praxis ci .                         Default: fail if score < 75
- *   npx praxis ci . --threshold 60          Custom score threshold
- *   npx praxis ci . --fail-on critical      Only fail on critical findings
- *   npx praxis ci . --sarif results.sarif   SARIF for GitHub Code Scanning
- *   npx praxis ci . --baseline              Only check new findings
+ *   npx praxis-sec ci .                         Default: fail if score < 75
+ *   npx praxis-sec ci . --threshold 60          Custom score threshold
+ *   npx praxis-sec ci . --fail-on critical      Only fail on critical findings
+ *   npx praxis-sec ci . --sarif results.sarif   SARIF for GitHub Code Scanning
+ *   npx praxis-sec ci . --baseline              Only check new findings
  */
 
 import fs from 'fs';

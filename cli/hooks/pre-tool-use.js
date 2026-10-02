@@ -14,7 +14,7 @@
  *   - Exit 2: BLOCK the tool (stdout = reason shown to Claude and user)
  *   - Exit 1: warn but allow (stdout = warning message)
  *
- * Install via:  npx praxis hooks install
+ * Install via:  npx praxis-sec hooks install
  */
 
 import path from 'path';
@@ -127,7 +127,7 @@ function buildBlockMessage(hits, filePath) {
     lines.push('');
   }
 
-  lines.push('Run `npx praxis scan .` for a full report.');
+  lines.push('Run `npx praxis-sec scan .` for a full report.');
   return lines.join('\n');
 }
 

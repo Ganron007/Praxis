@@ -6,8 +6,8 @@
  * and incrementally scans modified files.
  *
  * USAGE:
- *   npx praxis watch [path]     Start watching for changes
- *   npx praxis watch . --poll   Use polling (for network drives)
+ *   npx praxis-sec watch [path]     Start watching for changes
+ *   npx praxis-sec watch . --poll   Use polling (for network drives)
  */
 
 import fs from 'fs';
@@ -116,7 +116,7 @@ export async function watchCommand(targetPath = '.', options = {}) {
 
   } catch (err) {
     output.error(`Watch failed: ${err.message}`);
-    console.log(chalk.gray('  Try: npx praxis watch . --poll'));
+    console.log(chalk.gray('  Try: npx praxis-sec watch . --poll'));
     process.exit(1);
   }
 }

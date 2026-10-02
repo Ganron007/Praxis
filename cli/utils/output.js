@@ -178,7 +178,7 @@ export function vulnRecommendations() {
   console.log();
   console.log(chalk.white('1.') + ' Fix the flagged code patterns (see "Why" descriptions above)');
   console.log(chalk.white('2.') + ' Use  # praxis-ignore  on lines that are safe (e.g. internal tools, controlled input)');
-  console.log(chalk.white('3.') + ' Run  npx praxis checklist  for a full launch-day security review');
+  console.log(chalk.white('3.') + ' Run  npx praxis-sec checklist  for a full launch-day security review');
   console.log();
 }
 
@@ -198,7 +198,7 @@ export function recommendations() {
   console.log();
   console.log(chalk.white('4.') + ' Set up pre-commit hooks to catch this automatically:');
   console.log(chalk.gray('   npm install --save-dev husky'));
-  console.log(chalk.gray('   npx husky add .husky/pre-commit "npx praxis scan ."'));
+  console.log(chalk.gray('   npx husky add .husky/pre-commit "npx praxis-sec scan ."'));
   console.log();
 }
 

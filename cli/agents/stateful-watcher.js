@@ -13,8 +13,8 @@
  *  - K2.6's 12h+ session length handles full work sessions without reset
  *
  * USAGE (via watch command):
- *   npx praxis watch . --deep --stateful
- *   npx praxis watch . --deep --stateful --provider kimi
+ *   npx praxis-sec watch . --deep --stateful
+ *   npx praxis-sec watch . --deep --stateful --provider kimi
  */
 
 import fs from 'fs';

@@ -13,7 +13,7 @@
  * PostToolUse NEVER blocks — exit 0 always.
  * Empty stdout = silent (no findings or file skipped).
  *
- * Install via:  npx praxis hooks install
+ * Install via:  npx praxis-sec hooks install
  */
 
 import path from 'path';
@@ -89,7 +89,7 @@ async function main() {
     lines.push('');
   }
 
-  lines.push('Run `npx praxis scan .` for full details and auto-fix options.');
+  lines.push('Run `npx praxis-sec scan .` for full details and auto-fix options.');
 
   process.stdout.write(lines.join('\n'));
   process.exit(0);

@@ -503,7 +503,7 @@ function outputJSON(results, filesScanned) {
 /**
  * Output findings in SARIF 2.1.0 format.
  * Feed this into GitHub's Security tab:
- *   npx praxis scan . --sarif > results.sarif
+ *   npx praxis-sec scan . --sarif > results.sarif
  *
  * Then upload via:
  *   github/codeql-action/upload-sarif@v3

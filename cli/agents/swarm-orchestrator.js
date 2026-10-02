@@ -14,8 +14,8 @@
  * HTML reports, and CI exit codes work unchanged.
  *
  * USAGE:
- *   npx praxis red-team . --swarm
- *   npx praxis red-team . --swarm --provider kimi
+ *   npx praxis-sec red-team . --swarm
+ *   npx praxis-sec red-team . --swarm --provider kimi
  */
 
 import fs from 'fs';

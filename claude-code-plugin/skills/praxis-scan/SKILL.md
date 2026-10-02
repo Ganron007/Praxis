@@ -11,13 +11,13 @@ You are scanning this project for leaked secrets using Praxis's pattern matching
 ## Step 1: Run the scan
 
 ```bash
-npx praxis@latest scan $ARGUMENTS --json 2>/dev/null
+npx praxis-sec@latest scan $ARGUMENTS --json 2>/dev/null
 ```
 
 If `$ARGUMENTS` is empty, default to `.`:
 
 ```bash
-npx praxis@latest scan . --json 2>/dev/null
+npx praxis-sec@latest scan . --json 2>/dev/null
 ```
 
 The command exits 0 if clean, 1 if secrets found. Capture stdout regardless.
@@ -79,7 +79,7 @@ For each secret found, offer to fix it:
 3. **Ensure `.env` is in `.gitignore`** — check and add if missing
 
 4. **Warn about git history** — if the secret was already committed, it exists in git history. Recommend:
-   - Rotating the credential immediately (mention `npx praxis rotate`)
+   - Rotating the credential immediately (mention `npx praxis-sec rotate`)
    - Consider using `git filter-branch` or BFG Repo Cleaner to remove from history
 
 5. **Suggest auto-fix** — mention `/praxis-fix` for bulk remediation, or `/praxis-baseline` to baseline known findings

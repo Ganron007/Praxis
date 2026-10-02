@@ -124,7 +124,7 @@ async function handleGitignore(targetDir, force, results) {
       const mergedContent = existingContent.trim() + '\n\n' +
         '# =============================================================================\n' +
         '# PRAXIS ADDITIONS\n' +
-        '# Added by: npx praxis init\n' +
+        '# Added by: npx praxis-sec init\n' +
         '# =============================================================================\n\n' +
         extractSecurityPatterns(sourceContent);
 
@@ -243,9 +243,9 @@ const AGENT_MARKER = '<!-- praxis -->';
 const AGENT_SECTION = `
 ## Security (praxis)
 ${AGENT_MARKER}
-- Always run \`npx praxis scan .\` before committing code
+- Always run \`npx praxis-sec scan .\` before committing code
 - Never hardcode API keys, tokens, or credentials in source files — use environment variables
-- If hardcoded secrets are found or generated, run \`npx praxis remediate\` to auto-fix them
+- If hardcoded secrets are found or generated, run \`npx praxis-sec remediate\` to auto-fix them
 `;
 
 // Standalone content for a new Cursor rules file.
@@ -254,9 +254,9 @@ description: Prevent API key leaks and credential exposure in generated code
 alwaysApply: true
 ---
 
-- Always run \`npx praxis scan .\` before committing code
+- Always run \`npx praxis-sec scan .\` before committing code
 - Never hardcode API keys, tokens, or credentials in source files — use environment variables
-- If hardcoded secrets are found or generated, run \`npx praxis remediate\` to auto-fix them
+- If hardcoded secrets are found or generated, run \`npx praxis-sec remediate\` to auto-fix them
 `;
 
 async function handleAgentFiles(targetDir, force, results) {
@@ -316,7 +316,7 @@ async function handleHermesInit(targetDir, options) {
   if (!fromUrl) {
     console.error(chalk.red('\nError: --hermes requires --from <setup-url>'));
     console.error(chalk.gray('  Generate a setup URL at: '));
-    console.error(chalk.gray('  Then run: npx praxis init --hermes --from <url>\n'));
+    console.error(chalk.gray('  Then run: npx praxis-sec init --hermes --from <url>\n'));
     process.exit(1);
   }
 
@@ -402,8 +402,8 @@ async function handleHermesInit(targetDir, options) {
 
   console.log();
   console.log(chalk.cyan.bold('Next steps:'));
-  console.log(chalk.white('  1.') + ' Populate your baseline:    ' + chalk.cyan('npx praxis audit .'));
-  console.log(chalk.white('  2.') + ' Auto-fix findings:         ' + chalk.cyan('npx praxis audit . --agentic 3 --agentic-target 80'));
+  console.log(chalk.white('  1.') + ' Populate your baseline:    ' + chalk.cyan('npx praxis-sec audit .'));
+  console.log(chalk.white('  2.') + ' Auto-fix findings:         ' + chalk.cyan('npx praxis-sec audit . --agentic 3 --agentic-target 80'));
   console.log(chalk.white('  3.') + ' Commit everything and push — CI runs on every PR.');
   console.log();
 }
@@ -457,7 +457,7 @@ async function handleOpenClawInit(targetDir, force, results) {
   console.log(chalk.cyan('Important:'));
   console.log(chalk.white('  1.') + ' Set the OPENCLAW_API_KEY environment variable');
   console.log(chalk.white('  2.') + ' Only add verified skills from trusted sources');
-  console.log(chalk.white('  3.') + ' Run ' + chalk.cyan('npx praxis openclaw .') + ' to verify security');
+  console.log(chalk.white('  3.') + ' Run ' + chalk.cyan('npx praxis-sec openclaw .') + ' to verify security');
   console.log();
 }
 
@@ -507,8 +507,8 @@ function printSummary(results) {
   // Next steps
   console.log(chalk.cyan('Next steps:'));
   console.log(chalk.white('  1.') + ' Review the copied files and customize for your project');
-  console.log(chalk.white('  2.') + ' Run ' + chalk.cyan('npx praxis scan .') + ' to check for secrets');
-  console.log(chalk.white('  3.') + ' Run ' + chalk.cyan('npx praxis checklist') + ' before launching');
+  console.log(chalk.white('  2.') + ' Run ' + chalk.cyan('npx praxis-sec scan .') + ' to check for secrets');
+  console.log(chalk.white('  3.') + ' Run ' + chalk.cyan('npx praxis-sec checklist') + ' before launching');
   console.log();
   console.log(chalk.cyan('='.repeat(60)));
 }

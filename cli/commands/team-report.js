@@ -296,7 +296,7 @@ function generateHTML(target, findings, agentSections, synthesis, bullets) {
   ${roadmapHTML}
 
   <div class="footer">
-    Secured by <span class="powered">Praxis</span> · <code>npx praxis red-team .</code>
+    Secured by <span class="powered">Praxis</span> · <code>npx praxis-sec red-team .</code>
   </div>
 </div>`,
   });

@@ -8,9 +8,9 @@
  * land on disk and feeding advisory findings back into the conversation.
  *
  * USAGE:
- *   npx praxis hooks install     Install hooks into ~/.claude/settings.json
- *   npx praxis hooks remove      Remove praxis hooks
- *   npx praxis hooks status      Show whether hooks are installed
+ *   npx praxis-sec hooks install     Install hooks into ~/.claude/settings.json
+ *   npx praxis-sec hooks remove      Remove praxis hooks
+ *   npx praxis-sec hooks status      Show whether hooks are installed
  *
  * HOOK BEHAVIOUR:
  *   PreToolUse  — blocks Write/Edit if critical secrets detected; blocks
@@ -138,8 +138,8 @@ function install() {
   console.log(chalk.white('  Bash            ') + chalk.gray('→ blocked on curl|bash, credential exfiltration patterns'));
   console.log(chalk.white('  Write / Edit    ') + chalk.gray('→ advisory scan after save (findings injected into context)'));
   console.log();
-  console.log(chalk.gray('  To remove:  npx praxis hooks remove'));
-  console.log(chalk.gray('  To verify:  npx praxis hooks status\n'));
+  console.log(chalk.gray('  To remove:  npx praxis-sec hooks remove'));
+  console.log(chalk.gray('  To verify:  npx praxis-sec hooks status\n'));
 }
 
 // =============================================================================
@@ -216,7 +216,7 @@ function printStatus(settings) {
   console.log();
 
   if (!preInstalled || !postInstalled) {
-    console.log(chalk.gray('  Run: npx praxis hooks install'));
+    console.log(chalk.gray('  Run: npx praxis-sec hooks install'));
   }
   console.log();
 }

@@ -16,7 +16,7 @@ editor diagnostics.
 ## Requirements
 
 - Node.js ≥ 18
-- The `praxis` CLI — installed globally (`npm install -g praxis`) or configured
+- The `praxis` CLI — installed globally (`npm install -g praxis-sec`) or configured
   via the `praxis.cliPath` setting
 
 ## Configuration
@@ -27,7 +27,7 @@ editor diagnostics.
 | `praxis.severity` | `medium` | Minimum severity shown in diagnostics |
 | `praxis.showInlineHints` | `true` | Show inline hints for findings |
 | `praxis.deep` | `false` | Enable AI deep analysis (requires API key) |
-| `praxis.cliPath` | `""` | Path to the praxis executable; empty = `npx praxis` |
+| `praxis.cliPath` | `""` | Path to the praxis executable; empty = `npx praxis-sec` |
 
 ## Build
 

@@ -74,7 +74,7 @@
         "praxis.cliPath": {
           "type": "string",
           "default": "",
-          "description": "Path to the praxis executable (e.g. '/usr/local/bin/praxis' or 'C:\\Users\\...\\praxis.js'). If empty, defaults to 'npx praxis'."
+          "description": "Path to the praxis executable (e.g. '/usr/local/bin/praxis' or 'C:\\Users\\...\\praxis.js'). If empty, defaults to 'npx praxis-sec'."
         }
       }
     },

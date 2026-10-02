@@ -314,7 +314,7 @@ export function verifyAccessToken(token: string): TokenPayload {
 - **praxis** - Scan for leaked tokens in code
 
 ```bash
-npx praxis scan .
+npx praxis-sec scan .
 ```
 
 ---
