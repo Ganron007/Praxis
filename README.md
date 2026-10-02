@@ -32,7 +32,7 @@
 | **Find → fix → verify** | LLM drafts a diff → you approve → atomic apply → tiered verification ladder (AST syntax → build → tests → re-scan) with auto-revert of failed fixes → undo log |
 | **Governance audits** | Detects *missing* controls: no human-oversight gates, no observability wiring — EU AI Act Art. 14 / 12 evidence |
 | **MCP trust registry & live probing** | Known MCP servers with trust scores (SHA-256 integrity-checked) + live runtime JSON-RPC handshakes and tool fuzzing (`--test-live`) |
-| **Threat intel** | 6 free feeds cached locally (OSV, GHSA, KEV, EPSS, NVD, Gitleaks) + 5 optional paid; findings enriched with exploit likelihood |
+| **Threat intel** | 7 core sources cached locally — 6 remote feeds (OSV, GHSA, KEV, EPSS, NVD, Gitleaks) plus the bundled AI threatpack — and 5 optional keyed providers (Snyk, Socket, Phylum, Sonatype, GitGuardian); findings enriched with exploit likelihood |
 | **Compliance mapping** | Findings tagged against 8 frameworks — OWASP LLM/ML/Agentic, MITRE ATLAS (+ mitigations & case studies), NIST AI 600-1, AVID, EU AI Act, ISO 42001, Google SAIF |
 | **Professional HTML report** | Tabbed single-file report: overview KPIs + severity distribution, OWASP ASI agentic-risk coverage, per-agent coverage, findings with rule IDs and AST taint blocks, standards matrix, Agent BOM, remediation plan, remediation ledger (incl. declines and reasons), score trend, and a provenance footer |
 | **Web UI** | `praxis web` — register projects, run scans, watch live progress, browse findings. Read-only, loopback-only by default |

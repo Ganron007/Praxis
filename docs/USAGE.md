@@ -83,7 +83,7 @@ Running `praxis` with no args on a TTY drops into the interactive REPL.
 | `rules` | Inspect and export the detection rules (portable Semgrep-compatible bundle) |
 | `web` | Local web UI for running scans and managing scan projects |
 
-Plus three top-level shortcuts: `praxis vibe`, `praxis score`, and `praxis` alone (REPL on a TTY).
+Plus three top-level shortcuts: `praxis vibe`, `praxis score`, and `praxis` alone (REPL on a TTY), plus [legacy flat aliases](#legacy-top-level-aliases) for the original command names.
 
 ---
 
@@ -656,6 +656,43 @@ Compute a 0–100 security health score.
 - On a TTY → drops into the interactive REPL.
 - Otherwise → prints quick-start help.
 
+### Legacy top-level aliases
+
+Praxis was reorganized into verb-led groups. The original flat commands still work as
+aliases, so existing scripts and CI configs keep running. **Prefer the grouped form** in
+new work — the aliases are maintained for compatibility, not as the primary interface.
+
+| Alias | Use instead |
+| --- | --- |
+| `praxis ci` | `praxis scan ci` |
+| `praxis audit` · `praxis openclaw` | `praxis agents audit` |
+| `praxis scan-mcp` | `praxis agents mcp` |
+| `praxis scan-skill` | `praxis agents skill` |
+| `praxis abom` | `praxis agents bom` |
+| `praxis mcp` | `praxis agents serve` |
+| `praxis scan-standard` | `praxis scan standard` |
+| `praxis red-team` | `praxis scan redteam` |
+| `praxis update-intel` | `praxis intel update` |
+| `praxis deps` | `praxis intel deps` |
+| `praxis advisories` | `praxis intel advisories` |
+| `praxis remediate` | `praxis fix quick` |
+| `praxis rotate` | `praxis fix rotate` |
+| `praxis undo` | `praxis fix undo` |
+| `praxis env-template` | `praxis fix env-template` |
+| `praxis legal` | `praxis report legal` |
+| `praxis team` | `praxis report team` |
+| `praxis checklist` | `praxis report checklist` |
+| `praxis benchmark` | `praxis report benchmark` |
+| `praxis init` | `praxis project init` |
+| `praxis doctor` | `praxis project doctor` |
+| `praxis baseline` | `praxis project baseline` |
+| `praxis guard` | `praxis project guard` |
+| `praxis watch` | `praxis project watch` |
+| `praxis shell` | `praxis` (no args, on a TTY) |
+
+Note: `vibe`, `score` and the no-argument REPL are **not** aliases — they are distinct
+top-level commands.
+
 ---
 
 ## AI security standards alignment
@@ -788,8 +825,8 @@ operator's, not the target's).
 | `SONATYPE_USER` + `SONATYPE_TOKEN` | OSS Index (works anonymously too) |
 | `PHYLUM_API_KEY` | Phylum supply-chain risk |
 
-None are required. The six core intel sources and pattern-based scanning all
-work with zero config.
+None are required. The seven core intel sources — OSV, GHSA, KEV, EPSS, NVD, Gitleaks and
+the bundled AI threatpack — plus pattern-based scanning all work with zero config.
 
 ### State location override (used by tests)
 

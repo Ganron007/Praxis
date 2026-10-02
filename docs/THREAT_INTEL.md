@@ -182,13 +182,14 @@ on the next `praxis intel update` run.
 | `epss` | core | — | 24h | FIRST.org exploit-likelihood scores |
 | `nvd` | core | `NVD_API_KEY` *(optional, faster requests)* | 7d | CVE detail enrichment |
 | `gitleaks` | core | — | 7d | Gitleaks regex rule set |
+| `threatpack` | core | — (override with `PRAXIS_THREATPACK_URL`) | 7d | Praxis AI attack-vector signature pack — prompt-injection probes, EAA additions, model-gateway allowlists. Bundled seed at `cli/data/threatpacks/latest.json`; a fetch failure degrades to the seed |
 | `snyk` | optional | `SNYK_TOKEN` (+ `SNYK_ORG_ID`) | 12h | Snyk Vulnerability DB |
 | `socket` | optional | `SOCKET_API_KEY` | 6h | Socket.dev supply-chain risk |
 | `gitguardian` | optional | `GITGUARDIAN_API_KEY` | 7d | GitGuardian secret detector defs |
 | `sonatype` | optional | `SONATYPE_USER` + `SONATYPE_TOKEN` *(works anonymously too)* | 12h | OSS Index |
 | `phylum` | optional | `PHYLUM_API_KEY` | 6h | Phylum supply-chain risk |
 
-Without any env vars the system fully works using the six core sources. Optional
+Without any env vars the system fully works using the seven core sources. Optional
 sources gracefully report `skipped` and don't fail the run.
 
 ### Environment variables
