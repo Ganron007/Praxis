@@ -22,7 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
-import { BaseAgent, createFinding } from './base-agent.js';
+import { BaseAgent, createFinding, ruleTableLineMask } from './base-agent.js';
 
 // =============================================================================
 // PATTERNS — detected in source files
@@ -284,8 +284,13 @@ export class AgentAttestationAgent extends BaseAgent {
 
       // Pattern-based checks
       const lines = content.split('\n');
+      // This lane bypasses scanFileWithPatterns, so honour the documented
+      // suppression comment here too — it was silently ignored before.
+      const ruleTable = ruleTableLineMask(lines);
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
+        if (ruleTable && ruleTable.has(i)) continue;
+        if (this.isSuppressed(line)) continue;
         for (const pattern of PATTERNS) {
           pattern.regex.lastIndex = 0;
           if (pattern.regex.test(line)) {

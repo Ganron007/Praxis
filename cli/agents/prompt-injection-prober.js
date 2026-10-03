@@ -18,7 +18,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { BaseAgent, createFinding } from './base-agent.js';
+import { BaseAgent, createFinding, ruleTableLineMask } from './base-agent.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -179,6 +179,9 @@ export class PromptInjectionProber extends BaseAgent {
       const content = this.readFile(file);
       if (!content) continue;
       const lines = content.split('\n');
+      // A probe payload quoted in a rule table's own prose is the table
+      // documenting the probe, not an injection.
+      const ruleTable = ruleTableLineMask(lines);
 
       for (const probe of probes) {
         probe.regex.lastIndex = 0;
@@ -191,6 +194,7 @@ export class PromptInjectionProber extends BaseAgent {
           const column = lastNl === -1 ? idx + 1 : idx - lastNl;
           const lineText = lines[lineNum - 1] || '';
           if (this.isSuppressed(lineText)) continue;
+          if (ruleTable && ruleTable.has(lineNum - 1)) continue;
 
           const finding = createFinding({
             file,

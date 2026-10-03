@@ -23,7 +23,7 @@
  */
 
 import fs from 'fs';
-import { BaseAgent, createFinding } from './base-agent.js';
+import { BaseAgent, createFinding, ruleTableLineMask } from './base-agent.js';
 
 // =============================================================================
 // PATTERNS & REGEXES
@@ -291,9 +291,16 @@ export class AgentTelemetryAgent extends BaseAgent {
       };
 
       // ── Pass 1: line-scoped regex patterns ───────────────────────────────
+      // A rule table's own prose/patterns would otherwise match the very rules
+      // looking for them; `ruleTable` is null for anything that is not a table.
+      const ruleTable = ruleTableLineMask(lines);
       for (const group of [SECRET_PATTERNS, HAZARDOUS_CMD_PATTERNS, PROMPT_INJECTION_PATTERNS, EXFIL_PATTERNS]) {
         for (const pattern of group) {
           for (let i = 0; i < lines.length; i++) {
+            if (ruleTable && ruleTable.has(i)) continue;
+            // This lane bypassed scanFileWithPatterns, so honour the documented
+            // suppression comment here too — it was silently ignored before.
+            if (this.isSuppressed(lines[i])) continue;
             pattern.regex.lastIndex = 0;
             let match;
             while ((match = pattern.regex.exec(lines[i])) !== null) {

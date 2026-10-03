@@ -99,7 +99,7 @@ export class GitHistoryScanner extends BaseAgent {
               severity: stillExists ? p.severity : this.elevateSeverity(p.severity),
               category: 'history',
               rule: 'GIT_HISTORY_SECRET',
-              title: `Historical Secret: ${p.name}`,
+              title: `Historical Secret: ${p.name}`, // praxis-ignore AGENT_LOG_SECRET_KV — title template of a finding this scanner emits, not an agent definition
               description: stillExists
                 ? `Secret found in current code AND in git history (commit ${currentCommit}).`
                 : `Secret was removed from code but still exists in git history (commit ${currentCommit}, ${currentDate}). Anyone with repo access can retrieve it.`,

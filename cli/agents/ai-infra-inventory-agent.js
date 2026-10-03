@@ -29,7 +29,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { BaseAgent, createFinding } from './base-agent.js';
+import { BaseAgent, createFinding, ruleTableLineMask } from './base-agent.js';
 
 // =============================================================================
 // LANE 1 — MODEL GATEWAYS
@@ -130,6 +130,33 @@ const UNSAFE_DATASET_FLAG = /trust_remote_code\s*=\s*True|trust_remote_code\s*:\
 // Template injection in dataset configs: template expressions invoking OS/module
 const DATASET_TEMPLATE_INJECTION = /\{\{\s*(?:__import__|os\.|subprocess|exec|eval|__builtins__)[\s\S]{0,120}?\}\}|\$\{\s*(?:__import__|os\.|subprocess|exec|eval|process\.env)[\s\S]{0,120}?\}/i;
 
+/**
+ * First 1-based line where `re` matches something that is not a rule table
+ * describing itself, or 0 when every match is rule-table prose.
+ *
+ * The lanes below run patterns against whole file contents, so on one of our own
+ * rule tables the match is the table's `description:`/`title:` prose naming the
+ * very risk being checked. Skipping only those lines keeps real configuration in
+ * the same file reportable, and keeps the reported line honest.
+ */
+function realMatchLine(content, re) {
+  const mask = ruleTableLineMask(content.split('\n'));
+  if (!mask) {
+    re.lastIndex = 0;
+    const first = re.exec(content);
+    return first ? content.slice(0, first.index).split('\n').length : 0;
+  }
+  re.lastIndex = 0;
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    const lineIdx = content.slice(0, m.index).split('\n').length - 1;
+    if (!mask.has(lineIdx)) return lineIdx + 1;
+    if (!re.global) break;
+    if (m.index === re.lastIndex) re.lastIndex++;
+  }
+  return 0;
+}
+
 // Eval-harness / agent-sandbox: disabled safety gates, broad tool scope, egress
 const EVAL_HARNESS_RISK = [
   {
@@ -197,9 +224,11 @@ export class AiInfraInventoryAgent extends BaseAgent {
         }
         const content = read(file);
         if (!check.regex.test(content)) continue;
+        const gwLine = realMatchLine(content, check.regex);
+        if (gwLine === 0) continue;
         findings.push(createFinding({
           file,
-          line: 1,
+          line: gwLine,
           severity: check.severity,
           category: this.category,
           rule: check.rule,
@@ -241,10 +270,11 @@ export class AiInfraInventoryAgent extends BaseAgent {
       }
 
       for (const mc of MANAGED_COMPUTE) {
-        if (mc.regex.test(content)) {
+        const mcLine = mc.regex.test(content) ? realMatchLine(content, mc.regex) : 0;
+        if (mcLine) {
           findings.push(createFinding({
             file,
-            line: 1,
+            line: mcLine,
             severity: 'medium',
             category: this.category,
             rule: mc.rule,
@@ -362,16 +392,13 @@ export class AiInfraInventoryAgent extends BaseAgent {
       const content = read(file);
       if (!content) continue;
       const rel = path.relative(rootPath, file).replace(/\\/g, '/');
-      const lineNum = (re) => {
-        const m = content.match(new RegExp(re.source, 'i'));
-        return m ? content.slice(0, m.index).split('\n').length : 1;
-      };
 
       // Remote-code dataset loader (P-IMP-046)
-      if (DATASET_REMOTE_LOADER.test(content)) {
+      const dataset_remote_loader_line = DATASET_REMOTE_LOADER.test(content) ? realMatchLine(content, DATASET_REMOTE_LOADER) : 0;
+      if (dataset_remote_loader_line) {
         findings.push(createFinding({
           file,
-          line: lineNum(DATASET_REMOTE_LOADER),
+          line: dataset_remote_loader_line,
           severity: 'critical',
           category: this.category,
           rule: 'AI_DATASET_REMOTE_LOADER',
@@ -386,10 +413,11 @@ export class AiInfraInventoryAgent extends BaseAgent {
       }
 
       // Unsafe trust_remote_code flag (P-IMP-046 companion)
-      if (UNSAFE_DATASET_FLAG.test(content)) {
+      const unsafe_dataset_flag_line = UNSAFE_DATASET_FLAG.test(content) ? realMatchLine(content, UNSAFE_DATASET_FLAG) : 0;
+      if (unsafe_dataset_flag_line) {
         findings.push(createFinding({
           file,
-          line: lineNum(UNSAFE_DATASET_FLAG),
+          line: unsafe_dataset_flag_line,
           severity: 'high',
           category: this.category,
           rule: 'AI_DATASET_TRUST_REMOTE_CODE',
@@ -404,10 +432,11 @@ export class AiInfraInventoryAgent extends BaseAgent {
       }
 
       // Template injection in dataset config (P-IMP-047)
-      if (DATASET_TEMPLATE_INJECTION.test(content)) {
+      const dataset_template_injection_line = DATASET_TEMPLATE_INJECTION.test(content) ? realMatchLine(content, DATASET_TEMPLATE_INJECTION) : 0;
+      if (dataset_template_injection_line) {
         findings.push(createFinding({
           file,
-          line: lineNum(DATASET_TEMPLATE_INJECTION),
+          line: dataset_template_injection_line,
           severity: 'critical',
           category: this.category,
           rule: 'AI_DATASET_TEMPLATE_INJECTION',
@@ -423,14 +452,14 @@ export class AiInfraInventoryAgent extends BaseAgent {
 
       // Eval-harness / sandbox misconfigurations (P-IMP-048)
       for (const check of EVAL_HARNESS_RISK) {
-        if (check.regex.test(content)) {
-          const lNum = lineNum(check.regex);
+        const harness_line = check.regex.test(content) ? realMatchLine(content, check.regex) : 0;
+        if (harness_line) {
           const lines = content.split('\n');
-          const lineText = lines[lNum - 1] || '';
+          const lineText = lines[harness_line - 1] || '';
           if (lineText.includes('// praxis-ignore') || lineText.includes('# praxis-ignore')) continue;
           findings.push(createFinding({
             file,
-            line: lNum,
+            line: harness_line,
             severity: check.severity,
             category: this.category,
             rule: check.rule,

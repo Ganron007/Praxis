@@ -101,7 +101,7 @@ const TOOLS = [
         agents: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Specific agent names to run (optional). Omit to run all agents.',
+          description: 'Specific agent names to run (optional). Omit to run all agents.', // praxis-ignore AGENT_RECURSIVE_INVOCATION — JSON Schema property help text, not an agent definition
         },
         llm: {
           type: 'boolean',

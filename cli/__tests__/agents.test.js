@@ -2334,6 +2334,149 @@ describe('scanner hardening', async () => {
 });
 
 // =============================================================================
+// RULE-TABLE SUPPRESSION
+// =============================================================================
+//
+// A rule table states what a vulnerability looks like, so its prose and patterns
+// match the rules looking for them. Reporting those made 54% of a self-scan be
+// the scanner describing itself. Suppression is two-stage precisely so it cannot
+// hide a real finding, and these pin all three boundaries.
+
+describe('rule-table suppression', async () => {
+  const { ruleTableLineMask } = await import('../agents/base-agent.js');
+
+  // A table needs two or more matcher entries against two or more rule ids, each
+  // field on its own line — which is how every Praxis rule table is written.
+  const TABLE = [
+    'const RULES = [',
+    '  {',
+    "    rule: 'DEMO_A',",
+    "    severity: 'high',",
+    '    regex: /alpha/i,',
+    "    description: 'alpha risk',",
+    '  },',
+    '  {',
+    "    rule: 'DEMO_B',",
+    "    severity: 'low',",
+    '    regex: /beta/i,',
+    "    description: 'beta risk',",
+    '  },',
+    '];',
+  ].join('\n');
+
+  it('marks prose and pattern lines of a genuine rule table', () => {
+    const mask = ruleTableLineMask(TABLE.split('\n'));
+    assert.ok(mask, 'a file with 2 matchers and 2 rule ids is a rule table');
+    assert.ok(mask.has(4), "the entry's severity: is a rule line");
+    assert.ok(mask.has(5), "the entry's description: is a rule line");
+    assert.ok(!mask.has(1), 'structural lines are not rule lines');
+  });
+
+  it('does not treat ordinary application code as a rule table', () => {
+    // Real code that happens to use the words "description" and "fix" must still
+    // be scanned, or the guard becomes a false-negative machine.
+    const app = [
+      'const handler = {',
+      "  description: 'user-facing copy',",
+      "  fix: 'retry the request',",
+      "  severity: 'low',",
+      '};',
+      'function render() {',
+      '  return JSON.stringify(handler.description);',
+      '}',
+    ].join('\n');
+    assert.equal(ruleTableLineMask(app.split('\n')), null,
+      'no matcher fields means not a rule table, so nothing is suppressed');
+  });
+
+  it('does not treat a single-matcher file as a rule table', () => {
+    const one = [
+      'const RULES = [',
+      "  { rule: 'ONLY', regex: /x/ },",
+      '];',
+    ].join('\n');
+    assert.equal(ruleTableLineMask(one.split('\n')), null,
+      'one matcher is below the threshold and must not suppress anything');
+  });
+
+  it('does not treat compact single-line entries as a rule table (known limit)', () => {
+    // Documented limitation: keys must start the line, so a table written as
+    // `{ rule: 'X', regex: /y/ }` on one line is scanned normally. That is
+    // deliberate — loosening this to "any object with a regex key" would start
+    // suppressing prose in ordinary application objects, and a false negative
+    // is worse than a noisy finding.
+    const compact = [
+      'const RULES = [',
+      "  { rule: 'A', regex: /alpha/ },",
+      "  { rule: 'B', regex: /beta/ },",
+      '];',
+    ].join('\n');
+    assert.equal(ruleTableLineMask(compact.split('\n')), null,
+      'compact entries are intentionally out of scope');
+  });
+
+  it('suppresses a rule table describing itself, end to end', async () => {
+    const { MCPSecurityAgent } = await import('../agents/mcp-security-agent.js');
+    const agent = new MCPSecurityAgent();
+    const { dir, file } = writeTempFile([
+      'const RULES = [',
+      '  {',
+      "    rule: 'DEMO_SHELL',",
+      "    severity: 'high',",
+      '    regex: /alpha/,',
+      "    description: 'execSync runs a shell command',",
+      '  },',
+      '  {',
+      "    rule: 'DEMO_FS',",
+      "    severity: 'low',",
+      '    regex: /beta/,',
+      "    description: 'fs.writeFileSync writes to disk',",
+      '  },',
+      '];',
+      'server.tool("run_cmd", async (a) => { return execSync(a.cmd); });',
+    ].join('\n'));
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      // MCP_SHADOW_CONFIG is structural (a temp file is not in version control),
+      // not a pattern match, so it is not what this guard governs.
+      const patternFindings = findings.filter(f => f.rule !== 'MCP_SHADOW_CONFIG');
+      // Lines 1-14 are the table (including its two prose/pattern fields per
+      // entry); line 15 is the real call.
+      const onTable = patternFindings.filter(f => f.line <= 14);
+      assert.equal(onTable.length, 0,
+        `rule-table prose must not be reported (got ${onTable.map(f => `${f.rule}@${f.line}`).join(', ')})`);
+      assert.ok(patternFindings.some(f => f.line === 15 && f.rule === 'MCP_TOOL_SHELL_EXEC'),
+        `the real execSync call must still be reported (got ${patternFindings.map(f => `${f.rule}@${f.line}`).join(', ')})`);
+    } finally { cleanup(dir); }
+  });
+
+  it('still reports a real vulnerability in a file that also holds a table', async () => {
+    const { MCPSecurityAgent } = await import('../agents/mcp-security-agent.js');
+    const agent = new MCPSecurityAgent();
+    const { dir, file } = writeTempFile([
+      'const RULES = [',
+      '  {',
+      "    rule: 'DEMO_SHELL',",
+      '    regex: /alpha/,',
+      "    description: 'execSync runs a shell command',",
+      '  },',
+      '  {',
+      "    rule: 'DEMO_FS',",
+      '    regex: /beta/,',
+      "    description: 'fs.writeFileSync writes to disk',",
+      '  },',
+      '];',
+      'server.tool("write", async (a) => { fs.writeFileSync(a.path, a.data); });',
+    ].join('\n'));
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.line === 13 && f.rule === 'MCP_TOOL_FS_WRITE'),
+        `suppression is line-scoped: a table must not blind the rest of the file (got ${findings.map(f => `${f.rule}@${f.line}`).join(', ')})`);
+    } finally { cleanup(dir); }
+  });
+});
+
+// =============================================================================
 // GOVERNANCE ABSENCE-AUDITS (P-IMP-036)
 // =============================================================================
 

@@ -247,7 +247,7 @@ export class EndpointAgentAbuseAgent extends BaseAgent {
         category: this.category,
         rule: 'EAA_AGENT_CLI_IN_LIFECYCLE',
         title: `Lifecycle Script "${name}" Invokes an AI Agent CLI`,
-        description: `An npm lifecycle hook launches a coding-agent CLI. Package installs run without user review, making this a vector for driving a trusted agent from an untrusted parent (EAA-001, observed in the Nx s1ngularity and Trivy OpenVSX incidents).`,
+        description: `An npm lifecycle hook launches a coding-agent CLI. Package installs run without user review, making this a vector for driving a trusted agent from an untrusted parent (EAA-001, observed in the Nx s1ngularity and Trivy OpenVSX incidents).`, // praxis-ignore AGENT_RECURSIVE_INVOCATION — description of a finding this scanner emits, not an agent definition
         matched: cmd.slice(0, 200),
         confidence: 'medium',
         cwe: 'CWE-506',

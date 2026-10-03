@@ -21,6 +21,60 @@ import fg from 'fast-glob';
 import { SKIP_DIRS, SKIP_EXTENSIONS, SKIP_FILENAMES, MAX_FILE_SIZE, MAX_SCAN_FILES, loadGitignorePatterns } from '../utils/patterns.js';
 
 // =============================================================================
+// RULE-TABLE SUPPRESSION
+// =============================================================================
+//
+// A detection rule table is data, not code, and it necessarily contains the
+// signatures it hunts for: a rule's `description:` spells out the insecure call
+// it is looking for, so that prose matches the rule itself. Scanning our own
+// tables therefore reported every rule describing itself — 138 of 271 findings
+// in a self-scan, over half the report.
+//
+// Keep this comment free of concrete API names: quoting one makes this file a
+// match for the very rule being discussed.
+//
+// Suppression is deliberately two-stage so it cannot mask a real finding:
+//   1. the FILE must be a rule table (two or more matcher entries against rule
+//      ids — something application code never declares), and
+//   2. the LINE must be a rule field holding prose or a pattern.
+// A file that merely uses the words "description" or "fix" fails stage 1 and is
+// scanned normally.
+
+const RULE_MATCHER_FIELD = /^\s*(?:regex|pattern|detectionRegex)\s*:/;
+const RULE_ID_FIELD = /^\s*(?:rule|id|name)\s*:\s*['"`]/;
+const RULE_PROSE_FIELD =
+  /^\s*(?:title|description|fix|note|recommendation|regex|pattern|detectionRegex|severity|cwe|owasp|confidence|id|rule)\s*:/;
+
+const MIN_RULE_TABLE_ENTRIES = 2;
+
+/**
+ * Build the set of line indexes that hold rule-table prose rather than code.
+ *
+ * Returns `null` when the file is not a rule table, so callers get "scan this
+ * file normally" for free. Reuse the returned Set for the whole file: building
+ * it is one cheap pass, and callers that scan line by line would otherwise
+ * repeat it per line.
+ *
+ * @param {string[]} lines
+ * @returns {Set<number>|null} zero-based indexes of rule-definition lines
+ */
+export function ruleTableLineMask(lines) {
+  let matchers = 0;
+  let ids = 0;
+  for (const line of lines) {
+    if (RULE_MATCHER_FIELD.test(line)) matchers++;
+    else if (RULE_ID_FIELD.test(line)) ids++;
+  }
+  if (matchers < MIN_RULE_TABLE_ENTRIES || ids < MIN_RULE_TABLE_ENTRIES) return null;
+
+  const mask = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    if (RULE_PROSE_FIELD.test(lines[i])) mask.add(i);
+  }
+  return mask;
+}
+
+// =============================================================================
 // FINDING FACTORY
 // =============================================================================
 
@@ -225,9 +279,15 @@ export class BaseAgent {
     const lines = content.split('\n');
     const findings = [];
 
+    // Rule tables state what a vulnerability looks like, so their prose and
+    // patterns match the rules looking for them. Skipping those lines is what
+    // stops a self-scan from reporting every rule describing itself.
+    const ruleTable = ruleTableLineMask(lines);
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (this.isSuppressed(line)) continue;
+      if (ruleTable && ruleTable.has(i)) continue;
 
       for (const p of patterns) {
         p.regex.lastIndex = 0;
