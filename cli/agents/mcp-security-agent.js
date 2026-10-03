@@ -65,7 +65,13 @@ export const PATTERNS = [
   {
     rule: 'MCP_STDIO_NO_SANDBOX',
     title: 'MCP: stdio Transport Without Sandbox',
-    regex: /(?:StdioServerTransport|stdio|transport.*stdio)/g,
+    // Anchored to actual MCP context: the transport class itself, or a transport/type field
+    // whose value is stdio. An earlier version matched the bare substring instead, so every
+    // `stdio: 'pipe'` in a child_process call and every comment merely mentioning stdio was
+    // reported — 49 of Praxis's own 50 hits for this rule were that mistake, and it was the
+    // single largest source of noise in a self-scan. Keep this comment free of the class name
+    // or it will match itself.
+    regex: /StdioServerTransport|(?:transport|type)["']?\s*[:=]\s*["']?stdio\b/g, // praxis-ignore MCP_STDIO_NO_SANDBOX - this line necessarily names the pattern
     severity: 'medium',
     cwe: 'CWE-269',
     owasp: 'A04:2021',

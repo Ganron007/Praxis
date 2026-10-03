@@ -762,6 +762,63 @@ describe('MCPSecurityAgent', async () => {
       assert.ok(findings.some(f => f.rule === 'MCP_HTTP_NO_TLS'), 'Should detect HTTP without TLS');
     } finally { cleanup(dir); }
   });
+
+  // ── MCP_STDIO_NO_SANDBOX precision ───────────────────────────────────────
+  // The rule used to match the bare substring `stdio`, which reported every
+  // `stdio: 'pipe'` in a child_process call — 49 of its 50 hits on Praxis itself.
+  // These pin BOTH directions: real stdio servers must still be caught, and
+  // Node's stdio option must not be.
+
+  it('detects a real MCP server on the stdio transport', async () => {
+    const { dir, file } = writeTempFile(`
+      import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+      const transport = new StdioServerTransport();
+      const server = new McpServer({ name: 'demo', version: '1.0.0' });
+    `);
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'MCP_STDIO_NO_SANDBOX'),
+        'Should detect an MCP server constructed on StdioServerTransport');
+    } finally { cleanup(dir); }
+  });
+
+  it('detects stdio transport declared in MCP client config', async () => {
+    const { dir, file } = writeTempFile(`
+      const config = { mcpServers: { filesystem: { command: 'npx', transport: 'stdio' } } };
+    `);
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(findings.some(f => f.rule === 'MCP_STDIO_NO_SANDBOX'),
+        'Should detect "transport": "stdio" in a server config');
+    } finally { cleanup(dir); }
+  });
+
+  it('does NOT flag child_process stdio options as an MCP sandbox gap', async () => {
+    const { dir, file } = writeTempFile(`
+      const { execFileSync, spawnSync } = require('child_process');
+      execFileSync('git', ['--version'], { stdio: 'pipe' });
+      const out = spawnSync('gh', args, { stdio: ['ignore', 'pipe', 'inherit'] });
+      const res = execFileSync('docker', ['info'], { stdio: 'ignore' });
+    `);
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(!findings.some(f => f.rule === 'MCP_STDIO_NO_SANDBOX'),
+        "child_process's stdio option is unrelated to MCP and must not be reported");
+    } finally { cleanup(dir); }
+  });
+
+  it('does NOT flag prose that merely mentions stdio', async () => {
+    const { dir, file } = writeTempFile(`
+      // MCP uses JSON-RPC 2.0 over stdio
+      /* Spawn a child so the parent does not inherit stdio. */
+      const t = config.transport || 'stdio';
+    `);
+    try {
+      const findings = await agent.analyze({ rootPath: dir, files: [file], recon: {}, options: {} });
+      assert.ok(!findings.some(f => f.rule === 'MCP_STDIO_NO_SANDBOX'),
+        'comments and prose mentioning stdio are not an MCP finding');
+    } finally { cleanup(dir); }
+  });
 });
 
 // =============================================================================
