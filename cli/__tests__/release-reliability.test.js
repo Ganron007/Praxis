@@ -200,17 +200,27 @@ describe('finding paths never leak the local filesystem', () => {
         ['scan secrets', ['scan', 'secrets', root, '--json']],
         ['agents', ['agents', root, '--json']],
       ];
+      // Only the scanners that must fire on this fixture. `agents` audits the AI
+      // agent surface, so on a machine without ~/.cursor/mcp.json it legitimately
+      // reports nothing — the leak property still has to hold, but requiring
+      // findings there made this test fail on CI for the wrong reason.
+      const MUST_FIRE = new Set(['scan full', 'scan secrets']);
 
+      let checked = 0;
       for (const [label, args] of commands) {
         const doc = runsJson(args, repo);
         const files = (doc.findings || []).map(f => f.file).filter(Boolean);
-        assert.ok(files.length, `${label} produced no findings to check`);
+        if (MUST_FIRE.has(label)) {
+          assert.ok(files.length, `${label} produced no findings to check`);
+        }
+        checked += files.length;
         for (const f of files) {
           assert.ok(!/^[A-Za-z]:[\\/]/.test(f), `${label} published an absolute path: ${f}`);
           assert.ok(!f.includes('..'), `${label} published an escaping path: ${f}`);
           assert.ok(!f.includes(os.homedir()), `${label} leaked the home directory: ${f}`);
         }
       }
+      assert.ok(checked >= 2, `expected at least the fixture findings to be checked, got ${checked}`);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
