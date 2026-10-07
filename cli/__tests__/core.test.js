@@ -249,6 +249,17 @@ describe('cli/core/paths', async () => {
       `use displayPath(finding.file, root): ${offenders.join(', ')}`);
   });
 
+  it('treats a foreign-platform absolute path as absolute', () => {
+    // `path.isAbsolute('C:/work/src/a.js')` is false on POSIX, where that string
+    // is a legal relative filename. Without the drive-letter guard a Windows path
+    // read back from a report or a cache would be printed verbatim on Linux —
+    // drive letter and all. Found the hard way: a test fixture hardcoding
+    // `C:/…` passed on Windows and failed on every CI runner.
+    const root = path.join(path.sep, 'srv', 'app');
+    assert.equal(displayPath('C:/work/src/a.js', root), 'a.js');
+    assert.equal(displayPath('C:/work/src/a.js'), 'a.js');
+  });
+
   it('no file may re-inline the path strippers this replaced', () => {
     // The bug existed because these three rules were copy-pasted into five places:
     // cli/core/output/json.js, cli/commands/audit.js (twice — once in outputJSON

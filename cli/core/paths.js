@@ -30,6 +30,13 @@ import path from 'path';
 
 const toSlash = (p) => String(p).split(path.sep).join('/').replace(/\\/g, '/');
 
+// `path.isAbsolute` is platform-specific: on POSIX it reports false for
+// `C:/work/src/a.js`, because that is a legal relative filename there. Findings
+// normally come from the host's own glob, but a path read back from a report or
+// a cache can carry the other platform's shape, and treating it as relative would
+// print a drive letter straight into the output. Same guard sarif.js uses.
+const isAbsoluteLike = (s) => path.isAbsolute(s) || /^[a-zA-Z]:[\\/]/.test(s);
+
 /**
  * Render a finding's file for display.
  *
@@ -46,7 +53,7 @@ export function displayPath(file, root) {
   // `path.relative(root, ...)` would resolve it against the cwd, escape the root
   // and collapse it to a bare filename — the trap that made Code Scanning alerts
   // unlocatable.
-  if (!path.isAbsolute(s)) return toSlash(s);
+  if (!isAbsoluteLike(s)) return toSlash(s);
 
   if (root) {
     const rel = path.relative(root, s);

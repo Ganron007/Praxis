@@ -123,7 +123,12 @@ describe('HTMLReporter — escaping and path normalization', () => {
     // `Users/alice/.cursor/mcp.json`, leaking the username into every HTML
     // report. Reducing to the filename is strictly safer and matches the
     // fallback sarif.js already used. A home-directory path still becomes `~/…`.
-    assert.equal(reporter.normalizePath('C:/work/src/a.js'), 'a.js');
+    //
+    // Built with path.join so the fixture is absolute on the host: on POSIX a
+    // `C:/…` string is just a relative filename, so `path.isAbsolute` is false
+    // and displayPath correctly passes it through untouched. Hardcoding the
+    // Windows form made this test pass on Windows and fail on every CI runner.
+    assert.equal(reporter.normalizePath(path.join(path.sep, 'work', 'src', 'a.js')), 'a.js');
     assert.equal(
       reporter.normalizePath(path.join(os.homedir(), '.cursor', 'mcp.json')),
       '~/.cursor/mcp.json',
