@@ -159,7 +159,9 @@ export async function auditCommand(targetPath = '.', options = {}) {
       const fileResults = scanFileForSecrets(file);
       for (const f of fileResults) {
         secretFindings.push({
-          file,
+          // Normalised here so secret findings are indistinguishable from agent
+          // findings by the time anything renders them.
+          file: displayPath(file, absolutePath),
           line: f.line,
           column: f.column,
           severity: f.severity,
@@ -487,7 +489,7 @@ export async function auditCommand(targetPath = '.', options = {}) {
   } else if (options.md) {
     outputMarkdown(scoreResult, filteredFindings, depVulns, remediationPlan, absolutePath);
   } else if (options.json) {
-    outputJSON(scoreResult, filteredFindings, depVulns, recon, agentResults, remediationPlan, suppressions, options.compare ? scoringEngine.loadHistory(absolutePath) : null, filesScanned);
+    outputJSON(scoreResult, filteredFindings, depVulns, recon, agentResults, remediationPlan, suppressions, options.compare ? scoringEngine.loadHistory(absolutePath) : null, filesScanned, absolutePath);
   } else if (options.sarif) {
     outputSARIF(filteredFindings, absolutePath);
   } else {
@@ -881,7 +883,7 @@ function printReport(scoreResult, findings, depVulns, recon, plan, rootPath, fil
 // JSON OUTPUT
 // =============================================================================
 
-function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remediationPlan, suppressions, history, filesScanned = null) {
+function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remediationPlan, suppressions, history, filesScanned = null, absolutePath = process.cwd()) {
   const output = {
     score: scoreResult.score,
     grade: scoreResult.grade.letter,
@@ -897,13 +899,14 @@ function outputJSON(scoreResult, findings, depVulns, recon, agentResults, remedi
       }])
     ),
     findings: findings.map(f => {
-      const normFile = String(f.file || '')
-        .replace(/\\/g, '/')
-        .replace(/^[a-zA-Z]:\/+/, '')
-        .replace(/^.*\/Praxis\/showcase-target\//, 'showcase-target/')
-        .replace(/^.*\/Praxis\//, '');
       return {
-        file: normFile, line: f.line, severity: f.severity, category: f.category,
+        // Secret findings are built here rather than by an agent, so they never
+        // pass through the orchestrator's normalisation. Do it at the source —
+        // see cli/core/paths.js. This used to be the fourth copy of the same
+        // strippers, which is how an absolute path reached the JSON report with
+        // its drive letter removed and the username left behind.
+        file: displayPath(f.file, absolutePath),
+        line: f.line, severity: f.severity, category: f.category,
         rule: f.rule, title: f.title, description: f.description, fix: f.fix,
         cwe: f.cwe, owasp: f.owasp,
         ...(f.eaa ? { eaa: f.eaa } : {}),

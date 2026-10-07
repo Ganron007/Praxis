@@ -249,6 +249,45 @@ describe('cli/core/paths', async () => {
       `use displayPath(finding.file, root): ${offenders.join(', ')}`);
   });
 
+  it('no file may re-inline the path strippers this replaced', () => {
+    // The bug existed because these three rules were copy-pasted into five places:
+    // cli/core/output/json.js, cli/commands/audit.js (twice — once in outputJSON
+    // and once via the secret scan), cli/agents/html-reporter.js,
+    // cli/commands/openclaw.js and cli/commands/scan-standard.js. Each fix left
+    // the others behind, which is how a secret finding still shipped with its
+    // drive letter stripped and the username attached. One owner, guarded.
+    const CLI_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+    // The exact dogfood shapes, not a loose `/Praxis/` search: sarif.js keeps a
+    // legitimate rootless fallback using `^[a-zA-Z]:\/*`, which is a different
+    // regex from the `^[a-zA-Z]:\/+` form that did the damage.
+    const BANNED = [
+      /\^\[a-zA-Z\]:\\\/\+/,          // `^[a-zA-Z]:\/+`  drive-letter strip
+      /Praxis\\\/showcase-target/,   // `/Praxis\/showcase-target/`
+      /Praxis\\\/\)/,                // `/Praxis\/`
+    ];
+    const offenders = [];
+    const walk = (dir) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) {
+          if (e.name !== '__tests__' && e.name !== 'node_modules') walk(p);
+        } else if (p.endsWith('.js')) {
+          fs.readFileSync(p, 'utf8').split('\n').forEach((l, i) => {
+            // Prose about the bug is allowed; only executable lines are policed.
+            const t = l.trim();
+            if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return;
+            if (BANNED.some(re => re.test(l))) {
+              offenders.push(`${path.relative(CLI_DIR, p)}:${i + 1}`);
+            }
+          });
+        }
+      }
+    };
+    walk(CLI_DIR);
+    assert.deepEqual(offenders, [],
+      `use displayPath from cli/core/paths.js: ${offenders.join(', ')}`);
+  });
+
   it('normalises a mixed finding list without disturbing the others', () => {
     const home = os.homedir();
     const root = path.join(home, 'projects', 'myapp');

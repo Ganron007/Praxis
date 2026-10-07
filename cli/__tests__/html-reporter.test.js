@@ -116,8 +116,18 @@ describe('HTMLReporter — escaping and path normalization', () => {
     assert.equal(out, 'src/a.js');
   });
 
-  it('removes Windows drive prefixes when no root is supplied', () => {
-    assert.equal(reporter.normalizePath('C:/work/src/a.js'), 'work/src/a.js');
+  it('reduces an absolute path to its filename when no root is supplied', () => {
+    // With no root there is no way to know what is in-tree, so the old behaviour
+    // — strip the drive letter and keep `work/src/a.js` — published the local
+    // directory layout, and `C:\Users\alice\.cursor\mcp.json` became
+    // `Users/alice/.cursor/mcp.json`, leaking the username into every HTML
+    // report. Reducing to the filename is strictly safer and matches the
+    // fallback sarif.js already used. A home-directory path still becomes `~/…`.
+    assert.equal(reporter.normalizePath('C:/work/src/a.js'), 'a.js');
+    assert.equal(
+      reporter.normalizePath(path.join(os.homedir(), '.cursor', 'mcp.json')),
+      '~/.cursor/mcp.json',
+    );
   });
 
   it('never leaks an absolute path into the document', () => {
