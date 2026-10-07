@@ -16,6 +16,7 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
+import { displayPath } from '../core/paths.js';
 import { buildOrchestratorAsync } from '../agents/index.js';
 import { ScoringEngine } from '../agents/scoring-engine.js';
 import {
@@ -239,7 +240,7 @@ async function printHumanReport(standard, report) {  console.log(chalk.white.bol
     const sev = (f.severity || 'medium').toUpperCase();
     const color = SEV_COLORS[f.severity] || chalk.white;
     const tag = ids.join(', ');
-    const file = f.file ? path.relative(process.cwd(), f.file) : '';
+    const file = f.file ? displayPath(f.file, process.cwd()) : '';
     const loc = file ? `${file}:${f.line || 0}` : '';
     console.log(`  ${color(`[${sev}]`)} ${chalk.cyan(`[${tag}]`)} ${f.title || f.rule || ''}`);
     if (loc) console.log(chalk.gray(`    ${loc}`));

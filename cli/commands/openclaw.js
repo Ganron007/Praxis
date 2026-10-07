@@ -15,6 +15,7 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import { displayPath } from '../core/paths.js';
 import * as output from '../utils/output.js';
 import { AgentConfigScanner } from '../agents/agent-config-scanner.js';
 import { MCPSecurityAgent } from '../agents/mcp-security-agent.js';
@@ -174,7 +175,7 @@ function printFindings(findings, rootPath) {
   findings.sort((a, b) => (sevOrder[a.severity] ?? 4) - (sevOrder[b.severity] ?? 4));
 
   for (const f of findings) {
-    const relFile = path.relative(rootPath, f.file).replace(/\\/g, '/');
+    const relFile = displayPath(f.file, rootPath);
     const sevLabel = f.severity === 'critical' ? chalk.red.bold('CRITICAL')
       : f.severity === 'high' ? chalk.yellow('HIGH')
       : chalk.blue('MEDIUM');

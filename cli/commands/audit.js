@@ -17,6 +17,7 @@ import path from 'path';
 import { renderFindingsSARIF } from '../core/output/sarif.js';
 import chalk from 'chalk';
 import ora from 'ora';
+import { displayPath } from '../core/paths.js';
 import fg from '../core/glob.js';
 import { buildOrchestrator, buildOrchestratorAsync } from '../agents/index.js';
 import { LegalRiskAgent } from '../agents/legal-risk-agent.js';
@@ -709,7 +710,7 @@ function buildRemediationPlan(findings, depVulns, rootPath) {
     const nonEnvSecrets = [];
 
     for (const f of sevSecrets) {
-      const relFile = path.relative(rootPath, f.file).replace(/\\/g, '/');
+      const relFile = displayPath(f.file, rootPath);
       if (f.file.match(/\.env(\..*)?$/)) {
         if (!envGroups.has(relFile)) envGroups.set(relFile, []);
         envGroups.get(relFile).push(f);
@@ -741,7 +742,7 @@ function buildRemediationPlan(findings, depVulns, rootPath) {
         category: 'secrets',
         categoryLabel: 'SECRETS',
         title: f.title || f.rule,
-        file: `${path.relative(rootPath, f.file).replace(/\\/g, '/')}:${f.line}`,
+        file: `${displayPath(f.file, rootPath)}:${f.line}`,
         action: f.aiFix || f.fix || f.description,
         effort: 'low',
       });
@@ -755,7 +756,7 @@ function buildRemediationPlan(findings, depVulns, rootPath) {
         category: f.category,
         categoryLabel: (CATEGORY_LABELS[f.category] || f.category).toUpperCase(),
         title: f.title || f.rule,
-        file: `${path.relative(rootPath, f.file).replace(/\\/g, '/')}:${f.line}`,
+        file: `${displayPath(f.file, rootPath)}:${f.line}`,
         action: f.aiFix || f.fix || f.description,
         effort: EFFORT_MAP[f.category] || 'medium',
       });
@@ -1102,7 +1103,7 @@ function outputCSV(findings, depVulns, scoreResult, rootPath) {
 
   console.log('severity,category,rule,file,line,title,description,fix');
   for (const f of findings) {
-    const relFile = path.relative(rootPath, f.file).replace(/\\/g, '/');
+    const relFile = displayPath(f.file, rootPath);
     console.log([
       escape(f.severity), escape(f.category), escape(f.rule),
       escape(relFile), f.line || '', escape(f.title),
@@ -1152,7 +1153,7 @@ function outputMarkdown(scoreResult, findings, depVulns, remediationPlan, rootPa
     lines.push('| File | Rule | Description | Fix |');
     lines.push('|------|------|-------------|-----|');
     for (const f of sevFindings) {
-      const relFile = path.relative(rootPath, f.file).replace(/\\/g, '/');
+      const relFile = displayPath(f.file, rootPath);
       lines.push(`| ${relFile}:${f.line} | ${f.rule} | ${(f.description || '').slice(0, 80)} | ${(f.fix || '').slice(0, 60)} |`);
     }
     lines.push('');
